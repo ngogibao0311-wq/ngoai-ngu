@@ -1,0 +1,11 @@
+{
+  "name": "lingo-full",
+  "version": "2.0.0",
+  "private": true,
+  "scripts": {
+    "start": "node server.cjs",
+    "test": "node Final/tests/verify.cjs && node Final/tests/ai.cjs && node Final/tests/ai-ui.cjs && node Final/tests/prompts.cjs && node Final/tests/firebase.cjs && node Final/tests/firebase-ui.cjs && node Final/tests/vocab-levels.cjs",
+    "check": "node --check script.js && node --check language.js && node --check workspace.js && node --check ai-providers.js && node --check openai-local.cjs && node --check ai-prompts.js && node --check firebase-backup.js && node --check firebase-connect.js",
+    "test:browser": "node Final/tests/browser.cjs"
+  }
+}

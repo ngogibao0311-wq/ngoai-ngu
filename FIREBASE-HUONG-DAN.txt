@@ -1,0 +1,19 @@
+Firebase:
+1. Chạy node server.cjs trong thư mục này.
+2. Mở http://localhost:5174 (dùng localhost để khớp Authorized domains).
+3. Cài đặt → Kết nối Firebase → Nhập cấu hình Firebase của bạn.
+4. Dán const firebaseConfig = { ... }; rồi Lưu cấu hình và tải lại.
+5. Đăng nhập Google → Lưu lên Firebase.
+Chọn ngôn ngữ còn lại và lưu riêng. Đồng bộ bằng nút, không tự động.
+Khi tải từ Firebase, dữ liệu ngôn ngữ hiện tại trên máy bị thay thế sau khi xác nhận.
+Khóa AI, cài đặt, mã tùy chỉnh và tệp media không được đồng bộ.
+Firestore Rules: dùng file firestore.rules, dán vào Firestore → Rules → Publish.
+Không dán vào Realtime Database.
+Tài liệu: https://firebase.google.com/docs/auth/web/google-signin
+
+Cập nhật 04/10/2026: bản sao văn bản hỗ trợ đến 32 MB, chia thành các phần nhỏ.
+Bấm Ctrl+F5 để tải mã mới rồi Lưu lên Firebase. Có tiến độ theo số phần.
+Chỉ cập nhật bản sao đang dùng sau khi tải đủ tất cả các phần. Tải xuống kiểm tra toàn vẹn trước khi thay dữ liệu trên máy.
+Bản sao định dạng cũ vẫn tải được. Các phiên bản và phần tải dở được giữ trong Firestore; mỗi lần lưu dùng thêm dung lượng và lượt ghi.
+Rules trong firestore.rules đã cho phép các phần dữ liệu thuộc đúng tài khoản; không mở quyền đọc/ghi công khai.
+Nếu báo permission-denied, kiểm tra đã tạo Cloud Firestore và Publish rules cho đúng dự án.

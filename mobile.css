@@ -1,0 +1,219 @@
+/* ==========================================================================
+   MOBILE RESPONSIVE OVERRIDES (Dành riêng cho giao diện điện thoại)
+   Target: Màn hình < 768px
+   ========================================================================== */
+
+@media screen and (max-width: 768px) {
+
+    /* --- 1. CẤU TRÚC CHUNG (LAYOUT & SCROLLING) --- */
+    body, html {
+        overflow-x: hidden; /* Chặn trượt ngang gây vỡ khung */
+        font-size: 14px;    /* Giảm nhẹ cỡ chữ gốc để hiển thị nhiều tin hơn */
+    }
+
+    /* Tăng khoảng cách dưới cùng để không bị che bởi thanh điều hướng ảo của điện thoại */
+    #app-container {
+        padding-bottom: 80px; 
+    }
+
+    /* --- 2. SIDEBAR & NAVIGATION --- */
+    /* Ẩn Sidebar máy tính, chuyển sang dạng Drawer hoặc Menu nút */
+    .sidebar {
+        display: none !important; /* JS có thể toggle class, nhưng CSS này đảm bảo ẩn mặc định */
+    }
+    
+    /* Header: Thu gọn padding */
+    header {
+        padding: 0.5rem 1rem !important;
+        height: auto !important;
+        flex-wrap: wrap;
+    }
+
+    /* Logo & Brand nhỏ lại */
+    header .brand-logo {
+        font-size: 1.25rem !important; /* 20px */
+    }
+
+    /* --- 3. DASHBOARD & CARDS --- */
+    /* Chuyển các Grid 2-3 cột thành 1 cột dọc */
+    .grid, .grid-cols-2, .grid-cols-3, .grid-cols-4 {
+        grid-template-columns: 1fr !important;
+        gap: 1rem !important;
+    }
+
+    /* Card thống kê: Giảm padding để tiết kiệm diện tích */
+    .card {
+        padding: 1rem !important;
+        margin-bottom: 0.5rem;
+    }
+
+    /* --- 4. HỌC TẬP & QUIZ (QUAN TRỌNG) --- */
+    /* Khu vực hiển thị chữ Hán to (Quiz/Flashcard) */
+    #qBody .text-4xl, 
+    #srsHanzi {
+        font-size: 4rem !important; /* Giảm từ to khổng lồ xuống vừa phải */
+        margin: 1rem 0;
+    }
+
+    /* Các nút bấm trắc nghiệm: Xếp chồng dọc, tăng vùng bấm */
+    #qActions {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    #qActions button {
+        width: 100%;
+        padding: 12px 16px !important; /* Vùng bấm dễ dàng cho ngón tay */
+        font-size: 1rem;
+        text-align: center; /* Căn giữa thay vì lệch trái như PC */
+    }
+
+    /* --- 5. HANZI WRITER (LUYỆN VIẾT) --- */
+    /* Canvas vẽ chữ phải co giãn theo màn hình */
+    #hanziWriterMount, 
+    #hanziWriterMount svg {
+        width: 100% !important;
+        height: auto !important;
+        max-width: 300px; /* Giới hạn tối đa */
+        margin: 0 auto;   /* Căn giữa */
+        aspect-ratio: 1/1; /* Giữ tỷ lệ vuông */
+    }
+
+    /* --- 6. MODAL & POPUP --- */
+    /* Modal full màn hình hoặc gần full để dễ đọc */
+    dialog, .modal {
+        width: 95% !important;
+        max-width: 95% !important;
+        max-height: 90vh;
+        margin: auto;
+        border-radius: 12px;
+    }
+
+    /* Popup tra từ (Context Menu) - Chuyển thành "Bottom Sheet" (Trượt từ dưới lên) */
+    #saveSelectionPopup, 
+    #vi-zh-lookup-popup {
+        position: fixed !important;
+        bottom: 0 !important;
+        left: 0 !important;
+        top: auto !important; /* Bỏ vị trí theo chuột */
+        width: 100% !important;
+        transform: none !important; /* Reset transform scale cũ */
+        border-radius: 16px 16px 0 0 !important; /* Bo góc trên */
+        box-shadow: 0 -4px 20px rgba(0,0,0,0.3);
+        animation: slideUp 0.3s ease-out;
+        z-index: 9999;
+    }
+
+    /* --- 7. LINH VẬT & HIỆU ỨNG (TỐI ƯU HIỆU NĂNG) --- */
+    /* Ẩn các linh vật (Gấu trúc, Người tuyết) để đỡ che nội dung */
+    #menu-snowman, #panda-bubble, #panda-mascot-container {
+        display: none !important;
+    }
+
+    /* Giảm hiệu ứng nền sao/bay để đỡ tốn pin */
+    #bg-canvas {
+        opacity: 0.3; /* Làm mờ bớt */
+    }
+}
+
+/* Animation trượt lên cho Popup Mobile */
+@keyframes slideUp {
+    from { transform: translateY(100%); }
+    to { transform: translateY(0); }
+}
+/* ==========================================================================
+   MOBILE RESPONSIVE: BOTTOM NAVIGATION
+   ========================================================================== */
+
+@media screen and (max-width: 768px) {
+    /* 1. Layout tổng thể */
+    body, html {
+        overflow-x: hidden;
+    }
+
+    #app-container, main {
+        padding-bottom: 85px !important; /* Chừa chỗ cho menu không bị che nội dung */
+        margin-left: 0 !important;       /* Bỏ lề của desktop */
+        width: 100% !important;
+    }
+
+    /* 2. Biến Sidebar thành Bottom Nav */
+    .sidebar {
+        display: flex !important; /* Đảm bảo HIỆN */
+        position: fixed !important;
+        bottom: 0 !important;
+        left: 0 !important;
+        top: auto !important;    /* Bỏ vị trí top của desktop */
+        width: 100% !important;
+        height: 70px !important;
+        background: #0f172a !important; /* Màu nền tối */
+        flex-direction: row !important; /* Xếp ngang */
+        z-index: 9999 !important;
+        border-right: none !important;
+        border-top: 1px solid rgba(255, 255, 255, 0.1) !important;
+        padding: 0 !important;
+        box-shadow: 0 -4px 15px rgba(0, 0, 0, 0.5);
+    }
+
+    /* Ẩn các thành phần thừa trên mobile */
+    .sidebar .brand-logo, 
+    .sidebar .user-info, 
+    .sidebar footer,
+    .sidebar .px-4.mb-4 /* Tiêu đề nhóm menu */ {
+        display: none !important;
+    }
+
+    /* Container chứa các icon */
+    .sidebar nav {
+        display: flex !important;
+        flex-direction: row !important;
+        width: 100% !important;
+        height: 100% !important;
+        justify-content: space-around !important;
+        align-items: center !important;
+        padding: 0 5px !important;
+    }
+
+    /* Style lại từng nút bấm */
+    .sidebar .nav-item {
+        flex: 1;
+        flex-direction: column !important; /* Icon trên chữ dưới */
+        justify-content: center !important;
+        align-items: center !important;
+        height: 100% !important;
+        margin: 0 !important;
+        padding: 5px 0 !important;
+        gap: 2px !important;
+        background: transparent !important;
+        border-radius: 0 !important;
+    }
+
+    /* Icon */
+    .sidebar .nav-item i, 
+    .sidebar .nav-item svg {
+        width: 20px !important;
+        height: 20px !important;
+        margin: 0 !important;
+    }
+
+    /* Chữ dưới Icon */
+    .sidebar .nav-item span {
+        font-size: 10px !important;
+        font-weight: 500;
+        white-space: nowrap;
+        display: block !important;
+    }
+
+    /* Màu sắc khi được chọn */
+    .sidebar .nav-item.active {
+        color: #2dd4bf !important; /* Màu Teal-400 */
+    }
+
+    /* 3. Chỉnh sửa Modal/Popup trên mobile */
+    dialog, .modal {
+        width: 95% !important;
+        max-width: 95% !important;
+        padding: 15px !important;
+    }
+}

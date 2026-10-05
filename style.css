@@ -1,0 +1,2485 @@
+  html {
+    overflow-y: auto; /* Cho phép trình duyệt tự quyết định */
+    scrollbar-gutter: stable; /* Yêu cầu trình duyệt luôn "chừa chỗ" cho thanh cuộn */
+}
+/* --- THÊM MỚI: THANH CUỘN HIỆN ĐẠI --- */
+/* --- 1. THANH CUỘN CAO CẤP (Ghi đè cũ) --- */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.1); 
+    border-radius: 10px;
+}
+::-webkit-scrollbar-thumb {
+    background: linear-gradient(to bottom, var(--brand), #2dd4bf); /* Gradient màu thương hiệu */
+    border-radius: 10px;
+    border: 2px solid transparent;
+    background-clip: content-box;
+}
+::-webkit-scrollbar-thumb:hover {
+    background-color: var(--brand-hover);
+}
+
+/* --- 2. HIỆU ỨNG CHỮ SHINE (Lấp lánh quét qua) --- */
+.text-shine {
+    background: linear-gradient(
+        to right,
+        #fff 20%,
+        var(--brand) 40%,
+        var(--brand) 60%,
+        #fff 80%
+    );
+    background-size: 200% auto;
+    color: #000;
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: shine 3s linear infinite;
+}
+@keyframes shine {
+    to {
+        background-position: 200% center;
+    }
+}
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+::-webkit-scrollbar-track {
+    background: transparent; 
+}
+::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: var(--brand); /* Đổi màu khi di chuột vào */
+}
+    /* --- SỬA LỖI: Nút X (theme forest-ruins) bị dây leo đè --- */
+/* Nguyên nhân: Dây leo (::after) có z-index: 10, cao hơn nút X.
+  Giải pháp: Đặt z-index cho nút X cao hơn (z-index: 20).
+  Chúng ta cần 'position: relative' để z-index có hiệu lực.
+*/
+body[data-theme='forest-ruins'] .card button[onclick="this.closest('dialog').close()"]:not(.absolute) {
+    position: relative;
+    z-index: 20;
+}
+
+    /* --- CSS cho Sandbox Ghép Chữ --- */
+.sandbox-component {
+    padding: 0.75rem 1rem;
+    font-size: 1.5rem; /* 24px */
+    font-weight: 600;
+    background-color: var(--surface-glass);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    cursor: grab;
+    transition: all 0.2s ease;
+    user-select: none; /* Ngăn bôi đen chữ khi kéo */
+}
+.sandbox-component:hover {
+    background-color: var(--brand-light);
+    border-color: var(--brand);
+}
+.sandbox-component.is-dragging {
+    opacity: 0.5;
+    cursor: grabbing;
+}
+#sandbox-frame.drag-over {
+    border-color: var(--brand);
+    background-color: var(--brand-light);
+}
+#sandbox-frame .sandbox-component {
+    font-size: 2.5rem; /* 40px */
+    padding: 0.5rem 1rem;
+    cursor: default;
+}
+/* --- BẮT ĐẦU THÊM MỚI: CSS CHO BÀI TẬP ĐỤC LỖ --- */
+    .cloze-input {
+        background-color: var(--surface-glass);
+        border: 1px dashed var(--border);
+        border-radius: 4px;
+        padding: 2px 4px;
+        color: var(--text-primary);
+        text-align: center;
+        transition: all 0.2s ease;
+        display: inline-block; /* Quan trọng */
+        vertical-align: baseline; /* Quan trọng */
+        font-size: 0.9em; /* Nhỏ hơn text 1 chút */
+    }
+    .cloze-input:focus {
+        outline: none;
+        border-style: solid;
+        border-color: var(--brand);
+        background-color: var(--surface);
+    }
+    .cloze-input.correct {
+        background-color: rgba(34, 197, 94, 0.2);
+        border-color: rgba(34, 197, 94, 0.7);
+        color: #22c55e; /* Màu xanh lá */
+    }
+    .cloze-input.incorrect {
+        background-color: rgba(239, 68, 68, 0.2);
+        border-color: rgba(239, 68, 68, 0.7);
+        color: #ef4444; /* Màu đỏ */
+        text-decoration: line-through;
+    }
+    .cloze-correct-answer {
+        color: #22c55e;
+        font-weight: bold;
+        margin-left: 4px;
+    }
+    /* --- KẾT THÚC THÊM MỚI --- */
+
+    /* --- BẮT ĐẦU THÊM MỚI: CSS CHO LUYỆN NGẮT NHỊP --- */
+
+/* Kiểu của dấu ngắt nhịp */
+.pause-mark {
+    color: var(--text-muted);
+    font-size: 0.8em;
+    margin: 0 0.1em;
+    transition: opacity 0.3s ease, width 0.3s ease;
+    display: inline; /* Đảm bảo nó không bị ẩn */
+    opacity: 1;
+    width: auto;
+}
+
+/* Lớp (class) để ẩn dấu ngắt nhịp (DÙNG CHUNG) */
+.reading-container.hide-pauses .pause-mark {
+    opacity: 0;
+    width: 0;
+    margin: 0;
+    font-size: 0; /* Ẩn hoàn toàn */
+}
+
+/* --- KẾT THÚC THÊM MỚI --- */
+
+    /* --- BẮT ĐẦU THÊM MỚI: CSS CHO QUill.js Editor --- */
+    /* Đảm bảo toolbar của Quill khớp với theme */
+    #quill-toolbar {
+        background-color: var(--surface);
+        border-color: var(--border);
+        border-top-left-radius: 8px;
+        border-top-right-radius: 8px;
+    }
+    /* Tô màu cho các icon trên toolbar (trắng/xám) */
+    #quill-toolbar .ql-stroke {
+        stroke: var(--text-secondary);
+    }
+    #quill-toolbar .ql-fill {
+        fill: var(--text-secondary);
+    }
+    #quill-toolbar .ql-picker-label {
+        color: var(--text-secondary);
+    }
+    #quill-toolbar button:hover .ql-stroke,
+    #quill-toolbar .ql-picker-label:hover {
+        stroke: var(--text-primary);
+        color: var(--text-primary);
+    }
+    #quill-toolbar .ql-picker-item:hover {
+        color: var(--brand);
+    }
+    /* Nền của các dropdown */
+    #quill-toolbar .ql-picker-options {
+        background-color: var(--surface);
+        border-color: var(--border);
+    }
+    /* Vùng soạn thảo (luôn là nền trắng, chữ đen) */
+    #quill-editor {
+        background-color: #ffffff;
+        color: #111827; /* Gần giống màu đen */
+        border-bottom-left-radius: 8px;
+        border-bottom-right-radius: 8px;
+        border-color: var(--border);
+    }
+    /* --- KẾT THÚC THÊM MỚI --- */
+    /* --- BẮT ĐẦU SỬA LỖI: Chữ tối màu trong Modal --- */
+    /* Mục tiêu: Buộc modal hiển thị nội dung luôn dùng màu chữ
+      chính của theme (trắng/sáng), và ghi đè
+      bất kỳ style="color: rgb(0,0,0)" nào mà Quill có thể đã lưu.
+    */
+    #aiResultModal .prose {
+        color: var(--text-primary); /* Đặt màu chữ cơ bản (trắng) */
+    }
+    
+    /* Ghi đè tất cả các thẻ con (p, span, li...) bên trong */
+    #aiResultModal .prose * {
+        /* 'color: unset' sẽ xóa mọi style inline (như style="color: black")
+          và buộc thẻ đó kế thừa màu (color) từ thẻ cha (.prose)
+          mà chúng ta đã set là var(--text-primary) ở trên.
+        */
+        color: unset !important;
+    }
+    /* --- KẾT THÚC SỬA LỖI --- */
+    /* --- BẮT ĐẦU SỬA LỖI: Chữ trắng trên nền sáng (trong modal) --- */
+/*
+  Mục tiêu: Ghi đè các thẻ <code> (từ Quill) hoặc <kbd>
+  khi chúng ở trong .prose (của modal) ở GIAO DIỆN TỐI.
+  Trình duyệt/Quill mặc định cho <code> nền xám nhạt,
+  trong khi quy tắc .prose * của chúng ta buộc chữ màu trắng -> chữ trắng trên nền xám.
+*/
+body[data-theme='dark'] .prose code,
+body[data-theme='dark'] .prose kbd {
+    background-color: var(--surface-glass) !important; /* Nền tối (giống .btn-secondary) */
+    color: var(--text-secondary) !important;      /* Chữ sáng (không phải trắng tinh) */
+    padding: 2px 5px;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+    font-size: 0.9em;
+}
+/* --- KẾT THÚC SỬA LỖI --- */
+/* --- BẮT ĐẦU THÊM MỚI: CSS CHO IN ẤN HỘI THOẠI --- */
+@media print {
+  /* 1. Ẩn tất cả mọi thứ trên trang theo mặc định */
+  body > *:not(.printable-modal) {
+    display: none !important;
+  }
+
+  /* 2. Hiển thị modal được chọn để in */
+  .printable-modal {
+    display: block !important;
+    visibility: visible !important;
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 100% !important;
+    max-width: 100vw !important;
+    height: 100% !important;
+    max-height: 100vh !important;
+    border: none !important;
+    box-shadow: none !important;
+    overflow: visible !important;
+    background-color: white !important; /* Luôn in nền trắng */
+    color: black !important; /* Luôn in chữ đen */
+  }
+
+  /* 3. Hiển thị tất cả nội dung BÊN TRONG modal */
+  .printable-modal * {
+    visibility: visible !important;
+    background-color: transparent !important;
+    color: black !important;
+  }
+  
+  /* 4. Ẩn các nút (X, In) và các thành phần không mong muốn khi in */
+  .printable-modal .print-hide {
+    display: none !important;
+  }
+
+  /* 5. Đảm bảo khu vực nội dung được in đầy đủ */
+  .printable-modal [data-print-content] {
+     max-height: none !important;
+     overflow: visible !important;
+  }
+}
+/* --- KẾT THÚC THÊM MỚI --- */
+
+/* --- NÂNG CẤP 2: Thẻ Card Cao Cấp --- */
+#vocabGrid .card {
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); /* Hiệu ứng nảy (bouncy) */
+    position: relative;
+    overflow: hidden;
+}
+
+#vocabGrid .card:hover {
+    transform: translateY(-8px) scale(1.02); /* Nổi lên cao hơn */
+    border-color: var(--brand); /* Viền đổi màu thương hiệu */
+    box-shadow: 
+        0 20px 40px -10px rgba(0,0,0,0.5), /* Bóng đen sâu */
+        0 0 20px 0px var(--brand-light); /* Phát sáng màu thương hiệu */
+}
+
+/* Thêm hiệu ứng vệt sáng quét qua khi hover */
+#vocabGrid .card::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 50%;
+    height: 100%;
+    background: linear-gradient(
+        to right,
+        transparent,
+        rgba(255, 255, 255, 0.1),
+        transparent
+    );
+    transform: skewX(-25deg);
+    transition: 0.5s;
+    pointer-events: none;
+}
+
+#vocabGrid .card:hover::after {
+    left: 150%;
+    transition: 0.7s ease-in-out;
+}
+
+/* --- NÂNG CẤP 3: Menu Nổi --- */
+/* --- NÂNG CẤP: MENU NỔI (FLOATING DOCK) --- */
+/* --- GIAO DIỆN MENU NỔI (FLOATING DOCK) --- */
+header.glass-nav {
+    border-bottom: 1px solid var(--border);
+    background-color: rgba(15, 23, 42, 0.6) !important;
+    backdrop-filter: blur(16px) saturate(180%);
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease-in-out;
+}
+
+@media (min-width: 768px) {
+    header.glass-nav {
+        /* Biến thành viên thuốc nổi */
+        position: sticky;
+        top: 1.5rem;
+        margin: 0 auto;
+        max-width: 85%; /* Không full màn hình */
+        border-radius: 9999px; /* Bo tròn hoàn toàn */
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        box-shadow: 
+            0 10px 30px -10px rgba(0, 0, 0, 0.5),
+            inset 0 1px 0 rgba(255, 255, 255, 0.1); /* Viền sáng trên cùng */
+        z-index: 50;
+    }
+    
+    /* Điều chỉnh padding bên trong để cân đối */
+    header .max-w-7xl {
+        padding-left: 2rem;
+        padding-right: 2rem;
+    }
+}
+
+    /* Chỉnh lại padding bên trong header */
+    header .max-w-7xl {
+        padding-left: 1.5rem;
+        padding-right: 1.5rem;
+    }
+
+/* --- Ẩn thanh cuộn cho các menu Tab --- */
+#resources-tabs::-webkit-scrollbar,
+#reading-tabs::-webkit-scrollbar,
+#writing-tabs::-webkit-scrollbar,
+#settings-tabs::-webkit-scrollbar {
+    display: none; /* Ẩn trên Chrome/Safari */
+}
+
+#resources-tabs, 
+#reading-tabs, 
+#writing-tabs, 
+#settings-tabs {
+    -ms-overflow-style: none;  /* Ẩn trên IE/Edge cũ */
+    scrollbar-width: none;  /* Ẩn trên Firefox */
+}
+/* --- NÂNG CẤP: HIỆU ỨNG THẺ (CARD) --- */
+.card {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); /* Chuyển động mượt hơn */
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.card:hover {
+    transform: translateY(-5px) scale(1.01); /* Nổi lên nhẹ */
+    border-color: var(--brand); /* Viền đổi màu theo chủ đề */
+    box-shadow: 
+        0 10px 30px -10px rgba(0, 0, 0, 0.5),
+        0 0 15px -3px var(--brand-light); /* Hiệu ứng phát sáng (Glow) */
+}
+
+/* Hiệu ứng cho nút bấm bên trong Card */
+.card button {
+    transition: transform 0.2s;
+}
+.card button:active {
+    transform: scale(0.95); /* Nhấn xuống khi click */
+}
+
+/* --- THÊM MỚI: TIÊU ĐỀ GRADIENT --- */
+.text-gradient {
+    background: linear-gradient(to right, #ffffff, var(--brand));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    display: inline-block;
+}
+
+/* --- SỬA LỖI: Thẻ dưới che thẻ trên --- */
+/* Khi một mục HSK được mở ra (open), đưa nó lên lớp cao nhất */
+#vocabGrid details[open] {
+    position: relative;
+    z-index: 50; /* Cao hơn các thẻ khác */
+    overflow: visible !important; /* Cho phép hiển thị đầy đủ bóng đổ và nội dung */
+}
+
+/* Khi đóng, để nó ở lớp thấp hơn */
+#vocabGrid details {
+    position: relative;
+    z-index: 1;
+}
+
+/* Ngăn thẻ container (HSK 3, 4...) bị nảy lên khi hover vào khoảng trống */
+#vocabGrid details.card:hover {
+    transform: none !important; 
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05) !important; /* Giữ bóng đổ tĩnh */
+}
+
+/* --- FIX LỖI MENU CHO GIAO DIỆN SAKURA SPRING --- */
+
+/* 1. Ghi đè màu nền tối của Header bằng màu trắng hồng trong suốt */
+body[data-theme='sakura-spring'] header.glass-nav {
+    background-color: rgba(255, 255, 255, 0.65) !important; /* Màu trắng trong */
+    backdrop-filter: blur(15px) saturate(150%); /* Mờ kính */
+    border-bottom: 1px solid rgba(244, 114, 182, 0.3); /* Viền hồng nhạt */
+    box-shadow: 0 4px 20px rgba(236, 72, 153, 0.15); /* Bóng đổ hồng nhẹ */
+}
+
+/* 2. Đổi màu chữ các nút menu từ xám nhạt (slate-300) sang màu tím hồng của theme */
+body[data-theme='sakura-spring'] header.glass-nav .text-slate-300,
+body[data-theme='sakura-spring'] header.glass-nav button {
+    color: var(--text-secondary) !important; /* Màu chữ tím hồng */
+    font-weight: 500;
+}
+
+/* 3. Hiệu ứng khi di chuột vào nút menu */
+body[data-theme='sakura-spring'] header.glass-nav button.btn:hover {
+    background-color: rgba(255, 255, 255, 0.9) !important; /* Nền trắng rõ hơn */
+    color: var(--brand-hover) !important; /* Chữ đậm màu hơn */
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(244, 114, 182, 0.2);
+}
+
+/* 4. Chỉnh lại màu chữ Logo (HSK Pro) */
+body[data-theme='sakura-spring'] header.glass-nav .font-bold.text-white {
+    color: var(--text-primary) !important; /* Đổi màu trắng sang tím đậm */
+}
+
+/* 5. Nếu bạn dùng giao diện Sidebar (Menu dọc) trên PC, chỉnh luôn cho đồng bộ */
+body[data-theme='sakura-spring'] .sidebar {
+    background-color: rgba(255, 255, 255, 0.7) !important;
+    border-right: 1px solid var(--border);
+}
+body[data-theme='sakura-spring'] .nav-item {
+    color: var(--text-secondary) !important;
+}
+body[data-theme='sakura-spring'] .nav-item:hover {
+    background-color: var(--brand-light) !important;
+    color: var(--brand-hover) !important;
+}
+
+/* --- NGƯỜI TUYẾT TRÊN MENU (WINTER THEME) --- */
+#menu-snowman {
+    position: absolute;
+    top: -28px; /* Ngồi trên mép menu */
+    left: 50px;
+    font-size: 2rem; /* Kích thước */
+    z-index: 50; /* Nổi lên trên cùng */
+    pointer-events: none; /* Không chặn click vào menu */
+    transition: left 2s ease-in-out, transform 0.5s ease;
+    display: none; /* Mặc định ẩn */
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+}
+
+/* Chỉ hiện khi ở theme winter-street */
+body[data-theme='winter-street'] #menu-snowman {
+    display: block;
+}
+
+/* Bong bóng thoại (cho lúc ngủ hoặc nói) */
+#snowman-bubble {
+    position: absolute;
+    top: -25px;
+    right: -15px;
+    background: white;
+    color: black;
+    padding: 2px 6px;
+    border-radius: 8px;
+    font-size: 0.7rem;
+    font-weight: bold;
+    opacity: 0;
+    transition: opacity 0.3s;
+    white-space: nowrap;
+}
+#snowman-bubble::after {
+    content: '';
+    position: absolute;
+    bottom: -4px;
+    left: 5px;
+    border-width: 4px 4px 0;
+    border-style: solid;
+    border-color: white transparent;
+}
+
+/* --- CÁC TRẠNG THÁI HÀNH ĐỘNG --- */
+
+/* 1. Đi bộ (Mặc định là đứng yên, JS sẽ chỉnh left) */
+.snowman-walk {
+    animation: snowman-bob 0.5s infinite alternate;
+}
+@keyframes snowman-bob {
+    0% { transform: translateY(0) rotate(0deg); }
+    100% { transform: translateY(-3px) rotate(2deg); }
+}
+
+/* 2. Ngủ (Nằm ngang) */
+.snowman-sleep {
+    transform: rotate(90deg) translateY(10px) !important;
+    opacity: 0.8;
+}
+
+/* 3. Nhặt tuyết (Cúi xuống) */
+.snowman-pickup {
+    transform: rotate(-45deg) translateY(5px) !important;
+}
+
+/* 4. Nhảy vui vẻ */
+.snowman-jump {
+    animation: snowman-jump-anim 0.6s ease infinite !important;
+}
+@keyframes snowman-jump-anim {
+    0%, 100% { transform: translateY(0) scale(1); }
+    50% { transform: translateY(-15px) scale(1.1); }
+}
+
+/* 5. Tan chảy (Biến hình) */
+.snowman-melt {
+    transform: scaleY(0.4) translateY(20px) !important;
+    filter: blur(1px);
+}
+
+/* --- GẤU TRÚC TRÊN MENU (FOREST THEME) --- */
+#menu-panda {
+    position: absolute;
+    top: -30px; /* Ngồi trên mép menu */
+    left: 20px;
+    font-size: 2.2rem; /* Kích thước lớn hơn chút cho rõ */
+    z-index: 50; 
+    pointer-events: none;
+    transition: left 2.5s linear, transform 0.5s ease; /* Di chuyển mượt mà */
+    display: none; /* Mặc định ẩn */
+    filter: drop-shadow(0 4px 6px rgba(0,0,0,0.4));
+}
+
+/* Chỉ hiện khi ở theme forest-ruins */
+body[data-theme='forest-ruins'] #menu-panda {
+    display: block;
+}
+
+/* Bong bóng cảm xúc của Gấu */
+#panda-bubble {
+    position: absolute;
+    top: -20px;
+    right: -18px;
+    background: rgba(255, 255, 255, 0.9);
+    color: #000;
+    padding: 2px 6px;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    font-weight: bold;
+    opacity: 0;
+    transition: opacity 0.3s;
+    white-space: nowrap;
+    border: 1px solid #4ade80; /* Viền xanh lá */
+}
+
+/* --- CÁC HÀNH ĐỘNG CỦA GẤU --- */
+
+/* 1. Đi bộ (Đung đưa chậm) */
+.panda-walk {
+    animation: panda-waddle 0.8s infinite alternate;
+}
+@keyframes panda-waddle {
+    0% { transform: rotate(-5deg); }
+    100% { transform: rotate(5deg); }
+}
+
+/* 2. Ăn tre (Cúi xuống) */
+.panda-eat {
+    transform: translateY(5px) scale(1.1) !important;
+}
+
+/* 3. Cuộn tròn (Lăn) */
+.panda-roll {
+    animation: panda-spin 1s linear infinite !important;
+}
+@keyframes panda-spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* 4. Ngủ (Nằm úp) */
+.panda-sleep {
+    transform: rotate(90deg) translateY(10px) !important;
+    opacity: 0.7;
+}
+
+/* --- THÊM: Cho phép click vào nhân vật --- */
+#snowman-body, #panda-body {
+    pointer-events: auto; /* Quan trọng: Cho phép nhận sự kiện click */
+    cursor: pointer;      /* Hiển thị con trỏ tay */
+    transition: transform 0.2s;
+}
+
+#snowman-body:active, #panda-body:active {
+    transform: scale(0.9); /* Hiệu ứng nhấn xuống */
+}
+
+/* --- THANH CUỘN HIỆN ĐẠI --- */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    transition: background 0.3s;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+/* --- FIX LỖI: PHÔNG CHỮ CHUẨN (DỄ ĐỌC) --- */
+/* Khi body có class này, ghi đè biến font thư pháp thành font chuẩn */
+body.use-plain-font {
+    --cn-font: 'Noto Sans SC', sans-serif !important; 
+    font-family: 'Inter', 'Noto Sans SC', sans-serif !important;
+}
+
+/* Ghi đè bắt buộc cho tất cả các thành phần đang dùng font thư pháp */
+body.use-plain-font .font-calligraphy,
+body.use-plain-font #heroCard .fc-face div:first-child,
+body.use-plain-font #srsHanzi,
+body.use-plain-font #srsCardBack .text-4xl,
+body.use-plain-font .sandbox-component,
+body.use-plain-font #sandbox-result-char,
+body.use-plain-font #sandbox-frame .sandbox-component,
+body.use-plain-font #qBody .text-6xl, 
+body.use-plain-font #qBody .text-4xl,
+body.use-plain-font #toneChar,
+body.use-plain-font #vocabGrid .text-2xl,
+body.use-plain-font #charDetailModal .text-8xl {
+    font-family: 'Noto Sans SC', sans-serif !important;
+    font-weight: 700 !important; /* Giữ độ đậm để dễ nhìn */
+    letter-spacing: 0.02em;
+}
+
+/* --- CHẾ ĐỘ HIỆU SUẤT CAO (GIẢM LAG) - TỐI ƯU CARD --- */
+
+/* 1. (QUAN TRỌNG) Đã XÓA dòng ẩn #bg-canvas để giữ lại hiệu ứng nền */
+
+/* 2. Tắt các vật thể bay bay/trang trí GẮN TRÊN THẺ CARD */
+/* Bao gồm: Hoa, Lá, Bong bóng, Tuyết đọng, Cá bơi */
+body.reduce-motion .card::before,
+body.reduce-motion .card::after,
+body.reduce-motion .card .flex-grow::before, /* Tuyết đọng */
+body.reduce-motion .snow-flake ,      
+body.reduce-motion .card .mt-4::after {       /* Bông tuyết trong thẻ */
+    display: none !important;
+    animation: none !important;
+    content: none !important;
+}
+
+/* 3. Tắt hiệu ứng nhún nhảy/rung lắc của bản thân cái Thẻ */
+/* Giúp thẻ đứng yên, không bị nảy lên xuống gây lag */
+body.reduce-motion .card,
+body.reduce-motion #vocabGrid .card,
+body.reduce-motion #heroCard {
+    animation: none !important;
+    transform: none !important; 
+    /* Vẫn giữ lại transition để khi di chuột vào nút bấm vẫn mượt */
+}
+
+/* 4. Tắt các nhân vật trang trí trên Menu (Gấu, Người tuyết) để nhẹ bớt */
+body.reduce-motion #menu-snowman,
+body.reduce-motion #menu-panda {
+    display: none !important;
+}
+
+/* 5. Tắt trang trí trên Hero Card (Cây thông, Lâu đài...) */
+body.reduce-motion #heroCard::before,
+body.reduce-motion #heroCard::after,
+body.reduce-motion #heroCard .fc-face::after {
+    display: none !important;
+    content: none !important;
+}
+
+/* 6. Tắt tuyết rơi toàn màn hình (nếu thấy vướng mắt, nếu muốn giữ thì xóa dòng dưới) */
+body.reduce-motion #global-snow-container {
+    display: none !important;
+}
+
+/* --- BẢO MẬT: CHẾ ĐỘ CHỐNG NHÌN TRỘM --- */
+/* Lớp phủ mờ toàn màn hình */
+#privacy-overlay {
+    position: fixed;
+    top: 0; left: 0; width: 100vw; height: 100vh;
+    background: rgba(15, 23, 42, 0.95);
+    backdrop-filter: blur(20px);
+    z-index: 999999;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    transition: opacity 0.3s ease;
+}
+
+/* --- BẢO MẬT: CHẾ ĐỘ CHỐNG NHÌN TRỘM --- */
+/* Lớp phủ mờ toàn màn hình */
+#privacy-overlay {
+    position: fixed;
+    top: 0; left: 0; width: 100vw; height: 100vh;
+    background: rgba(15, 23, 42, 0.95);
+    backdrop-filter: blur(20px);
+    z-index: 999999;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    transition: opacity 0.3s ease;
+}
+
+/* --- NÂNG CẤP GIAO DIỆN QUẢN LÝ API --- */
+.api-manager-card {
+    background: linear-gradient(145deg, rgba(30, 41, 59, 0.4), rgba(15, 23, 42, 0.6));
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(20px);
+}
+
+.api-slot {
+    position: relative;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 12px;
+}
+
+.api-slot:focus-within {
+    border-color: var(--brand);
+    box-shadow: 0 0 15px -3px var(--brand-light);
+    background: rgba(0, 0, 0, 0.4);
+    transform: translateX(5px);
+}
+
+.api-slot input {
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--brand);
+    font-family: 'Courier New', monospace; /* Font kiểu code */
+    letter-spacing: 1px;
+    width: 100%;
+    padding: 12px 0;
+    font-size: 0.9rem;
+    filter: blur(4px); /* Mờ mặc định */
+    transition: filter 0.2s;
+}
+
+.api-slot input:focus, .api-slot:hover input {
+    filter: blur(0); /* Rõ khi di chuột hoặc gõ */
+}
+
+.api-slot input::placeholder {
+    color: rgba(148, 163, 184, 0.3);
+    font-family: sans-serif;
+    letter-spacing: normal;
+}
+
+.api-slot .key-number {
+    font-family: 'Courier New', monospace;
+    color: rgba(255, 255, 255, 0.2);
+    font-weight: 800;
+    font-size: 1.5rem;
+    position: absolute;
+    left: -10px;
+    top: 50%;
+    transform: translateY(-50%);
+    pointer-events: none;
+    transition: all 0.3s;
+}
+
+.api-slot:focus-within .key-number {
+    color: var(--brand);
+    opacity: 0.2;
+    left: -15px;
+}
+
+/* Trạng thái lỗi/hết hạn */
+.api-slot.has-error {
+    border-color: #ef4444;
+    background: rgba(239, 68, 68, 0.05);
+}
+.api-slot.has-error input {
+    color: #fca5a5;
+    text-decoration: line-through;
+}
+.limit-badge {
+    position: absolute;
+    right: 50px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(220, 38, 38, 0.9);
+    color: white;
+    font-size: 0.65rem;
+    padding: 2px 8px;
+    border-radius: 4px;
+    text-transform: uppercase;
+    font-weight: bold;
+    pointer-events: none;
+    box-shadow: 0 0 10px rgba(220, 38, 38, 0.5);
+    z-index: 10;
+}
+
+/* --- UI NÂNG CẤP CHO SCANNER --- */
+.scan-container {
+    background: linear-gradient(145deg, rgba(30, 41, 59, 0.4), rgba(15, 23, 42, 0.6));
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(20px);
+    border-radius: 16px;
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+}
+
+.scan-header {
+    background: linear-gradient(to right, rgba(99, 102, 241, 0.1), transparent);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* Hiệu ứng Log (Terminal Style) */
+#scanLiveLog {
+    font-family: 'JetBrains Mono', 'Consolas', monospace;
+    font-size: 0.85rem;
+    background: rgba(0, 0, 0, 0.3); /* Nền tối hơn */
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    box-shadow: inset 0 2px 10px rgba(0,0,0,0.5);
+}
+
+/* Thẻ lỗi trong Log */
+.log-item {
+    background: rgba(255, 255, 255, 0.03);
+    border-left: 3px solid transparent;
+    transition: all 0.2s ease;
+}
+.log-item:hover {
+    background: rgba(255, 255, 255, 0.06);
+    transform: translateX(2px);
+}
+.log-item.error { border-left-color: #ef4444; background: linear-gradient(90deg, rgba(239,68,68,0.1), transparent); }
+.log-item.warning { border-left-color: #f59e0b; }
+.log-item.success { border-left-color: #22c55e; }
+
+/* Animation cho nút quét */
+@keyframes pulse-ring {
+    0% { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.7); }
+    70% { box-shadow: 0 0 0 10px rgba(99, 102, 241, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0); }
+}
+.btn-scan-pulse {
+    animation: pulse-ring 2s infinite;
+}
+
+/* Animation vẽ đường thanh điệu */
+.tone-path-animate {
+    stroke-dasharray: 200;
+    stroke-dashoffset: 200;
+    animation: drawTone 0.8s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    filter: drop-shadow(0 0 5px var(--brand));
+}
+
+@keyframes drawTone {
+    to {
+        stroke-dashoffset: 0;
+    }
+}
+
+/* Hiệu ứng nổi bật cho chữ Hán đang active */
+#toneChar span {
+    display: inline-block;
+    padding: 0 4px;
+}
+    /* CSS cho khung chứa đồ thị */
+    #vocab-graph-container {
+        width: 100%;
+        height: 600px;
+        background-color: rgba(30, 41, 59, 0.5); /* Màu nền tối khớp theme */
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        position: relative;
+    }
+    /* Tùy chỉnh loading text */
+    #graph-loading {
+        position: absolute;
+        top: 50%; left: 50%;
+        transform: translate(-50%, -50%);
+        color: var(--text-muted);
+        pointer-events: none;
+    }
+    /* --- BẮT ĐẦU THAY THẾ TỪ DÒNG NÀY TRONG <style id="custom-styles"> --- */
+
+:root {
+    /* Font chữ thư pháp */
+    --cn-font: 'Ma Shan Zheng', cursive;
+    
+    /* Bảng màu Premium mới */
+    --bg-start: #0f172a; /* Slate 900 sâu hơn */
+    --bg-end: #020617;   /* Slate 950 */
+    
+    /* Màu bề mặt kính (Glass) */
+    --surface: rgba(30, 41, 59, 0.7); 
+    --surface-glass: rgba(30, 41, 59, 0.4); 
+    
+    /* Viền siêu mỏng, tinh tế */
+    --border: rgba(255, 255, 255, 0.08);
+    
+    /* Màu chữ */
+    --text-primary: #f1f5f9;
+    --text-secondary: #94a3b8;
+    --text-muted: #64748b;
+    
+    /* Brand Color: Teal Neon rực rỡ hơn */
+    --brand: #2dd4bf; 
+    --brand-hover: #14b8a6;
+    --brand-light: rgba(45, 212, 191, 0.15);
+    --brand-glow: 0 0 20px rgba(45, 212, 191, 0.3);
+    
+    /* Hiệu ứng nhiễu hạt (Noise Texture) - Tạo cảm giác cao cấp */
+    --noise: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.05'/%3E%3C/svg%3E");
+}
+
+body {
+    font-family: 'Inter', 'Noto Sans SC', sans-serif;
+    background-color: var(--bg-start);
+    /* Thêm lớp phủ Noise */
+    background-image: var(--noise), linear-gradient(to bottom, var(--bg-start), var(--bg-end));
+    background-attachment: fixed;
+    color: var(--text-secondary);
+    line-height: 1.6;
+    /* Tăng độ mịn chữ */
+    -webkit-font-smoothing: antialiased; 
+    letter-spacing: -0.015em; /* Chữ khít hơn, hiện đại hơn */
+}
+
+/* --- KẾT THÚC THAY THẾ --- */
+
+    /* --- CẤU HÌNH FONT CHỮ HÁN --- */
+    
+    /* 1. Font mặc định cho toàn trang (Ưu tiên Noto Sans SC cho tiếng Trung dễ đọc) */
+    body {
+      font-family: 'Inter', 'Noto Sans SC', sans-serif;
+    }
+
+    /* 2. Class riêng cho font Thư pháp (Dùng cho tiêu đề, thẻ lớn) */
+    .font-calligraphy {
+      font-family: var(--cn-font) !important; /* Đã sửa */
+    }
+
+    /* 3. TỰ ĐỘNG ÁP DỤNG CHO CÁC VỊ TRÍ CHỮ LỚN CỤ THỂ */
+    
+    /* Thẻ Hero (Trang chủ) */
+    #heroCard .fc-face div:first-child {
+        font-family: var(--cn-font) !important; /* Đã sửa */
+        font-weight: 400;
+    }
+    
+    /* Mặt trước thẻ SRS (Luyện tập) */
+    #srsHanzi {
+        font-family: var(--cn-font) !important;
+        font-weight: 400;
+    }
+
+    /* Mặt sau thẻ SRS (Chữ Hán nhỏ hơn nếu có) */
+    #srsCardBack .text-4xl {
+        font-family: var(--cn-font) !important;
+    }
+
+    /* Chữ trong Sandbox (Ghép chữ) */
+    .sandbox-component, 
+    #sandbox-result-char,
+    #sandbox-frame .sandbox-component {
+        font-family: var(--cn-font) !important;
+    }
+
+    /* Chữ lớn trong bài tập (Quiz) */
+    #qBody .text-6xl, 
+    #qBody .text-4xl {
+        font-family: var(--cn-font) !important;
+    }
+
+    /* Chữ lớn trong phần Luyện thanh điệu */
+    #toneChar {
+        font-family: var(--cn-font) !important;
+    }
+
+    /* Chữ Hán trong danh sách từ vựng (tùy chọn, nếu muốn đẹp hơn) */
+    #vocabGrid .text-2xl {
+         font-family: var(--cn-font) !important;
+    }
+
+    /* --- Light Theme --- */
+    body[data-theme='light'] {
+      --bg-start: #f0f4ff;
+      --bg-end: #ffffff;
+      --surface: rgba(255, 255, 255, 0.75);
+      --surface-glass: rgba(255, 255, 255, 0.6);
+      --border: #dde4f1;
+      --text-primary: #1e293b;
+      --text-secondary: #475569;
+      --text-muted: #94a3b8;
+      --brand: #4f80e0; /* A nice blue from the video */
+      --brand-hover: #3b6acb;
+      --brand-light: rgba(79, 128, 224, 0.1);
+      --brand-glow: 0 0 15px rgba(79, 128, 224, 0.4);
+    }
+    
+    /* --- Keyframes cho Chuyển động Nâng cao --- */
+
+/* Mô phỏng hiệu ứng "cỏ đung đưa" hoặc "sóng vỗ nhẹ" */
+@keyframes bg-sway {
+    0% {
+        transform: skewX(-1.5deg) translateX(-1%);
+    }
+    50% {
+        transform: skewX(1.5deg) translateX(1%);
+    }
+    100% {
+        transform: skewX(-1.5deg) translateX(-1%);
+    }
+}
+
+/* Mô phỏng hiệu ứng "lấp lánh" (cho cực quang, mặt nước) */
+@keyframes bg-shimmer {
+    0% {
+        opacity: 0.9;
+        filter: brightness(100%);
+    }
+    30% {
+        opacity: 1;
+        filter: brightness(110%);
+    }
+    60% {
+        opacity: 0.9;
+        filter: brightness(105%);
+    }
+    100% {
+        opacity: 0.9;
+        filter: brightness(100%);
+    }
+}
+/* Keyframe cho dây leo đung đưa (MỚI) */
+@keyframes vine-sway {
+    0% {
+        transform: rotate(-2deg) translateX(-3px);
+    }
+    50% {
+        transform: rotate(2deg) translateX(3px);
+    }
+    100% {
+        transform: rotate(-2deg) translateX(-3px);
+    }
+}
+/* Keyframe cho thẻ nổi (GỢN SÓNG - MỚI) */
+@keyframes card-bob {
+    0% {
+        transform: translateY(-3px);
+    }
+    100% {
+        transform: translateY(3px);
+    }
+}
+/* --- Keyframe cho hiệu ứng Rêu phát sáng (MỚI) --- */
+@keyframes moss-glow-pulse {
+  0% {
+    box-shadow: 0 0 10px 2px rgba(74, 222, 128, 0.2);
+  }
+  50% {
+    /* Phát sáng mạnh hơn */
+    box-shadow: 0 0 20px 8px rgba(74, 222, 128, 0.4);
+  }
+  100% {
+    box-shadow: 0 0 10px 2px rgba(74, 222, 128, 0.2);
+  }
+}
+/* --- Keyframe cho hiệu ứng Hoa Anh Đào Rơi (NÂNG CẤP: TỪ TỪ BIẾN MẤT) --- */
+/* --- Keyframe: Cánh hoa rơi lả tả theo gió --- */
+@keyframes sakura-fall {
+  0% {
+    transform: translate(0, -20px) rotate(0deg);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  25% {
+    transform: translate(15px, 25%) rotate(45deg); /* Gió thổi sang phải */
+  }
+  50% {
+    transform: translate(-10px, 50%) rotate(90deg); /* Gió thổi ngược lại */
+    opacity: 0.9;
+  }
+  75% {
+    transform: translate(15px, 75%) rotate(135deg);
+  }
+  100% {
+    transform: translate(20px, 120%) rotate(180deg);
+    opacity: 0;
+  }
+}
+/* --- Keyframe cho hiệu ứng Lá Rơi (MỚI) --- */
+@keyframes leaf-fall {
+  0% {
+    transform: translate(0, -20px) rotate(10deg);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1; /* Bắt đầu xuất hiện */
+  }
+  90% {
+    opacity: 1;
+  }
+  100% {
+    /* Rơi xuống dưới thẻ và trôi sang trái */
+    transform: translate(-20px, 120%) rotate(-40deg); 
+    opacity: 0;
+  }
+}
+
+/* --- BẮT ĐẦU THÊM MỚI: Keyframe cho Tuyết Rơi --- */
+@keyframes snow-fall {
+  0% {
+    transform: translateY(-50px) rotate(10deg);
+    opacity: 0;
+  }
+  10% {
+    opacity: 0.9; /* Bắt đầu xuất hiện */
+  }
+  90% {
+    opacity: 0.5; /* Mờ dần khi rơi */
+  }
+  100% {
+    /* Rơi xuống dưới thẻ và trôi sang trái */
+    transform: translateY(120%) rotate(-20deg); 
+    opacity: 0;
+  }
+}
+/* --- BẮT ĐẦU THÊM MỚI: Keyframe cho Tuyết Rơi Toàn Cục --- */
+@keyframes global-snow-fall {
+  0% {
+    transform: translateY(-5vh) rotate(10deg);
+    opacity: 0;
+  }
+  10% {
+    opacity: 0.8; /* Bắt đầu xuất hiện */
+  }
+  90% {
+    opacity: 0.2; /* Mờ dần khi rơi */
+  }
+  100% {
+    /* Rơi xuống 105% chiều cao màn hình */
+    transform: translateY(105vh) rotate(-20deg); 
+    opacity: 0;
+  }
+}
+/* --- KẾT THÚC THÊM MỚI --- */
+/* --- KẾT THÚC THÊM MỚI --- */
+
+/* Lớp (class) để áp dụng chuyển động */
+.bg-animate-sway {
+    /* Chuyển động sway sẽ chạy trong 10 giây */
+    animation: bg-sway 10s ease-in-out infinite alternate;
+}
+.bg-animate-shimmer {
+    /* Chuyển động shimmer chạy trong 7 giây */
+    animation: bg-shimmer 7s ease-in-out infinite alternate;
+}
+
+    /* --- Bảng điều khiển Tùy chỉnh Hình nền --- */
+    #bg-adjustment-controls {
+        transition: all 0.3s ease;
+    }
+
+    /* Ẩn bảng điều khiển mặc định */
+    #bg-adjustment-controls.hidden {
+        display: none;
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    /* CSS cho các thanh trượt (slider) */
+    #bg-adjustment-controls input[type="range"] {
+        width: 100%;
+        accent-color: var(--brand);
+    }
+
+    /* --- Keyframes cho Chuyển động Hình nền --- */
+    @keyframes bg-pan-left {
+        from { background-position-x: 0%; }
+        to { background-position-x: 100%; }
+    }
+
+    @keyframes bg-pan-right {
+        from { background-position-x: 100%; }
+        to { background-position-x: 0%; }
+    }
+
+    @keyframes bg-zoom-in {
+        from { background-size: 100% 100%; }
+        to { background-size: 115% 115%; }
+    }
+
+    @keyframes bg-zoom-out {
+        from { background-size: 115% 115%; }
+        to { background-size: 100% 100%; }
+    }
+    /* --- Keyframe cho hiệu ứng Bong Bóng (NÂNG CẤP) --- */
+/* --- Keyframe cho hiệu ứng Bong Bóng Rơi (ĐÃ SỬA LỖI + THÊM HIỆU ỨNG NỔ) --- */
+@keyframes bubble-fall {
+  0% {
+    /* Bắt đầu từ bên trên thẻ */
+    top: -10%; 
+    transform: scale(0.8) translateX(-10px);
+    opacity: 0;
+  }
+  20% {
+    opacity: 0.7; /* Bắt đầu xuất hiện */
+  }
+  
+  /* --- Giai đoạn rơi --- */
+  90% {
+    top: 90%; /* Rơi xuống gần cuối thẻ */
+    transform: scale(1.1) translateX(0px); /* Hơi phồng lên */
+    opacity: 0.5;
+  }
+  
+  /* --- Giai đoạn "Nổ" (Pop) --- */
+  99% {
+    top: 92%; /* Hơi nhích xuống và phình to rất nhanh */
+    transform: scale(2.5) translateX(5px); 
+    opacity: 0.1; /* Mờ đi nhanh */
+  }
+  
+  100% {
+    /* Biến mất hoàn toàn */
+    top: 92%;
+    transform: scale(3) translateX(5px); 
+    opacity: 0;
+  }
+}
+/* --- KẾT THÚC SỬA LỖI --- */
+
+/* --- Keyframe cho hiệu ứng Cá Bơi (MỚI) --- */
+@keyframes fish-swim {
+  0% {
+    transform: translateX(-50px) rotate(0deg); /* Bắt đầu bên trái */
+    opacity: 0;
+  }
+  10% {
+    opacity: 1; /* Xuất hiện */
+  }
+  /* Thêm 'wiggles' (lắc nhẹ) */
+  25% {
+    transform: translateX(30%) rotate(5deg);
+  }
+  50% {
+    transform: translateX(60%) rotate(-5deg);
+  }
+  75% {
+    transform: translateX(90%) rotate(5deg);
+  }
+  90% {
+    opacity: 1; /* Bắt đầu mờ dần */
+  }
+  100% {
+    transform: translateX(130%) rotate(0deg); /* Biến mất bên phải */
+    opacity: 0;
+  }
+}
+    /* Lớp (class) để áp dụng chuyển động */
+    .bg-animate-pan-left {
+        animation: bg-pan-left 30s linear infinite alternate;
+    }
+    .bg-animate-pan-right {
+        animation: bg-pan-right 30s linear infinite alternate;
+    }
+    .bg-animate-zoom-in {
+        animation: bg-zoom-in 40s linear infinite alternate;
+    }
+    .bg-animate-zoom-out {
+        animation: bg-zoom-out 40s linear infinite alternate;
+    }
+
+    /* --- New Themes --- */
+     body[data-theme='sunrise-field'] {
+      --bg-start: #fdf4e3;
+      --surface: rgba(255, 247, 237, 0.8);
+      --surface-glass: rgba(255, 247, 237, 0.6);
+      --border: #fde8d8;
+      --brand: #f97316;
+      --brand-hover: #ea580c;
+      --text-primary: #422006;
+      --text-secondary: #7c3a0a;
+      --text-muted: #b45309;
+    }
+    body[data-theme='sunset-road'] {
+      --bg-start: #261811;
+      --surface: #452c1e;
+      --surface-glass: rgba(69, 44, 30, 0.5);
+      --border: #573725;
+      --brand: #ef4444;
+      --brand-hover: #dc2626;
+      --text-primary: #fde8e1;
+      --text-secondary: #fbc8b6;
+      --text-muted: #e5a995;
+    }
+    body[data-theme='ocean-sky'] {
+      --bg-start: #e0f2fe;
+      --surface: rgba(255, 255, 255, 0.8);
+      --surface-glass: rgba(255, 255, 255, 0.6);
+      --border: #bae6fd;
+      --brand: #0ea5e9;
+      --brand-hover: #0284c7;
+      --text-primary: #0c4a6e;
+      --text-secondary: #075985;
+      --text-muted: #0369a1;
+    }
+     body[data-theme='nanjing-spring'] {
+      --bg-start: #f0fdf4;
+      --surface: rgba(255, 255, 255, 0.8);
+      --surface-glass: rgba(255, 255, 255, 0.6);
+      --border: #dcfce7;
+      --brand: #ec4899;
+      --brand-hover: #db2777;
+      --text-primary: #14532d;
+      --text-secondary: #166534;
+      --text-muted: #15803d;
+    }
+    body[data-theme='nanjing-autumn'] {
+      --bg-start: #291d0d;
+      --surface: #473016;
+      --surface-glass: rgba(71, 48, 22, 0.5);
+      --border: #5d3d1c;
+      --brand: #f59e0b;
+      --brand-hover: #d97706;
+      --text-primary: #fffbeb;
+      --text-secondary: #fef3c7;
+      --text-muted: #fde68a;
+    }
+    body[data-theme='cyber-neon'] {
+      --bg-start: #0a0514;
+      --bg-end: #120822; /* Thêm một màu end để có gradient nhẹ */
+      --surface: #1a102c;
+      --surface-glass: rgba(26, 16, 44, 0.6);
+      --border: #3a2a57;
+      --brand: #e025a8; /* Bright Pink */
+      --brand-hover: #ff40c1;
+      --brand-light: rgba(224, 37, 168, 0.1);
+      --brand-glow: 0 0 15px rgba(224, 37, 168, 0.5);
+      --text-primary: #f0e8ff;
+      --text-secondary: #c0b0e0;
+      --text-muted: #8070a0;
+   }
+   /* --- BẮT ĐẦU THEME MỚI --- */
+     body[data-theme='ink-wash'] {
+       --bg-start: #f7f3e8; /* Màu be của Giấy Xuyến (Xuan paper) */
+       --bg-end: #fdfbf5;
+       --surface: rgba(255, 255, 255, 0.85); /* Hơi đục, giống giấy */
+       --surface-glass: rgba(255, 255, 255, 0.7);
+       --border: #e0e0e0; /* Viền xám rất nhạt */
+       --text-primary: #1c1c1c; /* Màu mực đen đậm */
+       --text-secondary: #4a4a4a; /* Mực xám (đậm vừa) */
+       --text-muted: #7d7d7d; /* Mực xám nhạt */
+       --brand: #c0392b; /* Màu đỏ son (con dấu) */
+       --brand-hover: #a93226; /* Đỏ sậm hơn khi hover */
+       --brand-light: rgba(192, 57, 43, 0.1);
+       --brand-glow: 0 0 15px rgba(192, 57, 43, 0.4);
+       --danger: #d9534f;
+       --warning: #f0ad4e;
+       --success: #5cb85c;
+     }
+     /* --- BẮT ĐẦU GIAO DIỆN RỪNG RẬM (PHÁC THẢO V2 - DÙNG BORDER-IMAGE) --- */
+   body[data-theme='forest-ruins'] {
+     --bg-start: #1a2a1f; /* Xanh rêu đậm */
+     --bg-end: #101c14;
+     --surface: rgba(42, 64, 49, 0.8); /* SỬA ĐỔI: Thêm độ trong suốt */
+     --surface-glass: rgba(42, 64, 49, 0.5);
+     --border: #3f5c49; /* Viền rêu */
+     --text-primary: #f0f5e8; /* Chữ màu be sáng */
+     --text-secondary: #a8c0ab; /* Chữ phụ */
+     --text-muted: #7a9483;
+     --brand: #4ade80; /* Xanh lá cây sống động (màu dây leo) */
+     --brand-hover: #36c16b;
+     --brand-light: rgba(74, 222, 128, 0.1);
+     --brand-glow: 0 0 15px rgba(74, 222, 128, 0.5);
+   }
+
+   /* CSS cho hiệu ứng Lá rơi (Chỉ áp dụng cho theme 'forest-ruins') */
+   body[data-theme='forest-ruins'] .card {
+       position: relative; 
+       /* THAY ĐỔI: Ẩn lá khi rơi ra ngoài */
+       overflow: hidden; 
+       /* Giữ lại viền rêu và hiệu ứng phát sáng */
+       border: 2px solid var(--border);
+       box-shadow: 0 0 15px 5px rgba(74, 222, 128, 0.15); 
+   }
+
+   /* Thay thế dây leo bằng lá rơi */
+   body[data-theme='forest-ruins'] .card::before,
+   body[data-theme='forest-ruins'] .card::after {
+       content: '🍃'; /* Ký tự lá rơi (thay vì ảnh SVG) */
+       position: absolute;
+       top: 0; /* Rơi từ trên xuống */
+       font-size: 1.25rem; /* Kích thước lá */
+       z-index: 10; /* Nằm trên card */
+       
+       /* Áp dụng animation lá rơi (từ Bước 1) */
+       animation: leaf-fall 9s linear infinite;
+       transform-origin: top center; /* Rơi từ điểm treo */
+   }
+
+   /* Lá thứ nhất (bên trái) */
+   body[data-theme='forest-ruins'] .card::before {
+       left: 20%; /* Vị trí bắt đầu */
+       animation-delay: 0s; /* Rơi ngay */
+   }
+
+   /* Lá thứ hai (bên phải) */
+   body[data-theme='forest-ruins'] .card::after {
+       left: 70%; /* Vị trí bắt đầu */
+       animation-delay: -4.5s; /* Rơi lệch pha */
+       animation-duration: 8s; /* Rơi tốc độ khác */
+   }
+   /* --- BẮT ĐẦU: Thêm Gấu trúc vào Hero Card (Forest Ruins) --- */
+body[data-theme='forest-ruins'] #heroCard .fc-face:first-child::after {
+    content: '🐼';
+    position: absolute;
+    font-size: 2.5rem; /* Kích thước gấu trúc (40px) */
+    z-index: 20; /* Nổi trên nội dung thẻ (chữ, HSK) */
+    
+    /* Đặt ở góc dưới bên phải */
+    bottom: 5px; 
+    right: 10px;
+    
+    /* Hơi mờ một chút để hòa vào cảnh */
+    opacity: 0.8; 
+    
+    /* Tái sử dụng animation 'đung đưa' có sẵn của theme */
+    animation: vine-sway 6s ease-in-out infinite alternate;
+    animation-delay: -1s; /* Chạy lệch pha với lá */
+}
+/* --- KẾT THÚC: Thêm Gấu trúc --- */
+   /* --- KẾT THÚC NÂNG CẤP RỪNG RẬM --- */
+   /* --- BẮT ĐẦU GIAO DIỆN BIỂN SÂU (NÂNG CẤP VỚI 5 BÓNG RƠI & CÁ) --- */
+body[data-theme='deep-ocean'] {
+  --bg-start: #0a1828; /* Xanh biển sâu */
+  --bg-end: #040f1a;
+  --surface: rgba(28, 58, 80, 0.7); /* THAY ĐỔI: Trong suốt 70% */
+  --surface-glass: rgba(28, 58, 80, 0.4); /* THAY ĐỔI: Trong suốt 40% */
+  --border: #3a7ca5; /* Viền xanh sáng */
+  --text-primary: #f0f8ff; /* Chữ màu trắng (bọt biển) */
+  --text-secondary: #a0c0d8; /* Chữ phụ */
+  --text-muted: #7092ad;
+  --brand: #22d3ee; /* Xanh Cyan (sóng) */
+  --brand-hover: #06b6d4;
+  --brand-light: rgba(34, 211, 238, 0.1);
+  --brand-glow: 0 0 15px rgba(34, 211, 238, 0.5);
+}
+
+/* NÂNG CẤP: 'overflow: hidden' để chứa bong bóng và cá */
+body[data-theme='deep-ocean'] .card {
+    position: relative; 
+    overflow: hidden; /* THAY ĐỔI: từ 'visible' */
+    border: 1px solid var(--border);
+    box-shadow: none; 
+}
+
+/* --- BẮT ĐẦU THÊM MỚI: Hiệu ứng Kính Mờ cho Biển Sâu --- */
+body[data-theme='deep-ocean'] .card {
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px); /* Hỗ trợ Safari */
+}
+/* --- KẾT THÚC THÊM MỚI --- */
+
+/* NÂNG CẤP: 'overflow: hidden' để chứa bong bóng và cá */
+body[data-theme='deep-ocean'] .card,
+
+/* Giữ nguyên hiệu ứng GỢN SÓNG (nổi lên xuống) */
+body[data-theme='deep-ocean'] #vocabGrid .card,
+body[data-theme='deep-ocean'] #heroCard {
+    animation: card-bob 8s ease-in-out infinite alternate;
+    transform-origin: bottom center;
+}
+
+/* NÂNG CẤP: Hiệu ứng bong bóng (Phiên bản 4.0 - 5 BÓNG RƠI) */
+        
+/* 1. CSS chung cho cả 5 bong bóng */
+/* NÂNG CẤP: Hiệu ứng bong bóng (Phiên bản 5.0 - 6 BÓNG RƠI) */
+        
+/* 1. CSS chung cho cả 6 bong bóng */
+body[data-theme='deep-ocean'] .card::before,
+body[data-theme='deep-ocean'] .card::after,
+body[data-theme='deep-ocean'] .card .flex-grow::before {
+    content: ''; 
+    position: absolute;
+    top: -20px; /* THAY ĐỔI: Rơi từ trên xuống (thay vì bottom: -20px) */
+    width: 1.25rem; 
+    height: 1.25rem; 
+    border-radius: 50%;
+    background-color: rgba(34, 211, 238, 0.1);
+    border: 2px solid var(--brand); 
+    opacity: 0;
+    z-index: 10;
+    
+    animation-name: bubble-fall; /* THAY ĐỔI: Dùng keyframe 'bubble-fall' */
+    animation-timing-function: linear;
+    animation-iteration-count: infinite;
+    filter: drop-shadow(0 0 5px var(--brand));
+}
+
+/* 2. Thiết lập riêng cho từng bong bóng (5 BÓNG - Vị trí & delay mới) */
+
+/* Bong bóng 1 (lớn, chậm) */
+body[data-theme='deep-ocean'] .card::before {
+    left: 15%; /* Vị trí mới */
+    animation-duration: 12s;
+    animation-delay: 0s;
+}
+
+/* Bong bóng 2 (nhỏ, nhanh) */
+body[data-theme='deep-ocean'] .card::after {
+    left: 40%; /* Vị trí mới */
+    width: 0.75rem; 
+    height: 0.75rem; 
+    animation-duration: 10s;
+    animation-delay: -3s; /* Delay mới */
+}
+
+/* --- KẾT THÚC DÁN --- */
+/* 3. Hiệu ứng cá bơi (MỚI - dùng footer::after) */
+body[data-theme='deep-ocean'] .card .mt-4::after {
+  content: '🐠';
+  position: absolute;
+  z-index: 20; /* Nằm trên bong bóng */
+  font-size: 1.5rem; /* Kích thước cá */
+  
+  /* Vị trí bơi (ngang) */
+  top: 65%; 
+  left: 0; /* Bắt đầu từ bên trái (bị đảo ngược) */
+  
+  opacity: 0; /* Bắt đầu ẩn */
+  
+  /* Animation: bơi 1 lần mỗi 15 giây */
+  animation: fish-swim 15s linear infinite;
+  
+  animation-direction: reverse; /* <-- THÊM DÒNG NÀY ĐỂ BƠI NGƯỢC LẠI */
+  
+  /* Bắt đầu ở giây thứ 10 (để lệch pha với bong bóng) */
+  animation-delay: -10s; 
+}
+/* --- BẮT ĐẦU: Thêm Lâu đài cát vào Hero Card (Deep Ocean) --- */
+body[data-theme='deep-ocean'] #heroCard .fc-face:first-child::after {
+    content: '🏰'; /* Emoji lâu đài cát */
+    position: absolute;
+    font-size: 2.5rem; /* Kích thước 40px */
+    z-index: 15; /* Nằm trên thẻ, nhưng dưới con cá (z-index 20) */
+    
+    /* Đặt ở góc dưới bên trái */
+    bottom: -5px; 
+    left: 5px;   
+    
+    /* Hơi mờ một chút */
+    opacity: 0.8;
+    
+    /* Hơi nghiêng cho tự nhiên */
+    transform: rotate(5deg);
+}
+/* --- KẾT THÚC: Thêm Lâu đài cát --- */
+/* --- KẾT THÚC GIAO DIỆN BIỂN SÂU --- */
+   /* --- BẮT ĐẦU GIAO DIỆN MỚI: SAKURA SPRING --- */
+/* --- GIAO DIỆN SAKURA SPRING (PHIÊN BẢN 2.0 - CAO CẤP) --- */
+body[data-theme='sakura-spring'] {
+  /* Gradient nền hồng phấn nhẹ nhàng như mây */
+  --bg-start: #fff0f5; 
+  --bg-end: #ffd1dc; /* Thêm màu cuối để tạo gradient */
+  
+  /* Màu bề mặt kính mờ (trắng hồng, trong suốt cao) */
+  --surface: rgba(255, 255, 255, 0.65);
+  --surface-glass: rgba(255, 255, 255, 0.45);
+  
+  /* Viền hồng nhạt tinh tế */
+  --border: rgba(255, 182, 193, 0.6);
+  
+  /* Màu chữ: Tím than pha hồng (dễ đọc trên nền sáng) */
+  --text-primary: #5e2a40; 
+  --text-secondary: #8e4064; 
+  --text-muted: #bc7a95;
+  
+  /* Màu thương hiệu: Hồng đậm (Sakura) */
+  --brand: #ff69b4; 
+  --brand-hover: #db2777;
+  --brand-light: rgba(255, 105, 180, 0.15);
+  --brand-glow: 0 0 20px rgba(255, 105, 180, 0.6);
+}
+
+/* Thiết lập nền động cho Sakura */
+body[data-theme='sakura-spring'] {
+    background: linear-gradient(120deg, #fff0f5 0%, #ffe6ee 50%, #fff0f5 100%);
+    background-size: 200% 200%;
+    animation: bg-pan-right 15s ease infinite alternate;
+}
+
+/* Card hiệu ứng kính mờ cao cấp */
+body[data-theme='sakura-spring'] .card {
+    background: linear-gradient(135deg, rgba(255,255,255,0.7) 0%, rgba(255,255,255,0.4) 100%);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.8);
+    box-shadow: 
+        0 4px 30px rgba(255, 182, 193, 0.3), /* Bóng hồng */
+        inset 0 0 20px rgba(255, 255, 255, 0.5); /* Ánh sáng bên trong */
+    position: relative;
+    overflow: hidden;
+}
+
+/* Hiệu ứng hover cho Card */
+body[data-theme='sakura-spring'] .card:hover {
+    transform: translateY(-5px) scale(1.01);
+    border-color: var(--brand);
+    box-shadow: 
+        0 10px 40px rgba(255, 105, 180, 0.25),
+        0 0 15px rgba(255, 255, 255, 0.8);
+}
+
+/* Thanh cuộn màu hồng */
+body[data-theme='sakura-spring'] ::-webkit-scrollbar-thumb {
+    background: linear-gradient(to bottom, #ffb7b2, #ff69b4);
+    border: 2px solid #fff0f5;
+}
+/* --- CSS cho Cánh hoa rơi (NÂNG CẤP 6 CÁNH HOA) --- */
+body[data-theme='sakura-spring'] .card {
+  position: relative; /* Cần thiết để định vị cánh hoa */
+  overflow: hidden; /* Ẩn hoa khi nó rơi ra ngoài */
+}
+
+/* 1. CSS chung cho cả 6 cánh hoa */
+body[data-theme='sakura-spring'] .card::before,
+body[data-theme='sakura-spring'] .card::after,
+body[data-theme='sakura-spring'] .card .flex-grow::before {
+  content: '🌸'; /* Ký tự hoa anh đào */
+  position: absolute;
+  top: 0;
+  font-size: 1.25rem; /* Kích thước cánh hoa */
+  z-index: 10; /* Nằm trên thẻ */
+  
+  /* Áp dụng animation (với hiệu ứng bung ra) */
+  animation: sakura-fall 8s linear infinite;
+  transform-origin: top left;
+  opacity: 0; /* Bắt đầu ẩn */
+}
+
+/* 2. Thiết lập riêng cho từng cánh hoa (6 CÁNH) */
+
+/* Hoa 1 */
+body[data-theme='sakura-spring'] .card::before {
+  left: 15%; 
+  animation-duration: 8s;
+  animation-delay: 0s; 
+}
+
+/* Hoa 2 */
+body[data-theme='sakura-spring'] .card::after {
+  left: 60%; 
+  animation-duration: 7s; 
+  animation-delay: -4s; 
+}
+
+/* Hoa 3 (MỚI) */
+body[data-theme='sakura-spring'] .card .flex-grow::before {
+  left: 30%;
+  animation-duration: 9s;
+  animation-delay: -2s;
+  font-size: 1rem; /* nhỏ hơn */
+}
+
+/* Vô hiệu hóa dây leo của 'forest-ruins' (để chắc chắn) */
+body[data-theme='sakura-spring'] .card:not(::before, ::after) {
+    content: none;
+}
+
+/* --- BẮT ĐẦU GIAO DIỆN MỚI: WINTER STREET --- */
+body[data-theme='winter-street'] {
+  --bg-start: #0a0f1a; /* Xanh đen */
+  --bg-end: #1a202c;
+  --surface: rgba(45, 55, 72, 0.7); /* Xám xanh đậm (trong suốt 70%) */
+  --surface-glass: rgba(45, 55, 72, 0.5);
+  --border: #4a5568;
+  --text-primary: #e2e8f0; /* Chữ trắng xám */
+  --text-secondary: #a0aec0;
+  --text-muted: #718096;
+  --brand: #63b3ed; /* Màu Xanh Băng (Ice Blue) */
+  --brand-hover: #4299e1;
+  --brand-light: rgba(99, 179, 237, 0.1);
+  --brand-glow: 0 0 15px rgba(99, 179, 237, 0.4);
+}
+/* CSS cho Tuyết rơi (Chỉ áp dụng cho theme 'winter-street') */
+body[data-theme='winter-street'] .card {
+  position: relative; /* Cần thiết để định vị */
+  overflow: hidden; /* Ẩn tuyết khi rơi ra ngoài */
+
+  /* --- THÊM MỚI: Hiệu ứng mờ --- */
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px); /* Hỗ trợ Safari */
+}
+
+/* Kích hoạt lớp .snow-flake (được tạo bởi JavaScript trong hàm cardHTML) 
+  chỉ khi theme 'winter-street' được chọn.
+*/
+body[data-theme='winter-street'] .card .snow-flake {
+  content: '❄️';
+  font-family: 'Arial', sans-serif; /* Đảm bảo ký tự tuyết hiển thị */
+  position: absolute;
+  top: 0; /* Bắt đầu từ trên */
+  z-index: 10;
+  color: white; /* Màu bông tuyết */
+  text-shadow: 0 0 5px rgba(255, 255, 255, 0.7);
+  
+  /* Áp dụng animation (với các biến inline-style từ JS) */
+  animation: snow-fall linear infinite;
+  transform-origin: top center;
+}
+/* --- BẮT ĐẦU THÊM MỚI: CSS cho Tuyết Rơi Toàn Cục --- */
+
+/* 1. Lớp chứa tuyết toàn cục */
+#global-snow-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none; /* QUAN TRỌNG: Cho phép click xuyên qua */
+  z-index: 1; /* Nằm trên hình nền, nhưng dưới menu (z-40) và thẻ (card) */
+  overflow: hidden; /* Ẩn tuyết khi bay ra ngoài màn hình */
+}
+
+/* 2. Kiểu của từng bông tuyết toàn cục */
+.global-snow-flake {
+  position: absolute;
+  top: -10%; /* Bắt đầu từ bên trên màn hình */
+  font-size: 1rem;
+  color: white;
+  text-shadow: 0 0 5px rgba(255, 255, 255, 0.7);
+  user-select: none;
+  
+  /* Áp dụng animation mới */
+  animation: global-snow-fall linear infinite;
+  
+  /* Ẩn mặc định */
+  display: none; 
+}
+
+/* 3. Chỉ hiển thị tuyết rơi khi đúng giao diện */
+body[data-theme='winter-street'] .global-snow-flake {
+  display: block;
+}
+/* --- KẾT THÚC THÊM MỚI --- */
+/* --- BẮT ĐẦU: Thêm Cây thông & Người tuyết cho Hero Card (Winter Street) --- */
+body[data-theme='winter-street'] #heroCard {
+    /* Đảm bảo thẻ card không bị "cắt" mất phần trang trí */
+    overflow: visible; 
+}
+
+/* 1. Thêm Cây thông (bên trái) */
+body[data-theme='winter-street'] #heroCard::before {
+    content: '🎄';
+    position: absolute;
+    z-index: 20; /* Nằm trên thẻ */
+    font-size: 2.75rem; /* Kích thước 44px */
+    bottom: -15px; /* Nằm ở mép dưới, hơi thò ra */
+    left: -12px;   /* Nằm ở mép trái, hơi thò ra */
+    transform: rotate(-10deg); /* Hơi nghiêng cho tự nhiên */
+}
+
+/* 2. Thêm 2 Người tuyết (bên phải) */
+body[data-theme='winter-street'] #heroCard::after {
+    content: '☃️ ☃️'; /* Đặt 2 emoji người tuyết */
+    position: absolute;
+    z-index: 20;
+    font-size: 1.75rem; /* Kích thước 28px (nhỏ hơn cây thông) */
+    bottom: -10px;
+    right: -15px;
+    word-spacing: 0.25em; /* Tạo một chút khoảng cách giữa 2 người tuyết */
+}
+/* --- KẾT THÚC: Thêm Cây thông & Người tuyết --- */
+/* --- BẮT ĐẦU: Thêm Tuyết đọng trên các thẻ (Winter Street) --- */
+body[data-theme='winter-street'] .card .flex-grow::before {
+    content: '';
+    position: absolute;
+    /* Đặt z-index thấp (5) để nó nằm trên nội dung thẻ,
+       nhưng dưới các bông tuyết đang rơi (z-index 10)
+       và cây thông/người tuyết (z-index 20) */
+    z-index: 5; 
+    
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 8px; /* Độ dày của lớp tuyết */
+    
+    /* Màu tuyết (hơi trong) */
+    background: rgba(255, 255, 255, 0.7);
+    
+    /* Hiệu ứng "mờ" của tuyết */
+    filter: blur(4px);
+    
+    /* Làm cho mép dưới của tuyết hơi lượn sóng */
+    border-radius: 0 0 30% 30%;
+    
+    /* Thêm hiệu ứng "phát sáng" nhẹ để tuyết trông "xốp" hơn */
+    box-shadow: 0 0 12px 5px rgba(255, 255, 255, 0.4);
+}
+/* --- KẾT THÚC: Thêm Tuyết đọng --- */
+/* --- KẾT THÚC GIAO DIỆN MỚI --- */
+
+    /* Base Styl.es */
+    html { height: 100%; }
+    body {
+      scroll-behavior: smooth;
+      /* LOGIC MỚI: 
+         1. Inter: Dùng cho Tiếng Việt/Anh.
+         2. Ma Shan Zheng: Khi gặp chữ Hán, trình duyệt sẽ dùng font này (Thư pháp).
+         3. Noto Sans SC: Font chữ Hán chuẩn (dự phòng).
+      */
+      font-family: 'Inter', 'Ma Shan Zheng', 'Noto Sans SC', sans-serif;
+      
+      background-color: var(--bg-start);
+      color: var(--text-secondary);
+      line-height: 1.6;
+      font-size: 1rem;
+      background-attachment: fixed;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      transition: background-color 0.5s ease, color 0.5s ease;
+    }
+    
+    #bg-canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: -10;
+      pointer-events: none;
+      transition: opacity 0.5s ease;
+    }
+
+    #bg-image-container {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        z-index: -11;
+        background-size: cover;
+        background-position: center center;
+        opacity: 0;
+        transition: opacity 0.5s ease-in-out;
+    }
+
+    /* Components */
+    /* --- NÂNG CẤP 1: Giao diện Kính Siêu thực --- */
+.glass-nav {
+    /* Giảm độ đậm màu nền, tăng độ mờ (blur) */
+    background-color: rgba(15, 23, 42, 0.3) !important; /* Màu nền tối rất trong */
+    backdrop-filter: blur(20px) saturate(180%); /* Blur mạnh hơn, màu sắc rực rỡ hơn */
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08); /* Viền siêu mỏng */
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1); /* Bóng đổ mềm */
+}
+
+/* Làm cho các thẻ (Card) cũng có hiệu ứng kính mờ nhẹ */
+.card {
+    background-color: var(--surface-glass); /* Dùng biến có sẵn nhưng chỉnh lại bên dưới */
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.05); /* Viền sáng nhẹ */
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.2);
+}
+    .card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+    }
+    body[data-theme='light'] .card,
+    body[data-theme='sunrise-field'] .card,
+    body[data-theme='ocean-sky'] .card,
+    body[data-theme='nanjing-spring'] .card,
+    body[data-theme='ink-wash'] .card 
+    body[data-theme='nanjing-spring'] .card {
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+    }
+     body[data-theme='light'] .card:hover,
+     body[data-theme='sunrise-field'] .card:hover,
+     body[data-theme='ocean-sky'] .card:hover,
+     body[data-theme='nanjing-spring'] .card:hover,
+     body[data-theme='ink-wash'] .card:hover 
+     body[data-theme='nanjing-spring'] .card:hover {
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+    }
+
+    /* --- NÚT BẤM & INPUT --- */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.625rem 1.25rem;
+    border-radius: 12px; /* Bo tròn hơn */
+    font-weight: 600;
+    font-size: 0.95rem;
+    letter-spacing: 0.01em;
+    transition: all 0.2s ease;
+    cursor: pointer;
+    user-select: none;
+    position: relative;  /* Để tâm hiệu ứng nằm trong nút */
+    overflow: hidden;    /* Để hiệu ứng không bị tràn ra ngoài nút */
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, var(--brand) 0%, #0f766e 100%); /* Gradient */
+    color: #fff;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+    box-shadow: 0 4px 15px var(--brand-light), inset 0 1px 0 rgba(255,255,255,0.2);
+    border: none;
+}
+
+.btn-primary:hover:not(:disabled) {
+    background: linear-gradient(135deg, #2dd4bf 0%, #115e59 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px var(--brand-light);
+}
+
+.btn-secondary {
+    background-color: rgba(255, 255, 255, 0.03);
+    color: var(--text-secondary);
+    border: 1px solid var(--border);
+}
+
+.btn-secondary:hover:not(:disabled) {
+    background-color: rgba(255, 255, 255, 0.08);
+    color: var(--text-primary);
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+.form-input {
+    background-color: rgba(15, 23, 42, 0.6); /* Nền tối mờ */
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 0.875rem 1rem;
+    color: var(--text-primary);
+    width: 100%;
+    transition: all 0.3s ease;
+}
+
+.form-input:focus {
+    outline: none;
+    border-color: var(--brand);
+    background-color: rgba(15, 23, 42, 0.9);
+    box-shadow: 0 0 0 4px var(--brand-light);
+}
+
+    .form-input {
+      background-color: var(--bg-start);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.75rem 1rem;
+      color: var(--text-primary);
+      width: 100%;
+      transition: border-color 0.2s, box-shadow 0.2s, background-color 0.3s ease;
+    }
+    .form-input:focus {
+      outline: none;
+      border-color: var(--brand);
+      box-shadow: 0 0 0 3px var(--brand-light);
+    }
+    .chip {
+        display: inline-block;
+        padding: 0.25rem 0.75rem;
+        border-radius: 9999px;
+        font-size: 0.75rem;
+        font-weight: 500;
+        line-height: 1.25;
+        border: 1px solid transparent;
+    }
+    .content-wrap { word-break: break-word; overflow-wrap: break-word; white-space: pre-wrap; }
+
+    /* Flashcard 3D */
+    .fc-scene { perspective: 1200px; }
+    .fc-card { transform-style: preserve-3d; transition: transform 0.7s cubic-bezier(0.25, 1, 0.5, 1); cursor: pointer; }
+    .fc-card.is-flipped { transform: rotateY(180deg); }
+    .fc-face { backface-visibility: hidden; position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 1.5rem; }
+    .fc-back { transform: rotateY(180deg); }
+
+    /* Animations */
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes slideUp { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes backdropShow { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes slideInFromRight { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
+    
+    @keyframes modalShowWithBounce { 
+      0% { opacity: 0; transform: scale(0.7); } 
+      60% { opacity: 1; transform: scale(1.05); }
+      100% { transform: scale(1); }
+    }
+    
+    @keyframes spin {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+    }
+    .spinner {
+        animation: spin 1s linear infinite;
+    }
+
+    .view-section { animation: slideInFromRight 0.5s ease-out forwards; }
+    dialog { 
+        animation: modalShowWithBounce 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; 
+        z-index: 99980; /* Thấp hơn music player và popup */
+    }
+    dialog::backdrop { 
+        background-color: rgba(0, 0, 0, 0.6); 
+        backdrop-filter: blur(4px); 
+        animation: backdropShow 0.3s ease-out forwards; 
+        z-index: 99970; /* Ngay bên dưới dialog */
+    }
+
+    /* Ripple effect */
+    .ripple {
+      position: absolute;
+      border-radius: 50%;
+      transform: scale(0);
+      animation: ripple-effect 0.6s linear;
+      background-color: rgba(255, 255, 255, 0.7);
+    }
+    @keyframes ripple-effect {
+      to {
+        transform: scale(4);
+        opacity: 0;
+      }
+    }
+    
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+      20%, 40%, 60%, 80% { transform: translateX(5px); }
+    }
+    .shake {
+        animation: shake 0.5s ease-in-out;
+    }
+
+    .badge-locked {
+        filter: grayscale(1) opacity(0.5);
+    }
+
+    .pinyin-btn {
+        padding: 2px 4px;
+        margin: 1px;
+        border-radius: 4px;
+        background-color: var(--surface-glass);
+        transition: background-color 0.2s, color 0.2s;
+        cursor: pointer;
+        font-size: 0.8rem;
+    }
+    .pinyin-btn:hover {
+        background-color: var(--brand);
+        color: white !important;
+    }
+
+
+    /* HSK Colors */
+    .hsk-1 { background-color: rgba(34,197,94,0.1); color: #22c55e; border-color: #22c55e40; }
+    .hsk-2 { background-color: rgba(234,179,8,0.1); color: #eab308; border-color: #eab30840; }
+    .hsk-3 { background-color: rgba(249,115,22,0.1); color: #f97316; border-color: #f9731640; }
+    .hsk-4 { background-color: rgba(239,68,68,0.1); color: #ef4444; border-color: #ef444440; }
+    .hsk-5 { background-color: rgba(168,85,247,0.1); color: #a855f7; border-color: #a855f740; }
+    .hsk-6 { background-color: rgba(59,130,246,0.1); color: #3b82f6; border-color: #3b82f640; }
+    
+    /* Reading Mode Styles */
+    #readingContent { line-height: 2.5; font-size: 1.5rem; cursor: text; }
+#readingContent .word { padding: 0 2px; border-radius: 4px; transition: background-color 0.2s; }
+/* Dòng 304 và 305 đã bị xóa */
+
+    #saveSelectionPopup {
+        position: absolute;
+        z-index: 1000;
+        filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25));
+    }
+
+    /* General text color overrides for themes */
+    body:not([data-theme='dark']) .text-white,
+    body:not([data-theme='dark']) .text-slate-300,
+    body:not([data-theme='dark']) .text-rose-200 { color: var(--text-primary); }
+
+    body:not([data-theme='dark']) h1, 
+    body:not([data-theme='dark']) h2, 
+    body:not([data-theme='dark']) h3, 
+    body:not([data-theme='dark']) h4 { color: var(--text-primary); }
+    
+    body:not([data-theme='dark']) .text-slate-400 { color: var(--text-secondary); }
+    body:not([data-theme='dark']) .text-slate-500 { color: var(--text-muted); }
+    body:not([data-theme='dark']) .text-rose-300 { color: var(--danger); }
+    
+    body:not([data-theme='dark']) kbd {
+        background-color: #e2e8f0;
+        color: var(--text-secondary);
+        border: 1px solid #cbd5e1;
+    }
+
+    /* --- NÂNG CẤP BỐ CỤC: SIDEBAR LAYOUT --- */
+
+/* 1. Wrapper chính bao quanh toàn bộ app */
+.app-layout {
+    display: flex;
+    height: 100vh;
+    overflow: hidden;
+    background-color: var(--bg-start); /* Đảm bảo nền ăn theo theme */
+}
+
+/* 2. Sidebar bên trái (Chỉ hiện trên Desktop) */
+.sidebar {
+    width: 260px;
+    background-color: var(--surface-glass);
+    border-right: 1px solid rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(20px);
+    display: flex;
+    flex-direction: column;
+    padding: 1.5rem;
+    transition: transform 0.3s ease;
+    z-index: 50;
+}
+
+/* Ẩn Sidebar trên Mobile */
+@media (max-width: 768px) {
+    .sidebar {
+        position: fixed;
+        height: 100%;
+        transform: translateX(-100%);
+        background-color: var(--surface); /* Đậm hơn trên mobile */
+    }
+    .sidebar.open {
+        transform: translateX(0);
+    }
+}
+
+/* 3. Khu vực nội dung chính bên phải */
+.main-content {
+    flex: 1;
+    overflow-y: auto;
+    position: relative;
+    padding: 2rem;
+    scroll-behavior: smooth;
+}
+
+/* 4. Style cho các nút trong Sidebar */
+.nav-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    margin-bottom: 0.5rem;
+    border-radius: 0.75rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+    transition: all 0.2s;
+    cursor: pointer;
+    border: 1px solid transparent;
+}
+
+.nav-item:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+    color: var(--text-primary);
+}
+
+.nav-item.active {
+    background-color: var(--brand-light);
+    color: var(--brand);
+    border-color: rgba(255, 255, 255, 0.05);
+    font-weight: 600;
+    box-shadow: 0 4px 12px -2px rgba(0, 0, 0, 0.1);
+}
+
+.nav-item i {
+    width: 1.25rem;
+    height: 1.25rem;
+}
+
+/* 5. Header trên Mobile (Nút Menu) */
+.mobile-header {
+    display: none;
+    padding: 1rem;
+    background-color: var(--surface-glass);
+    border-bottom: 1px solid var(--border);
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 40;
+}
+
+@media (max-width: 768px) {
+    .mobile-header { display: flex; }
+    .main-content { padding: 1rem; }
+    /* Tắt glass-nav cũ vì ta dùng sidebar */
+    header.glass-nav { display: none !important; }
+}
+
+/* 6. Dashboard Grid mới */
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+/* --- CSS CHO ẢNH TỪ VỰNG --- */
+.vocab-image {
+    width: 80px;
+    height: 80px;
+    object-fit: cover;
+    border-radius: 8px;
+    border: 2px solid var(--border);
+    background-color: var(--surface);
+    flex-shrink: 0; /* Không bị co lại */
+}
+/* Hiệu ứng khi hover vào ảnh */
+.vocab-image:hover {
+    transform: scale(1.5);
+    transition: transform 0.3s ease;
+    z-index: 50;
+    box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+}
+
+/* --- style.css - PHIÊN BẢN NÂNG CẤP ĐỒ HỌA --- */
+
+:root {
+    /* Màu thương hiệu rực rỡ hơn */
+    --brand: #0ea5e9; /* Sky Blue */
+    --brand-hover: #38bdf8;
+    --brand-glow: rgba(14, 165, 233, 0.5);
+    
+    /* Giao diện tối hiện đại (Deep Blue/Black) */
+    --bg-dark: #0f172a;
+    --surface-glass: rgba(15, 23, 42, 0.7);
+    --surface-glass-hover: rgba(30, 41, 59, 0.8);
+    
+    /* Border phát sáng nhẹ */
+    --border-light: rgba(255, 255, 255, 0.1);
+    --border-glow: rgba(14, 165, 233, 0.3);
+    
+    /* Text */
+    --text-primary: #f8fafc;
+    --text-secondary: #94a3b8;
+}
+
+/* 1. NỀN BACKGROUND SỐNG ĐỘNG (Aurora Effect) */
+body {
+    background-color: var(--bg-dark);
+    /* Tạo hiệu ứng nền chuyển động nhẹ phía sau */
+    background-image: 
+        radial-gradient(circle at 15% 50%, rgba(14, 165, 233, 0.15), transparent 25%),
+        radial-gradient(circle at 85% 30%, rgba(168, 85, 247, 0.15), transparent 25%);
+    background-attachment: fixed;
+    color: var(--text-primary);
+    font-family: 'Nunito', sans-serif; /* Font tròn trịa dễ đọc */
+    -webkit-font-smoothing: antialiased;
+}
+
+/* 2. CARD GLASSMORPHISM CAO CẤP */
+.card, .bg-slate-900, dialog .card {
+    background: var(--surface-glass) !important;
+    backdrop-filter: blur(16px) saturate(180%);
+    -webkit-backdrop-filter: blur(16px) saturate(180%);
+    border: 1px solid var(--border-light) !important;
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Hiệu ứng nhấc lên khi hover vào thẻ */
+.card:hover {
+    transform: translateY(-4px);
+    border-color: var(--border-glow) !important;
+    box-shadow: 0 12px 40px -8px var(--brand-glow);
+}
+
+/* 3. NÚT BẤM NEON (Glowing Buttons) */
+button, .btn {
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Nút chính (Màu xanh) */
+.btn-primary, button[class*="bg-teal"], button[class*="bg-blue"] {
+    background: linear-gradient(135deg, var(--brand), #3b82f6) !important;
+    box-shadow: 0 4px 15px rgba(14, 165, 233, 0.3);
+    border: none;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+}
+
+.btn-primary:hover, button[class*="bg-teal"]:hover {
+    box-shadow: 0 6px 20px rgba(14, 165, 233, 0.6);
+    transform: translateY(-2px) scale(1.02);
+    filter: brightness(1.1);
+}
+
+/* Nút phụ (Màu xám/trong suốt) */
+button[class*="bg-slate"] {
+    background: rgba(255, 255, 255, 0.05) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(4px);
+}
+button[class*="bg-slate"]:hover {
+    background: rgba(255, 255, 255, 0.15) !important;
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+/* 4. INPUT & FORM ĐẸP HƠN */
+input, select, textarea {
+    background: rgba(15, 23, 42, 0.6) !important;
+    border: 1px solid var(--border-light) !important;
+    color: white !important;
+    transition: all 0.2s;
+    border-radius: 8px;
+}
+input:focus, select:focus, textarea:focus {
+    border-color: var(--brand) !important;
+    box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.2);
+    outline: none;
+    background: rgba(15, 23, 42, 0.9) !important;
+}
+
+/* 5. THANH CUỘN (SCROLLBAR) MỚI */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: var(--brand);
+}
+
+/* 6. HIỆU ỨNG TEXT */
+h1, h2, h3, .font-bold {
+    letter-spacing: -0.025em; /* Chữ khít lại nhìn hiện đại hơn */
+}
+
+/* Text Gradient cho tiêu đề lớn */
+.text-gradient {
+    background: linear-gradient(to right, #6dd5ed, #2193b0);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+/* 7. MODAL (Dialog) */
+dialog {
+    animation: fadeInScale 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+dialog::backdrop {
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(8px);
+}
+
+@keyframes fadeInScale {
+    from { opacity: 0; transform: scale(0.95) translateY(10px); }
+    to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+/* 8. LOADING SPINNER */
+.loader {
+    border: 3px solid rgba(255,255,255,0.1);
+    border-left-color: var(--brand);
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    animation: spin 1s linear infinite;
+}
+@keyframes spin { 100% { transform: rotate(360deg); } }
+/* === UI CHẨN ĐOÁN HỆ THỐNG (DIAGNOSIS TERMINAL) === */
+.terminal-window {
+    font-family: 'Consolas', 'Monaco', monospace;
+    background-color: #0f172a; /* Slate 900 */
+    border: 1px solid #334155;
+    border-radius: 0.5rem;
+    padding: 1rem;
+    height: 200px;
+    overflow-y: auto;
+    font-size: 0.8rem;
+    box-shadow: inset 0 0 20px rgba(0,0,0,0.5);
+}
+
+.terminal-line {
+    margin-bottom: 0.25rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    opacity: 0;
+    animation: fadeIn 0.2s forwards;
+}
+
+.terminal-line.success { color: #34d399; } /* Green */
+.terminal-line.warning { color: #fbbf24; } /* Yellow */
+.terminal-line.error { color: #f87171; }   /* Red */
+.terminal-line.info { color: #94a3b8; }    /* Grey */
+
+/* Hiệu ứng con trỏ nhấp nháy */
+.typing-cursor::after {
+    content: '_';
+    animation: blink 1s step-end infinite;
+}
+@keyframes blink { 50% { opacity: 0; } }
+@keyframes fadeIn { to { opacity: 1; } }
+/* --- CSS CHO POPUP TRA TỪ MỚI --- */
+#saveSelectionPopup {
+    /* Mặc định ẩn thì scale nhỏ lại và mờ đi */
+    opacity: 0;
+    transform: scale(0.95) translateY(10px);
+    pointer-events: none;
+    transition: opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1), 
+                transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Khi JS xóa class 'hidden', ta override lại để hiện ra */
+#saveSelectionPopup:not(.hidden) {
+    display: block; /* Đảm bảo hiện */
+    opacity: 1;
+    transform: scale(1) translateY(0);
+    pointer-events: auto;
+}
+
+/* Hiệu ứng rung nhẹ khi rê chuột vào nút Lưu */
+#wordPopup-saveBtn:hover i {
+    animation: bounce-small 0.5s infinite;
+}
+
+@keyframes bounce-small {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-2px); }
+}
+/* Thêm vào cuối file style.css */
+
+/* Tinh chỉnh cho phần Ví dụ trong popup */
+#wordPopup-example {
+    font-size: 0.8rem;
+    line-height: 1.4;
+    color: #94a3b8; /* Màu xám nhẹ */
+    max-height: 60px; /* Giới hạn chiều cao nếu ví dụ quá dài */
+    overflow-y: auto; /* Cho phép cuộn nếu dài */
+    white-space: pre-wrap; /* Giữ xuống dòng nếu có */
+}
+
+/* Tinh chỉnh scrollbar nhỏ cho phần ví dụ */
+#wordPopup-example::-webkit-scrollbar {
+    width: 4px;
+}
+#wordPopup-example::-webkit-scrollbar-thumb {
+    background: rgba(255,255,255,0.1);
+    border-radius: 4px;
+}
