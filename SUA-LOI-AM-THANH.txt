@@ -1,0 +1,11 @@
+BẢN SỬA LỖI ÂM THANH/TTS
+
+Đã sửa:
+- Khi chuyển menu/mục: dừng âm thanh đang phát và hủy lệnh phát đang chờ.
+- Tắt Auto TTS mặc định cho người dùng mới.
+- Tắt Auto TTS cũ một lần sau khi cập nhật (có thể bật lại thủ công trong Cài đặt nếu muốn).
+- Câu hỏi nghe không còn tự đọc khi vừa hiển thị; bấm nút loa để nghe.
+- Bài luyện nghe không còn tự phát 2 lần khi vừa tạo/mở; bấm nút nghe để phát.
+- Timer phát âm trong bài thanh điệu được hủy khi đổi menu.
+
+Firebase/Google Login: vẫn giữ các sửa lỗi của bản FIX-v2.

@@ -556,7 +556,30 @@ function renderAiPracticeExercise(data, contentEl) {
 
 // ************************* HÀM SPEAK ĐÃ SỬA (THEO HSK) *************************
 // SỬA LỖI: Thêm onEndCallback làm tham số thứ 4
+let pendingSpeechTimer = null;
+let pendingAutoSpeechTimer = null;
+
+function stopSpeech() {
+    if (pendingSpeechTimer) {
+        clearTimeout(pendingSpeechTimer);
+        pendingSpeechTimer = null;
+    }
+    if (pendingAutoSpeechTimer) {
+        clearTimeout(pendingAutoSpeechTimer);
+        pendingAutoSpeechTimer = null;
+    }
+    if (typeof speechSynthesis !== 'undefined') {
+        speechSynthesis.cancel();
+    }
+}
+
 function speak(text, pinyin, hskLevel = 3, onEndCallback = null) {
+
+    // Mỗi yêu cầu mới phải hủy lần phát đang chờ để tránh phát lặp/ phát lại sau khi người dùng đổi mục.
+    if (pendingSpeechTimer) {
+        clearTimeout(pendingSpeechTimer);
+        pendingSpeechTimer = null;
+    }
 
     // --- SỬA LỖI QUAN TRỌNG ---
     // Nếu không có text, VẪN PHẢI gọi callback để chuỗi (chain) không bị đứt
@@ -623,7 +646,8 @@ function speak(text, pinyin, hskLevel = 3, onEndCallback = null) {
     // Thêm một độ trễ 50ms giữa cancel() và speak()
     // để tránh lỗi race condition của Web Speech API,
     // ngăn chặn việc 'onend' không được gọi (nguyên nhân gây kẹt).
-    setTimeout(() => {
+    pendingSpeechTimer = setTimeout(() => {
+        pendingSpeechTimer = null;
         speechSynthesis.speak(utterance);
     }, 50);
     // --- KẾT THÚC SỬA LỖI CHÍNH ---
@@ -1370,7 +1394,7 @@ function deleteMusicFile() {
 // (Dán khối mã này vào khoảng dòng 2540)
 
 const defaultOptions = {
-    autoTTS: true,
+    autoTTS: false,
     showPinyin: true,
     plainFont: false,
     dialogueDelay: 5000,
@@ -1430,7 +1454,7 @@ const NEW = {
     // **** THAY THẾ DÒNG TRÊN BẰNG KHỐI NÀY ****
     // --- BẮT ĐẦU: Thay thế NEW.options ---
     options: storage.get('hskpro_opts', {
-        autoTTS: true,
+        autoTTS: false,
         showPinyin: true,
         dialogueDelay: 5000,
         options: storage.get('hskpro_opts', defaultOptions),
@@ -1448,6 +1472,14 @@ const NEW = {
     customUserJS: storage.get('hskpro_custom_js_user', ''), // <-- ĐÃ THÊM
     customUserHTML: storage.get('hskpro_custom_html_user', '') // <-- ĐÃ THÊM
 };
+
+// Một lần sau bản sửa lỗi TTS: tắt tự đọc cũ đang lưu trong localStorage.
+// Người dùng vẫn có thể bật lại thủ công trong Cài đặt nếu thực sự muốn.
+if (!storage.get('hskpro_tts_autoplay_fix_v1', false)) {
+    NEW.options.autoTTS = false;
+    storage.set('hskpro_opts', NEW.options);
+    storage.set('hskpro_tts_autoplay_fix_v1', true);
+}
 if (!['gemini-3.8-flash','openai'].includes(NEW.options.aiModel)) {
  NEW.options.aiModel='gemini-3.8-flash'; storage.set('hskpro_opts',NEW.options);
 }
@@ -1816,6 +1848,10 @@ const views = {
 };
 let currentView = null;
 function show(view) {
+    // Khi chuyển sang bất kỳ mục/menu nào, dừng toàn bộ TTS đang chạy hoặc đang chờ.
+    // Điều này ngăn âm thanh của màn hình trước tự phát lại sau cú click điều hướng.
+    stopSpeech();
+
     if (currentView && views[currentView]) views[currentView].classList.add('hidden');
 
     if (!views[view]) {
@@ -3293,7 +3329,7 @@ function renderQ_Audio(q) {
     $('#qBody').innerHTML = `<div class="text-center"><div class="text-3xl font-medium">Nghe và chọn nghĩa đúng:</div><button id="qAudioBtn" class="btn btn-primary p-4 rounded-full h-20 w-20 mx-auto my-4"><i data-lucide="volume-2" class="w-8 h-8"></i></button></div>`;
     $('#qAudioBtn').onclick = () => speak(q.data.hanzi, q.data.pinyin, q.data.hskLevel);
     lucide.createIcons($('#qAudioBtn'));
-    speak(q.data.hanzi, q.data.pinyin); // Tự động phát lần đầu
+    // Không tự phát: chỉ đọc khi người dùng bấm nút loa.
 
     // Tái sử dụng logic trắc nghiệm (Hán tự -> Việt)
     renderQ_MC_HzVi(q);
@@ -4133,13 +4169,10 @@ function displayListeningExercise(hskLevel) { // <-- Sửa 1: Nhận hskLevel
     $('#checkListeningAnswersBtn').onclick = checkListeningAnswers;
     $('#checkListeningAnswersBtn').disabled = false;
 
-    // 6. Show content and play audio
+    // 6. Hiển thị nội dung. Không tự phát âm thanh khi mở/chọn mục;
+    // người dùng chủ động bấm nút nghe khi cần.
     content.classList.remove('hidden');
     lucide.createIcons(content);
-    speak(cleanSpeechText, null, hskLevel);
-
-    //sửa dòng code thứ 3
-    speak(cleanSpeechText); // Auto-play on load // <- Dòng mới
 }
 
 function checkListeningAnswers() {
@@ -7297,8 +7330,12 @@ function startToneQuiz() {
         `).join('');
     $('#toneOptions').innerHTML = optionsHtml;
 
-    // Tự động phát âm (có delay nhỏ)
-    setTimeout(() => speak(word.hanzi, word.pinyin), 100);
+    // Tự động phát trong bài thanh điệu, nhưng timer phải hủy được khi đổi menu.
+    if (pendingAutoSpeechTimer) clearTimeout(pendingAutoSpeechTimer);
+    pendingAutoSpeechTimer = setTimeout(() => {
+        pendingAutoSpeechTimer = null;
+        speak(word.hanzi, word.pinyin);
+    }, 100);
 }
 
 // Helper: Đường vẽ nhỏ cho nút bấm
