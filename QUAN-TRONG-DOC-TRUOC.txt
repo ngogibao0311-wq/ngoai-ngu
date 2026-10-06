@@ -1,0 +1,10 @@
+CACH MO WEB DE GOOGLE FIREBASE DANG NHAP DUOC
+
+1. KHONG nhap dup index.html.
+2. Nhap dup MO-WEB-DUNG-CACH.cmd.
+3. Trinh duyet phai hien dia chi: http://localhost:5174/
+4. Firebase Console > Authentication > Sign-in method > Google: Enable.
+5. Firebase Console > Authentication > Settings > Authorized domains: phai co "localhost".
+   Chi them localhost, KHONG them http://localhost:5174.
+
+Neu thanh dia chi cua trinh duyet bat dau bang file:/// thi ban dang mo sai cach.

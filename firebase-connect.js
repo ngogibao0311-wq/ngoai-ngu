@@ -1,5 +1,14 @@
 /* Firebase is loaded only after the user supplies their own web configuration. */
 (() => {
+  // Firebase Authentication requires an http(s) origin. index.html blocks file:// before this script loads.
+  // Keep local access consistent with the single Authorized domain: localhost.
+  if (location.hostname === '127.0.0.1') {
+    const localUrl = new URL(location.href);
+    localUrl.hostname = 'localhost';
+    location.replace(localUrl.href);
+    return;
+  }
+
   const keys = ['vocab','ignored_words','srs','grammar','rules','classifiers','idioms','dialogues','reading','logs','badges','streak'].map(x=>'hskpro_'+x).concat('writing_draft');
   const configKey = 'lingo_firebase_web_config';
   let auth, db, sdk, busy = false;
@@ -56,10 +65,20 @@
   async function run(action) {
     if(busy)return; busy=true; controls();
     try{await action();}catch(e){
-      const messages={'auth/unauthorized-domain':'Hãy thêm localhost vào Authentication → Settings → Authorized domains.', 'auth/popup-blocked':'Trình duyệt chặn cửa sổ đăng nhập. Hãy cho phép cửa sổ bật lên rồi thử lại.', 'auth/popup-closed-by-user':'Bạn đã đóng cửa sổ đăng nhập.', 'permission-denied':'Firestore từ chối truy cập. Kiểm tra Rules và tài khoản Google.', 'auth/operation-not-allowed':'Hãy bật Google trong Authentication → Sign-in method.'};
-      messages['unavailable']='Không kết nối được Firestore. Kiểm tra mạng và thử lại.';
-      messages['resource-exhausted']='Firebase đã hết hạn mức. Kiểm tra mục Usage của dự án rồi thử lại sau.';
-      messages['auth/unauthorized-domain']='Hãy thêm tên miền đang mở ('+location.hostname+') vào Authentication → Settings → Authorized domains.';
+      console.error('[Firebase]', e);
+      const messages={
+        'auth/unauthorized-domain':'Firebase chưa cho phép địa chỉ '+location.origin+'. Vào Authentication → Settings → Authorized domains và thêm đúng: '+location.hostname+' (không thêm http:// và không thêm cổng).',
+        'auth/popup-blocked':'Trình duyệt chặn cửa sổ đăng nhập. Web sẽ thử đăng nhập bằng chuyển trang; nếu vẫn lỗi hãy cho phép popup.',
+        'auth/popup-closed-by-user':'Bạn đã đóng cửa sổ đăng nhập.',
+        'auth/cancelled-popup-request':'Yêu cầu đăng nhập trước đó đã bị hủy. Hãy bấm Đăng nhập Google lại một lần.',
+        'auth/operation-not-allowed':'Google Sign-in chưa được bật. Vào Authentication → Sign-in method → Google → Enable.',
+        'auth/invalid-api-key':'Firebase apiKey không hợp lệ. Hãy dán lại firebaseConfig đúng dự án.',
+        'auth/invalid-credential':'Cấu hình hoặc thông tin xác thực Firebase không hợp lệ. Hãy kiểm tra lại firebaseConfig.',
+        'auth/web-storage-unsupported':'Trình duyệt đang chặn bộ nhớ cần cho đăng nhập. Hãy tắt chế độ chặn nghiêm ngặt/ẩn danh rồi thử lại.',
+        'permission-denied':'Firestore từ chối truy cập. Kiểm tra Rules và tài khoản Google.',
+        'unavailable':'Không kết nối được Firestore. Kiểm tra mạng và thử lại.',
+        'resource-exhausted':'Firebase đã hết hạn mức. Kiểm tra mục Usage của dự án rồi thử lại sau.'
+      };
       status(messages[e.code] || 'Không hoàn tất: '+(e.message || e.code));
     }finally{busy=false;controls();}
   }
@@ -85,7 +104,24 @@
       const [app,A,F]=await Promise.all([import(base+'firebase-app.js'),import(base+'firebase-auth.js'),import(base+'firebase-firestore.js')]);
       const instance=app.initializeApp(JSON.parse(saved)); auth=A.getAuth(instance); db=F.getFirestore(instance); sdk=F;
       A.onAuthStateChanged(auth,user=>{status(user?'Đã đăng nhập: '+user.email+' · '+Lingo.name:'Sẵn sàng. Hãy đăng nhập Google.');controls();});
-      el('login').onclick=()=>run(()=>A.signInWithPopup(auth,new A.GoogleAuthProvider()));
+
+      // Complete a redirect login (used automatically when popup login is blocked).
+      await A.getRedirectResult(auth);
+
+      el('login').onclick=()=>run(async()=>{
+        const provider=new A.GoogleAuthProvider();
+        provider.setCustomParameters({prompt:'select_account'});
+        try{
+          await A.signInWithPopup(auth,provider);
+        }catch(error){
+          if(['auth/popup-blocked','auth/cancelled-popup-request','auth/web-storage-unsupported'].includes(error?.code)){
+            status('Popup đăng nhập không dùng được. Đang chuyển sang đăng nhập Google toàn trang…');
+            await A.signInWithRedirect(auth,provider);
+            return;
+          }
+          throw error;
+        }
+      });
       el('logout').onclick=()=>run(()=>A.signOut(auth));
       const ref=()=>sdk.doc(db,'users',auth.currentUser.uid,'languages',Lingo.lang);
       el('push').onclick=()=>run(async()=>{

@@ -5,6 +5,16 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Lingo — Học tiếng Anh & tiếng Trung</title>
+    <script>
+    // Firebase Authentication cannot run from file://. If index.html is opened directly,
+    // stop the app before any Firebase/iframe scripts load and show the correct launcher.
+    if (location.protocol === 'file:') {
+      document.open();
+      document.write(`<!doctype html><html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Mở Lingo đúng cách</title><style>body{font-family:system-ui,-apple-system,Segoe UI,sans-serif;background:#0f172a;color:#e2e8f0;display:grid;place-items:center;min-height:100vh;margin:0;padding:24px;box-sizing:border-box}.box{max-width:720px;background:#111827;border:1px solid #334155;border-radius:20px;padding:28px;box-shadow:0 20px 60px #0008}h1{margin-top:0;color:#5eead4}code{background:#020617;padding:3px 7px;border-radius:6px}.warn{color:#fbbf24;font-weight:700}.ok{color:#86efac;font-weight:700}</style></head><body><main class="box"><h1>Không mở index.html trực tiếp</h1><p class="warn">Bạn đang chạy bằng <code>file://</code>. Google Firebase Login sẽ luôn báo <code>auth/unauthorized-domain</code> ở chế độ này.</p><p>Hãy đóng tab này, quay lại thư mục web và nhấp đúp file:</p><p><strong class="ok">MO-WEB-DUNG-CACH.cmd</strong></p><p>File đó sẽ tự chạy máy chủ và mở đúng địa chỉ <code>http://localhost:5174/</code>.</p><p>Nếu sau đó Firebase vẫn báo <code>auth/unauthorized-domain</code>, vào Firebase Console → Authentication → Settings → Authorized domains và thêm đúng <code>localhost</code>.</p></main></body></html>`);
+      document.close();
+      window.stop();
+    }
+    </script>
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
     <meta name="description"
         content="Học tiếng Anh và tiếng Trung: quản lý từ vựng, ôn SRS, nghe, nói, đọc, viết và thư viện cá nhân." />
