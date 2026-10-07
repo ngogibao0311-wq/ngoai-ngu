@@ -5,16 +5,6 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Lingo — Học tiếng Anh & tiếng Trung</title>
-    <script>
-    // Firebase Authentication cannot run from file://. If index.html is opened directly,
-    // stop the app before any Firebase/iframe scripts load and show the correct launcher.
-    if (location.protocol === 'file:') {
-      document.open();
-      document.write(`<!doctype html><html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Mở Lingo đúng cách</title><style>body{font-family:system-ui,-apple-system,Segoe UI,sans-serif;background:#0f172a;color:#e2e8f0;display:grid;place-items:center;min-height:100vh;margin:0;padding:24px;box-sizing:border-box}.box{max-width:720px;background:#111827;border:1px solid #334155;border-radius:20px;padding:28px;box-shadow:0 20px 60px #0008}h1{margin-top:0;color:#5eead4}code{background:#020617;padding:3px 7px;border-radius:6px}.warn{color:#fbbf24;font-weight:700}.ok{color:#86efac;font-weight:700}</style></head><body><main class="box"><h1>Không mở index.html trực tiếp</h1><p class="warn">Bạn đang chạy bằng <code>file://</code>. Google Firebase Login sẽ luôn báo <code>auth/unauthorized-domain</code> ở chế độ này.</p><p>Hãy đóng tab này, quay lại thư mục web và nhấp đúp file:</p><p><strong class="ok">MO-WEB-DUNG-CACH.cmd</strong></p><p>File đó sẽ tự chạy máy chủ và mở đúng địa chỉ <code>http://localhost:5174/</code>.</p><p>Nếu sau đó Firebase vẫn báo <code>auth/unauthorized-domain</code>, vào Firebase Console → Authentication → Settings → Authorized domains và thêm đúng <code>localhost</code>.</p></main></body></html>`);
-      document.close();
-      window.stop();
-    }
-    </script>
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
     <meta name="description"
         content="Học tiếng Anh và tiếng Trung: quản lý từ vựng, ôn SRS, nghe, nói, đọc, viết và thư viện cá nhân." />
@@ -199,11 +189,11 @@
                     <div id="statV_total" class="text-3xl font-bold text-white">0</div>
                 </div>
                 <div class="card p-4">
-                    <div class="text-sm text-slate-400">Đã thuộc (Box 5+)</div>
+                    <div class="text-sm text-slate-400">Đã thuộc (ôn ít nhất 7 lần)</div>
                     <div id="statV_mastered" class="text-3xl font-bold text-white">0</div>
                 </div>
                 <div class="card p-4">
-                    <div class="text-sm text-slate-400">Từ mới (Box 1)</div>
+                    <div class="text-sm text-slate-400">Chưa học lần nào</div>
                     <div id="statV_new" class="text-3xl font-bold text-white">0</div>
                 </div>
             </div>
@@ -219,7 +209,7 @@
                         <option value="3">HSK 3</option>
                         <option value="4">HSK 4</option>
                         <option value="5">HSK 5</option>
-                        <option value="6">HSK 6</option>
+                        <option value="6">HSK 6</option><option value="7">HSK 7</option><option value="8">HSK 8</option><option value="9">HSK 9</option>
                     </select>
                     <div class="relative">
                         <i data-lucide="search"
@@ -238,6 +228,16 @@
                 <i data-lucide="book-open"></i> Thư viện từ
             </button>
 
+            <div class="card p-4 mt-4 flex flex-wrap gap-3 items-center">
+                <select id="vocabStatus" class="form-input w-auto" aria-label="Trạng thái học">
+                    <option value="all">Mọi trạng thái</option><option value="new">Chưa học</option><option value="due">Đến hạn ôn</option><option value="learning">Đang học</option><option value="mastered">Đã thuộc</option>
+                </select>
+                <select id="vocabSort" class="form-input w-auto" aria-label="Sắp xếp"><option value="original">Thứ tự trong kho</option><option value="word">Theo từ</option><option value="due">Ngày ôn gần nhất</option></select>
+                <button id="vocabImportBtn" class="btn btn-secondary">Nhập thêm JSON / Excel</button>
+                <input id="vocabFile" type="file" accept=".json,.xlsx,.xls" hidden>
+                <button id="vocabExportBtn" class="btn btn-secondary">Xuất kho từ JSON</button>
+                <p class="text-sm text-slate-400 w-full">Học mới: 10 từ/phiên. Ôn đến hạn: tối đa 30 từ/phiên. Luyện tự do không thay đổi lịch ôn. Nhập thêm giữ từ và tiến độ hiện có.</p>
+            </div>
             <div id="vocabGrid" class="mt-6 space-y-5">
             </div>
         </section>
@@ -258,14 +258,15 @@
                 </div>
             </div>
 
+            <p id="srsSessionNote" class="text-sm text-slate-400 mt-4"></p>
             <div id="srsEmpty" class="mt-8 text-center hidden">
                 <div class="card p-8 max-w-lg mx-auto">
                     <i data-lucide="party-popper" class="w-16 h-16 text-[var(--brand)] mx-auto"></i>
                     <h4 class="text-xl font-bold text-white mt-4">Tuyệt vời!</h4>
-                    <p class="text-slate-400 mt-2">Bạn đã hoàn thành tất cả các thẻ đến hạn hôm nay.</p>
+                    <p class="text-slate-400 mt-2">Phiên học đã kết thúc hoặc chưa có từ đến hạn. Bạn có thể học từ mới hoặc kiểm tra phiên ôn tiếp theo.</p>
                     <div class="mt-6 flex justify-center gap-4">
                         <button data-goto="learn" class="btn btn-primary">Học từ mới</button>
-                        <button id="resetProgressBtn" class="btn btn-secondary">Đặt lại tiến độ</button>
+                        <button id="nextSrsSessionBtn" class="btn btn-secondary" onclick="buildSRSQueue()">Ôn phiên tiếp theo</button>
                     </div>
                 </div>
             </div>
@@ -302,7 +303,7 @@
                     <div id="srsCardBack" class="card shadow-lg mt-6 p-6 hidden">
                         <div class="text-center border-b border-[var(--border)] pb-6">
                             <div id="srsVN" class="text-4xl font-bold text-white text-center"></div>
-                            <div id="srsEx" class="text-xl text-slate-400 italic mt-4 text-center"></div>
+                            <div id="srsEx" style="white-space:pre-line" class="text-xl text-slate-400 italic mt-4 text-center"></div>
                         </div>
 
                         <div class="grid md:grid-cols-2 gap-6 mt-6">
@@ -347,9 +348,8 @@
                 </div>
 
                 <div id="srsRatingButtons" class="mt-8 grid grid-cols-3 gap-4 w-full max-w-2xl hidden">
-                    <button id="rate-hard" class="btn bg-rose-500/80 text-white hover:bg-rose-500 py-3">Lại (1)</button>
-                    <button id="rate-good" class="btn bg-amber-500/80 text-white hover:bg-amber-500 py-3">Tốt
-                        (2)</button>
+                    <button id="rate-hard" class="btn bg-rose-500/80 text-white hover:bg-rose-500 py-3">Chưa nhớ (1)</button>
+                    <button id="rate-good" class="btn bg-amber-500/80 text-white hover:bg-amber-500 py-3">Nhớ (2)</button>
                     <button id="rate-easy" class="btn bg-green-500/80 text-white hover:bg-green-500 py-3">Dễ
                         (3)</button>
                 </div>
@@ -374,13 +374,14 @@
                             <div>
                                 <label class="text-sm font-medium text-slate-300">Cấp độ HSK</label>
                                 <select id="qHSK" class="form-input w-full mt-1">
+                                    <option value="unknown">Chưa phân cấp</option>
                                     <option value="all">Tất cả HSK</option>
                                     <option value="1">HSK 1</option>
                                     <option value="2">HSK 2</option>
                                     <option value="3" selected>HSK 3</option>
                                     <option value="4">HSK 4</option>
                                     <option value="5">HSK 5</option>
-                                    <option value="6">HSK 6</option>
+                                    <option value="6">HSK 6</option><option value="7">HSK 7</option><option value="8">HSK 8</option><option value="9">HSK 9</option>
                                 </select>
                             </div>
                         </div>
@@ -1357,7 +1358,7 @@
                     <div id="statV" class="text-2xl sm:text-4xl font-bold text-white mt-1 truncate">0</div>
                 </div>
                 <div class="card p-4 sm:p-6">
-                    <div class="text-xs sm:text-sm text-slate-400">Đã thuộc (Box 5+)</div>
+                    <div class="text-xs sm:text-sm text-slate-400">Đã thuộc (ôn ít nhất 7 lần)</div>
                     <div id="statM" class="text-2xl sm:text-4xl font-bold text-white mt-1 truncate">0</div>
                 </div>
                 <div class="card p-4 sm:p-6">
@@ -1405,7 +1406,7 @@
                             <i data-lucide="history" class="text-sky-400"></i> Nhật ký hoạt động
                         </h4>
                         <button class="text-xs text-slate-400 hover:text-white"
-                            onclick="$('#logList').innerHTML=''; toast('Đã xóa nhật ký');">Xóa</button>
+                            onclick="renderStats()">Làm mới</button>
                     </div>
 
                     <div class="bg-slate-900/30 rounded-lg p-1 flex-grow border border-slate-700/50">
@@ -1572,6 +1573,12 @@
 
                                 <div class="space-y-5 relative z-10 flex-grow">
                                     <div class="relative group">
+                                        <label for="dataImportMode" class="text-sm font-bold">Cách nhập dữ liệu</label>
+                                        <select id="dataImportMode" class="form-input w-full mb-3">
+                                            <option value="merge" selected>Ghép từ vựng — bổ sung / cập nhật ví dụ</option>
+                                            <option value="restore">Khôi phục bản sao lưu (thay thế dữ liệu)</option>
+                                        </select>
+                                        <p class="text-sm text-slate-400 mb-3">Từ đã có sẽ được cập nhật ví dụ, không thêm trùng. Giữ nguyên tiến độ học. Có xem trước trước khi lưu.</p>
                                         <input id="excelInput" type="file" accept=".xlsx, .xls, .json"
                                             class="peer absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20" />
 
@@ -1633,13 +1640,13 @@
                                         </p>
 
                                         <div class="grid grid-cols-2 gap-4 relative z-10">
-                                            <button id="btnPushCloud"
+                                            <button id="btnPushCloud" type="button"
                                                 class="btn bg-sky-600 hover:bg-sky-500 text-white border-0 py-3 shadow-lg shadow-sky-500/20">
-                                                <i data-lucide="upload-cloud" class="w-4 h-4"></i> Lưu lên Mây
+                                                <i data-lucide="upload-cloud" class="w-4 h-4"></i> Lưu web lên Firebase
                                             </button>
-                                            <button id="btnPullCloud"
+                                            <button id="btnPullCloud" type="button"
                                                 class="btn btn-secondary py-3 border-sky-500/30 hover:border-sky-400/50">
-                                                <i data-lucide="download-cloud" class="w-4 h-4"></i> Tải về Máy
+                                                <i data-lucide="download-cloud" class="w-4 h-4"></i> Khôi phục từ Firebase
                                             </button>
                                         </div>
                                     </div>
@@ -2517,7 +2524,9 @@
     </dialog>
 
     <script src="ai-prompts.js"></script>
+    <script src="vocabulary-core.js"></script>
     <script src="script.js"></script>
+    <script src="vocabulary-ui.js"></script>
     <script src="workspace.js"></script><script src="ai-providers.js"></script><script src="firebase-backup.js"></script><script src="firebase-connect.js"></script>
 </body>
 

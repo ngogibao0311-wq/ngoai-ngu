@@ -411,8 +411,8 @@ const storage = {
     del: (key) => Lingo.storageRemove(key)
 };
 
-const todayStr = () => new Date().toISOString().slice(0, 10);
-const shuffle = (arr) => [...arr].sort(() => 0.5 - Math.random());
+const todayStr = () => Vocabulary.date();
+const shuffle = (arr) => { const list = [...arr]; for (let i = list.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [list[i], list[j]] = [list[j], list[i]]; } return list; };
 
 const toast = (msg, type = 'info') => {
     const el = document.createElement('div');
@@ -1930,7 +1930,7 @@ function updateDashboardData() {
     const today = todayStr();
 
     // Tính toán số lượng thẻ cần ôn
-    const dueCount = NEW.vocab ? NEW.vocab.filter(v => (NEW.srs[v.hanzi]?.next || today) <= today).length : 0;
+    const dueCount = NEW.vocab ? Vocabulary.unique(NEW.vocab).filter(v => Vocabulary.status(NEW.srs[v.hanzi], today) === 'due').length : 0;
     const totalCount = NEW.vocab ? NEW.vocab.length : 0;
     const streakCount = NEW.streak ? NEW.streak.count : 0;
 
@@ -1965,7 +1965,7 @@ $('#mobileMenu').addEventListener('click', () => $('#mobileNav').classList.toggl
 /* ------------------------------ Vocab List & Edit ------------------------------ */
 function vocabLevelGroup(value) {
     const level = Number(value);
-    return Number.isInteger(level) && level >= 1 && level <= 6 ? String(level) : 'unknown';
+    return Number.isInteger(level) && level >= 1 && level <= 9 ? String(level) : 'unknown';
 }
 function cardHTML(x) {
     const s = NEW.srs[x.hanzi] || { box: 1, mastered: false };
@@ -1973,14 +1973,14 @@ function cardHTML(x) {
 
     // --- BẮT ĐẦU SỬA LỖI HIỂN THỊ ẢNH ---
     const imageHTML = x.image
-        ? `<img src="${x.image}" class="vocab-image ml-3 bg-slate-800" alt="${x.hanzi}" loading="lazy" 
-           onerror="this.onerror=null; this.src='https://placehold.co/80x80/1e293b/94a3b8?text=${x.hanzi}';">`
+        ? `<img src="${MiniFirewall.sanitize(x.image)}" class="vocab-image ml-3 bg-slate-800" alt="${MiniFirewall.sanitize(x.hanzi)}" loading="lazy" 
+           onerror="this.hidden=true">`
         : '';
     // --- KẾT THÚC SỬA LỖI ---
 
     // --- BẮT ĐẦU HIỆU ỨNG TUYẾT RƠI TRONG THẺ (GIỮ NGUYÊN) ---
     let snowHTML = '';
-    const flakeCount = 15;
+    const flakeCount = 0;
     for (let i = 0; i < flakeCount; i++) {
         const left = Math.random() * 100;
         const delay = Math.random() * -10;
@@ -2010,10 +2010,10 @@ function cardHTML(x) {
         
       </div>
       <div class="mt-2 chip ${hskClass} text-xs">${vocabLevelGroup(x.hskLevel) === 'unknown' ? 'Chưa phân cấp' : 'HSK ' + x.hskLevel}${x.partOfSpeech ? ` • ${MiniFirewall.sanitize(x.partOfSpeech)}` : ''}</div>
-      <div class="mt-2 text-sm italic text-slate-500 break-words">${MiniFirewall.sanitize(x.example || '')}</div>
+      <div class="mt-2 text-sm italic text-slate-500 break-words" style="white-space:pre-line">${MiniFirewall.sanitize(x.example || '')}</div>
     </div>
     <div class="mt-4 flex items-center justify-between text-xs text-slate-500">
-      <span>Box: ${s.box}${s.mastered ? ' ✅' : ''}</span>
+      <span>${({new:"Chưa học",due:"Đến hạn",learning:"Đang học",mastered:"Đã thuộc"})[Vocabulary.status(s)]} · Bậc ${s.box}${s.mastered ? ' ✅' : ''}</span>
       <div class="flex gap-2">
         <button class="btn btn-secondary p-2 rounded-md" data-act="speak"><i data-lucide="volume-2" class="w-4 h-4"></i></button>
         <button class="btn btn-secondary p-2 rounded-md" data-act="decompose"><i data-lucide="blocks" class="w-4 h-4"></i></button>
@@ -2106,19 +2106,19 @@ function openEdit(x) {
                 
                 <div>
                     <label class="block text-xs font-bold text-slate-400 mb-1">Hán tự <span class="text-rose-500">*</span></label>
-                    <input id="fHanzi" class="form-input text-lg font-bold text-white" placeholder="Ví dụ: 学习" value="${x?.hanzi || ''}" required/>
+                    <input id="fHanzi" class="form-input text-lg font-bold text-white" placeholder="Ví dụ: 学习" value="${MiniFirewall.sanitize(x?.hanzi || '')}" required/>
                     <div id="fHanziStatus" class="mt-1 text-xs min-h-[20px] p-2 bg-slate-800/50 rounded-lg hidden"></div>
                 </div>
 
                 <div>
-                    <label class="block text-xs font-bold text-slate-400 mb-1">Pinyin <span class="text-rose-500">*</span></label>
-                    <input id="fPinyin" class="form-input" placeholder="Ví dụ: xué xí" value="${x?.pinyin || ''}" required/>
+                    <label class="block text-xs font-bold text-slate-400 mb-1">Pinyin (có thể bổ sung sau)</label>
+                    <input id="fPinyin" class="form-input" placeholder="Ví dụ: xué xí" value="${MiniFirewall.sanitize(x?.pinyin || '')}"/>
                 </div>
                 
                 <div class="sm:col-span-2 grid sm:grid-cols-3 gap-4">
                     <div class="sm:col-span-2">
                         <label class="block text-xs font-bold text-slate-400 mb-1">Nghĩa tiếng Việt <span class="text-rose-500">*</span></label>
-                        <input id="fVN" class="form-input font-medium" placeholder="Ví dụ: học tập" value="${x?.vietnamese || ''}" required/>
+                        <input id="fVN" class="form-input font-medium" placeholder="Ví dụ: học tập" value="${MiniFirewall.sanitize(x?.vietnamese || '')}" required/>
                     </div>
                     <div>
                         <label class="block text-xs font-bold text-slate-400 mb-1">Cấp độ HSK</label>
@@ -2128,16 +2128,16 @@ function openEdit(x) {
                 
                 <div>
                     <label class="block text-xs font-bold text-slate-400 mb-1">Từ loại</label>
-                    <input id="fPOS" class="form-input" placeholder="Động từ, Danh từ..." value="${x?.partOfSpeech || ''}"/>
+                    <input id="fPOS" class="form-input" placeholder="Động từ, Danh từ..." value="${MiniFirewall.sanitize(x?.partOfSpeech || '')}"/>
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-slate-400 mb-1">Tags (thẻ phân loại)</label>
-                    <input id="fTags" class="form-input" placeholder="kinh tế, giao tiếp..." value="${(x?.tags || []).join(',')}"/>
+                    <input id="fTags" class="form-input" placeholder="kinh tế, giao tiếp..." value="${MiniFirewall.sanitize((Array.isArray(x?.tags) ? x.tags : []).join(','))}"/>
                 </div>
                 
                 <div class="sm:col-span-2">
                     <label class="block text-xs font-bold text-slate-400 mb-1">Câu ví dụ</label>
-                    <textarea id="fEx" rows="2" class="form-input w-full text-sm italic text-slate-300" placeholder="Nhập câu ví dụ sử dụng từ này...">${x?.example || ''}</textarea>
+                    <textarea id="fEx" rows="2" class="form-input w-full text-sm italic text-slate-300" placeholder="Nhập câu ví dụ sử dụng từ này...">${MiniFirewall.sanitize(x?.example || '')}</textarea>
                 </div>
 
                 <div class="sm:col-span-2 border-t border-[var(--border)] pt-4 mt-2">
@@ -2148,7 +2148,7 @@ function openEdit(x) {
                     <div class="grid grid-cols-[100px_1fr] gap-4 items-start">
                         <div id="imgPreview" class="h-24 w-24 bg-slate-800 rounded-lg border-2 border-dashed border-slate-600 flex items-center justify-center overflow-hidden relative group">
                             ${x?.image
-            ? `<img src="${x.image}" class="w-full h-full object-cover">`
+            ? `<img src="${MiniFirewall.sanitize(x.image)}" class="w-full h-full object-cover">`
             : `<span class="text-xs text-slate-500 text-center px-1">Chưa có ảnh</span>`
         }
                             <div class="absolute inset-0 bg-black/50 hidden group-hover:flex items-center justify-center transition-all">
@@ -2157,7 +2157,7 @@ function openEdit(x) {
                         </div>
 
                         <div class="space-y-3">
-                            <input id="fImage" type="text" placeholder="Dán đường dẫn (URL) ảnh vào đây..." class="form-input text-xs w-full" value="${x?.image || ''}"/>
+                            <input id="fImage" type="text" placeholder="Dán đường dẫn (URL) ảnh vào đây..." class="form-input text-xs w-full" value="${MiniFirewall.sanitize(x?.image || '')}"/>
                             
                             <div class="flex gap-2">
                                 <button type="button" id="btnOneImageAI" class="btn btn-secondary flex-1 text-xs py-2 border-dashed border-slate-500 hover:border-[var(--brand)] hover:text-[var(--brand)] hover:bg-[var(--brand-light)] transition-all">
@@ -2389,6 +2389,23 @@ function openEdit(x) {
     }
 }
 
+function persistVocabulary(vocab, srs) {
+    const oldVocab = Lingo.storageGet('hskpro_vocab'), oldSrs = Lingo.storageGet('hskpro_srs');
+    try {
+        for (const [name, value] of [['hskpro_srs', srs], ['hskpro_vocab', vocab]]) {
+            const encoded = JSON.stringify(value);
+            if (Lingo.storageGet(name) !== encoded) Lingo.storageSet(name, encoded);
+            if (Lingo.storageGet(name) !== encoded) throw new Error('Không đủ bộ nhớ để lưu thay đổi. Hãy xuất sao lưu và giải phóng dung lượng.');
+        }
+        NEW.vocab = vocab; NEW.srs = srs;
+        return true;
+    } catch (error) {
+        if (oldVocab === null) Lingo.storageRemove('hskpro_vocab'); else Lingo.storageSet('hskpro_vocab', oldVocab);
+        if (oldSrs === null) Lingo.storageRemove('hskpro_srs'); else Lingo.storageSet('hskpro_srs', oldSrs);
+        toast(error.message, 'error'); return false;
+    }
+}
+
 function saveEdit(originalItem, modal) {
     // 1. Lấy giá trị thô
     let rawHanzi = $('#fHanzi', modal).value.trim();
@@ -2436,14 +2453,15 @@ function saveEdit(originalItem, modal) {
     // --- KẾT THÚC TÍCH HỢP ---
 
     // 3. Làm sạch dữ liệu lần cuối (Sanitize)
-    const hanzi = MiniFirewall.sanitize(rawHanzi);
-    const pinyin = MiniFirewall.sanitize(rawPinyin);
-    const vietnamese = MiniFirewall.sanitize(rawVietnamese);
-    const example = MiniFirewall.sanitize(rawExample);
+    const hanzi = rawHanzi.normalize('NFC');
+    const pinyin = rawPinyin;
+    const vietnamese = rawVietnamese;
+    const example = rawExample;
 
     // 4. Lưu dữ liệu
     const image = $('#fImage', modal).value.trim();
     const data = {
+        ...originalItem,
         hanzi,
         pinyin,
         vietnamese,
@@ -2455,15 +2473,23 @@ function saveEdit(originalItem, modal) {
         aiVerified: false // <--- THÊM DÒNG NÀY: Mọi thay đổi thủ công đều cần AI quét lại
     };
 
-    const i = NEW.vocab.findIndex(v => v.hanzi === (originalItem?.hanzi || hanzi));
+    if (!hanzi || ['__proto__','constructor','prototype'].includes(Vocabulary.key(hanzi))) return toast('Hãy nhập từ hợp lệ.', 'warning');
+    if (!vietnamese) return toast('Hãy nhập nghĩa tiếng Việt.', 'warning');
+    if (data.hskLevel !== null && (!Number.isInteger(data.hskLevel) || data.hskLevel < 1 || data.hskLevel > 9)) return toast('HSK phải là 1–9 hoặc để trống.', 'warning');
+    const i = originalItem ? NEW.vocab.indexOf(originalItem) : -1;
+    if (originalItem && i < 0) return toast('Từ đã thay đổi. Hãy đóng và mở lại biểu mẫu.', 'warning');
+    const nextVocab = [...NEW.vocab], nextSrs = { ...NEW.srs };
+    const duplicate = NEW.vocab.find((v, index) => index !== i && Vocabulary.key(v.hanzi) === Vocabulary.key(hanzi));
+    if (duplicate) return toast('Từ này đã có trong kho. Hãy sửa bản ghi hiện có để tránh trùng.', 'warning');
     if (i >= 0) {
-        // Giữ lại trạng thái verified nếu người dùng KHÔNG sửa nghĩa (tùy chọn, ở đây ta cứ reset cho chắc)
-        NEW.vocab[i] = data;
-    } else {
-        NEW.vocab.push(data);
-    }
-    if (!NEW.srs[data.hanzi]) NEW.srs[data.hanzi] = { box: 1, next: todayStr(), reviewed: 0, mastered: false };
-    storage.set('hskpro_vocab', NEW.vocab); storage.set('hskpro_srs', NEW.srs);
+        nextVocab[i] = data;
+        if (originalItem.hanzi !== hanzi && nextSrs[originalItem.hanzi]) {
+            nextSrs[hanzi] = { ...nextSrs[originalItem.hanzi] };
+            if (!nextVocab.some(v => v.hanzi === originalItem.hanzi)) delete nextSrs[originalItem.hanzi];
+        }
+    } else nextVocab.push(data);
+    if (!nextSrs[hanzi]) nextSrs[hanzi] = { box: 1, next: todayStr(), reviewed: 0, mastered: false };
+    if (!persistVocabulary(nextVocab, nextSrs)) return;
 
     logAction(i >= 0 ? 'edit-vocab' : 'add-vocab', data.hanzi);
 
@@ -2471,12 +2497,13 @@ function saveEdit(originalItem, modal) {
     modal.close(); renderVocab(); toast(i >= 0 ? 'Đã lưu thay đổi.' : 'Đã thêm từ mới.', 'success');
 }
 function confirmDelete(item, modal) {
-    showConfirm(`Bạn có chắc muốn xóa từ "${item.hanzi}"?`, () => {
-        const i = NEW.vocab.findIndex(v => v.hanzi === item.hanzi);
-        if (i >= 0) NEW.vocab.splice(i, 1);
-        delete NEW.srs[item.hanzi];
-        storage.set('hskpro_vocab', NEW.vocab);
-        storage.set('hskpro_srs', NEW.srs);
+    showConfirm(`Bạn có chắc muốn xóa từ "${MiniFirewall.sanitize(item.hanzi)}"?`, () => {
+        const i = NEW.vocab.indexOf(item);
+        if (i < 0) return toast('Từ đã được xóa hoặc thay đổi.', 'warning');
+        const nextVocab = [...NEW.vocab], nextSrs = { ...NEW.srs };
+        nextVocab.splice(i, 1);
+        if (!nextVocab.some(v => v.hanzi === item.hanzi)) delete nextSrs[item.hanzi];
+        if (!persistVocabulary(nextVocab, nextSrs)) return;
 
         // --- THÊM DÒNG NÀY ---
         logAction('delete-vocab', item.hanzi);
@@ -2491,8 +2518,8 @@ function confirmDelete(item, modal) {
 // (HÀM MỚI: Thêm vào gần renderVocab)
 function renderVocabStats() {
     const total = NEW.vocab.length;
-    const mastered = NEW.vocab.filter(v => NEW.srs[v.hanzi]?.mastered || NEW.srs[v.hanzi]?.box >= 5).length;
-    const fresh = NEW.vocab.filter(v => !NEW.srs[v.hanzi] || NEW.srs[v.hanzi].box === 1).length;
+    const mastered = Vocabulary.unique(NEW.vocab).filter(v => NEW.srs[v.hanzi]?.mastered).length;
+    const fresh = NEW.vocab.filter(v => Vocabulary.fresh(NEW.srs[v.hanzi])).length;
     $('#statV_total').textContent = total;
     $('#statV_mastered').textContent = mastered;
     $('#statV_new').textContent = fresh;
@@ -2501,9 +2528,9 @@ function renderVocabStats() {
 // (HÀM MỚI: Thêm vào gần renderVocab)
 function handleLearnNew(e) {
     const level = e.currentTarget.dataset.level;
-    const newWords = NEW.vocab.filter(v =>
+    const newWords = filteredVocabulary().filter(v =>
         vocabLevelGroup(v.hskLevel) === level &&
-        (NEW.srs[v.hanzi]?.box === 1 || !NEW.srs[v.hanzi]) // Lấy từ box 1 hoặc chưa có trong SRS
+        (Vocabulary.fresh(NEW.srs[v.hanzi])) // Lấy từ box 1 hoặc chưa có trong SRS
     );
     const list = shuffle(newWords).slice(0, 10);
     if (list.length > 0) {
@@ -2518,11 +2545,11 @@ function handleLearnNew(e) {
 // (HÀM MỚI: Thêm vào gần renderVocab)
 function handleCram(e) {
     const level = e.currentTarget.dataset.level;
-    const allWords = NEW.vocab.filter(v => vocabLevelGroup(v.hskLevel) === level);
+    const allWords = filteredVocabulary().filter(v => vocabLevelGroup(v.hskLevel) === level);
     if (allWords.length > 0) {
-        toast(`Bắt đầu ôn tập ${allWords.length} từ (${level === 'unknown' ? 'chưa phân cấp' : 'HSK ' + level})...`);
+        toast(`Bắt đầu luyện tự do ${Math.min(30, allWords.length)} từ (${level === 'unknown' ? 'chưa phân cấp' : 'HSK ' + level})...`);
         show('review');
-        startSRS(shuffle(allWords)); // Bắt đầu phiên SRS với TẤT CẢ từ
+        startSRS(shuffle(allWords).slice(0, 30), 'practice'); // Bắt đầu phiên SRS với TẤT CẢ từ
     }
 }
 
@@ -2616,39 +2643,41 @@ const boxIntervals = { 1: 0, 2: 1, 3: 3, 4: 7, 5: 14 };
 let srsRecognition = null;
 let srsIsRecording = false;
 
+let srsSessionMode = 'review';
+let srsRetryWords = new Set();
 function buildSRSQueue() {
-    const today = todayStr();
-    const due = NEW.vocab.filter(v => (NEW.srs[v.hanzi]?.next || today) <= today);
-    if (due.length === 0) {
-        $('#srsEmpty').classList.remove('hidden');
-        $('#srsWrap').classList.add('hidden');
-        return;
-    }
-    $('#srsEmpty').classList.add('hidden');
-    $('#srsWrap').classList.remove('hidden');
-
-    // Khởi tạo ghi âm ngay khi vào chế độ ôn tập
-    initSrsSpeech();
-
-    startSRS(shuffle(due));
+    const due = Vocabulary.unique(NEW.vocab).filter(v => Vocabulary.status(NEW.srs[v.hanzi]) === 'due')
+        .sort((a, b) => String(NEW.srs[a.hanzi]?.next || '').localeCompare(String(NEW.srs[b.hanzi]?.next || '')));
+    $('#dueCount').textContent = due.length;
+    startSRS(due.slice(0, 30));
 }
-
-function startSRS(list) {
-    srsQueue = list;
+function startSRS(list, mode = 'review') {
+    srsSessionMode = mode;
+    srsRetryWords = new Set();
+    srsQueue = Vocabulary.unique(list).slice(0, 30);
     srsIdx = 0;
     cur = null;
-    $('#dueCount').textContent = list.length;
+    $('#srsEmpty').classList.toggle('hidden', srsQueue.length > 0);
+    $('#srsWrap').classList.toggle('hidden', srsQueue.length === 0);
+    const note = $('#srsSessionNote');
+    if (note) note.textContent = mode === 'practice' ? 'Luyện tự do: không thay đổi lịch ôn hay tiến độ.' : 'Tối đa 30 từ/phiên. Từ chưa nhớ được nhắc lại một lần, rồi ôn tiếp ngày mai.';
+    initSrsSpeech();
     updateProgress();
-    showCard();
+    if (srsQueue.length) showCard();
 }
 
 // Biến toàn cục để lưu các instance của HanziWriter trong SRS
 let srsWriters = [];
 
 function showCard() {
+    if (srsIsRecording) srsStopRecord();
+    srsWriters.forEach(writer => { try { writer.cancelQuiz(); } catch {} });
     if (srsIdx >= srsQueue.length) {
-        toast('Hoàn thành phiên ôn hôm nay!', 'success');
-        buildSRSQueue();
+        cur = null;
+        $('#srsWrap').classList.add('hidden');
+        $('#srsEmpty').classList.remove('hidden');
+        $('#dueCount').textContent = Vocabulary.unique(NEW.vocab).filter(v => Vocabulary.status(NEW.srs[v.hanzi]) === 'due').length;
+        toast('Đã hoàn thành phiên học. Bạn có thể nghỉ hoặc bắt đầu phiên tiếp theo.', 'success');
         return;
     }
     cur = srsQueue[srsIdx];
@@ -2737,7 +2766,8 @@ function showCard() {
 
     // Thông tin chung
     metaEl.className = `chip hsk-${cur.hskLevel}`;
-    metaEl.textContent = `HSK ${cur.hskLevel}${cur.partOfSpeech ? ` • ${cur.partOfSpeech}` : ''} • Box ${NEW.srs[cur.hanzi]?.box || 1}`;
+    if (mode !== 'standard') metaEl.classList.add('opacity-0');
+    metaEl.textContent = `${vocabLevelGroup(cur.hskLevel) === 'unknown' ? 'Chưa phân cấp' : Lingo.level(cur.hskLevel)}${cur.partOfSpeech ? ` • ${cur.partOfSpeech}` : ''} • Box ${NEW.srs[cur.hanzi]?.box || 1}`;
 
     // Mặt sau (giữ nguyên)
     $('#srsVN').textContent = cur.vietnamese;
@@ -2761,6 +2791,7 @@ function showCard() {
 // Nút "Hiện Đáp Án" / Kiểm tra
 // Nút "Hiện Đáp Án" / Kiểm tra
 function showAnswer() {
+    if (!cur) return;
     const mode = document.getElementById('srsReviewMode').value;
 
     // Nếu đang ở chế độ viết: Hiển thị chữ mẫu và hủy Quiz
@@ -2796,24 +2827,38 @@ function showAnswer() {
     }
 }
 
+function bumpStreak() {
+    const today = todayStr();
+    const yesterday = new Date(); yesterday.setDate(yesterday.getDate() - 1);
+    if (NEW.streak.last !== today) {
+        NEW.streak.count = NEW.streak.last === Vocabulary.date(yesterday) ? (Number(NEW.streak.count) || 0) + 1 : 1;
+        NEW.streak.last = today;
+        storage.set('hskpro_streak', NEW.streak);
+    }
+    $('#streak').textContent = NEW.streak.count;
+}
+
 function rate(v) {
+    if (!cur || !['hard', 'good', 'easy'].includes(v) || $('#srsRatingButtons').classList.contains('hidden')) return;
+    $('#srsRatingButtons').classList.add('hidden');
     const reviewedWord = cur.hanzi;
-    const s = NEW.srs[cur.hanzi];
-    if (v === 'hard') { s.box = Math.max(1, s.box - 1); }
-    else if (v === 'easy') { s.box = Math.min(5, s.box + 2); }
-    else { s.box = Math.min(5, s.box + 1); }
-    const next = new Date();
-    next.setDate(next.getDate() + boxIntervals[s.box]);
-    s.next = next.toISOString().slice(0, 10);
-    s.reviewed = (s.reviewed || 0) + 1;
-    s.mastered = s.box >= 5 && s.reviewed >= 7;
-    storage.set('hskpro_srs', NEW.srs);
+    if (srsSessionMode !== 'practice') {
+        // Same-session retries reinforce recall without promoting the interval twice.
+        if (!cur._sessionRetry) {
+            const scheduled = { ...NEW.srs, [reviewedWord]: Vocabulary.schedule(NEW.srs[reviewedWord], v) };
+            if (!persistVocabulary(NEW.vocab, scheduled)) { $('#srsRatingButtons').classList.remove('hidden'); return; }
+        }
+        if (v === 'hard' && !srsRetryWords.has(reviewedWord)) {
+            srsRetryWords.add(reviewedWord);
+            srsQueue.push({ ...cur, _sessionRetry: true });
+        }
+        bumpStreak();
+        logAction('review', reviewedWord);
+        checkAllBadges();
+    }
     srsIdx++;
     updateProgress();
     showCard();
-    bumpStreak();
-    logAction('review', reviewedWord);
-    checkAllBadges();
 }
 
 function updateProgress() {
@@ -2832,10 +2877,10 @@ function srsCheckTyping(mode) {
 
     if (mode === 'pinyin') {
         answer = cur.pinyin.toLowerCase();
-        isCorrect = input === answer;
+        isCorrect = Vocabulary.answer(input, answer, mode === 'viet');
     } else { // 'viet'
         answer = cur.vietnamese.toLowerCase();
-        isCorrect = input === answer;
+        isCorrect = Vocabulary.answer(input, answer, mode === 'viet');
     }
 
     if (isCorrect) {
@@ -2993,6 +3038,7 @@ if (srsModeSelect) {
 
 // Phím tắt (giữ nguyên)
 document.onkeydown = (e) => {
+    if (e.repeat || e.target?.closest('input, textarea, select, [contenteditable="true"], dialog')) return;
     if (currentView === 'review') {
         // Nếu mặt sau chưa hiện, phím Space/1/2/3 sẽ hiện mặt sau
         if ($('#srsCardBack').classList.contains('hidden')) {
@@ -3047,6 +3093,7 @@ $('#qClassifier').onchange = (e) => $('#qClassifierOptions').classList.toggle('h
 // Gắn sự kiện cho nút điều hướng trong bài
 $('#qCheckBtn').onclick = checkAnswer;
 $('#qNextBtn').onclick = () => {
+    if (!qState.questions[qState.i]?.answered) return;
     qState.i++; // Tăng chỉ số câu hỏi
     nextQ();    // Sau đó mới gọi hàm hiển thị câu tiếp theo
 };
@@ -3056,6 +3103,7 @@ $('#qNextBtn').onclick = () => {
  * Sẽ tạo câu hỏi AI (ngữ pháp) trước khi bắt đầu
  */
 async function startQuiz(e) {
+    if (qState.isLoading) return;
     // Nếu nhấn nút "Làm lại", qState.currentSettings đã tồn tại
     const isRetry = qState.currentSettings && Object.keys(qState.currentSettings).length > 0;
     let settings;
@@ -3065,7 +3113,7 @@ async function startQuiz(e) {
     } else {
         // Lấy cài đặt mới từ form
         settings = {
-            count: Number($('#qCount').value) || 10,
+            count: Math.max(1, Math.min(50, Math.floor(Number($('#qCount').value) || 10))),
             hsk: $('#qHSK').value,
             useVocab: $('#qVocab').checked,
             vocabDir: $('input[name="qVocabDir"]:checked').value,
@@ -3095,12 +3143,16 @@ async function startQuiz(e) {
         return;
     }
 
-    let pool = NEW.vocab.filter(v => settings.hsk === 'all' || String(v.hskLevel) === settings.hsk);
+    let pool = shuffle(Vocabulary.unique(NEW.vocab).filter(v => (settings.hsk === 'all' || vocabLevelGroup(v.hskLevel) === settings.hsk) && v.vietnamese && (!settings.useTyping || settings.typingMode !== 'pinyin' || v.pinyin)));
+    qState.pool = pool;
     let minPool = types.some(t => ['mc_hz_vi', 'mc_vi_hz', 'audio'].includes(t)) ? 4 : (types.some(t => t.startsWith('type_')) ? 1 : 0);
 
     if (pool.length < minPool) {
         toast(`Cần ít nhất ${minPool} từ vựng (HSK ${settings.hsk}) cho các loại câu hỏi đã chọn.`, 'error');
         return;
+    }
+    if (types.some(t => ['mc_hz_vi', 'audio'].includes(t)) && new Set(pool.map(v => v.vietnamese.trim())).size < 4) {
+        toast('Cần ít nhất 4 nghĩa khác nhau để tạo trắc nghiệm hoặc bài nghe.', 'warning'); return;
     }
     let classifierPool = NEW.classifiers.filter(c => settings.hsk === 'all' || String(c.hskLevel) === settings.hsk);
 
@@ -3173,7 +3225,9 @@ async function startQuiz(e) {
 
             const result = await callGemini(prompt);
             const aiQuestions = parseAiJson(result);
-            aiQuestions.forEach(q => qState.questions.push({ type: 'grammar_ai', data: q }));
+            if (!Array.isArray(aiQuestions)) throw new Error('AI chưa trả về danh sách câu hỏi hợp lệ.');
+            aiQuestions.filter(q => q && typeof q.question === 'string' && typeof q.pinyin === 'string' && Array.isArray(q.options) && q.options.length === 4 && new Set(q.options).size === 4 && q.options.includes(q.answer)).slice(0, aiQuestionsNeeded).forEach(q => qState.questions.push({ type: 'grammar_ai', data: q }));
+            if (qState.questions.length < aiQuestionsNeeded) throw new Error('AI trả thiếu câu hỏi hợp lệ. Hãy thử lại hoặc tắt phần ngữ pháp AI.');
         }
 
         // --- Bước 2: Tạo các câu hỏi từ vựng & lượng từ (để lấp đầy) ---
@@ -3225,6 +3279,7 @@ async function startQuiz(e) {
         $('#quiz-active-view').classList.add('hidden');
         $('#quiz-setup-view').classList.remove('hidden');
     } finally {
+        qState.isLoading = false;
         // Reset nút start
         startBtn.innerHTML = originalBtnText;
         startBtn.disabled = false;
@@ -3272,35 +3327,25 @@ function nextQ() {
 /**
  * Hiển thị câu hỏi Trắc nghiệm (Hán tự -> Việt)
  */
-function renderQ_MC_HzVi(q) {
-    $('#qBody').innerHTML = `<div class="text-center"><div class="text-6xl font-bold">${q.data.hanzi}</div><div class="text-2xl text-slate-400 mt-2">${q.data.pinyin}</div></div>`;
-    const options = shuffle([q.data.vietnamese, ...shuffle(NEW.vocab.filter(v => v.hanzi !== q.data.hanzi)).slice(0, 3).map(v => v.vietnamese)]);
-
-    $('#qActions').innerHTML = options.map((opt, i) => `
-            <div>
-                <input type="radio" name="mc_option" id="opt${i}" value="${opt.replace(/"/g, '&quot;')}" class="sr-only peer">
-                <label for="opt${i}" class="btn btn-secondary w-full justify-start text-left peer-checked:bg-[var(--brand-light)] peer-checked:border-[var(--brand)] peer-checked:text-white">
-                    ${opt}
-                </label>
-            </div>
-        `).join('');
+function vocabularyQuizOptions(q, field) {
+    const options = Vocabulary.choices(qState.pool || NEW.vocab, q.data, field, shuffle);
+    const container = $('#qActions'); container.replaceChildren();
+    options.forEach((value, i) => {
+        const wrapper = document.createElement('div');
+        const input = document.createElement('input');
+        input.type = 'radio'; input.name = 'mc_option'; input.id = `opt${i}`; input.value = value; input.className = 'sr-only peer';
+        const label = document.createElement('label'); label.htmlFor = input.id; label.textContent = value;
+        label.className = 'btn btn-secondary w-full justify-start text-left peer-checked:bg-[var(--brand-light)] peer-checked:border-[var(--brand)]';
+        wrapper.append(input, label); container.append(wrapper);
+    });
 }
-
-/**
- * Hiển thị câu hỏi Trắc nghiệm (Việt -> Hán tự)
- */
+function renderQ_MC_HzVi(q) {
+    $('#qBody').textContent = q.data.hanzi;
+    vocabularyQuizOptions(q, 'vietnamese');
+}
 function renderQ_MC_ViHz(q) {
-    $('#qBody').innerHTML = `<div class="text-center"><div class="text-3xl font-medium">Từ nào có nghĩa là:</div><div class="text-4xl font-bold mt-2">${q.data.vietnamese}</div></div>`;
-    const options = shuffle([q.data.hanzi, ...shuffle(NEW.vocab.filter(v => v.hanzi !== q.data.hanzi)).slice(0, 3).map(v => v.hanzi)]);
-
-    $('#qActions').innerHTML = options.map((opt, i) => `
-            <div>
-                <input type="radio" name="mc_option" id="opt${i}" value="${opt.replace(/"/g, '&quot;')}" class="sr-only peer">
-                <label for="opt${i}" class="btn btn-secondary w-full justify-start text-left text-xl peer-checked:bg-[var(--brand-light)] peer-checked:border-[var(--brand)] peer-checked:text-white">
-                    ${opt}
-                </label>
-            </div>
-        `).join('');
+    $('#qBody').textContent = `Từ nào có nghĩa là: ${q.data.vietnamese}`;
+    vocabularyQuizOptions(q, 'hanzi');
 }
 
 /**
@@ -3308,7 +3353,7 @@ function renderQ_MC_ViHz(q) {
  */
 function renderQ_Type(q, mode) {
     const prompt = (mode === 'pinyin') ? 'Gõ Pinyin cho:' : 'Gõ nghĩa Tiếng Việt cho:';
-    $('#qBody').innerHTML = `<div class="text-center"><div class="text-2xl font-medium">${prompt}</div><div class="text-6xl font-bold mt-2">${q.data.hanzi}</div></div>`;
+    $('#qBody').innerHTML = `<div class="text-center"><div class="text-2xl font-medium">${prompt}</div><div class="text-6xl font-bold mt-2">${MiniFirewall.sanitize(q.data.hanzi)}</div></div>`;
 
     $('#qActions').innerHTML = `<input id="typeInput" class="form-input text-center text-lg" placeholder="...">`;
     $('#typeInput').focus();
@@ -3326,13 +3371,13 @@ function renderQ_Type(q, mode) {
  * Hiển thị câu hỏi Nghe
  */
 function renderQ_Audio(q) {
+    renderQ_MC_HzVi(q);
     $('#qBody').innerHTML = `<div class="text-center"><div class="text-3xl font-medium">Nghe và chọn nghĩa đúng:</div><button id="qAudioBtn" class="btn btn-primary p-4 rounded-full h-20 w-20 mx-auto my-4"><i data-lucide="volume-2" class="w-8 h-8"></i></button></div>`;
     $('#qAudioBtn').onclick = () => speak(q.data.hanzi, q.data.pinyin, q.data.hskLevel);
     lucide.createIcons($('#qAudioBtn'));
     // Không tự phát: chỉ đọc khi người dùng bấm nút loa.
 
-    // Tái sử dụng logic trắc nghiệm (Hán tự -> Việt)
-    renderQ_MC_HzVi(q);
+
 }
 
 /**
@@ -3414,6 +3459,7 @@ function renderQ_Classifier(q, mode) {
  */
 function checkAnswer() {
     const q = qState.questions[qState.i];
+    if (!q || q.answered || qState.isLoading) return;
     let userAnswer = '';
     let correctAnswer = '';
     let isCorrect = false;
@@ -3447,11 +3493,11 @@ function checkAnswer() {
             break;
         case 'type_pinyin':
             correctAnswer = q.data.pinyin.toLowerCase();
-            isCorrect = userAnswer.toLowerCase() === correctAnswer;
+            isCorrect = Vocabulary.answer(userAnswer, correctAnswer, q.type === 'type_viet');
             break;
         case 'type_viet':
             correctAnswer = q.data.vietnamese.toLowerCase();
-            isCorrect = userAnswer.toLowerCase() === correctAnswer;
+            isCorrect = Vocabulary.answer(userAnswer, correctAnswer, q.type === 'type_viet');
             break;
         case 'grammar_ai':
             correctAnswer = q.data.answer;
@@ -3467,6 +3513,7 @@ function checkAnswer() {
             break;
     }
 
+    q.answered = true;
     // 3. Hiển thị phản hồi
     const feedbackEl = $('#qFeedback');
     if (isCorrect) {
@@ -3475,7 +3522,7 @@ function checkAnswer() {
         feedbackEl.innerHTML = `<span class="text-green-400">Chính xác!</span>`;
     } else {
         qState.missed.push(q);
-        feedbackEl.innerHTML = `<span class="text-rose-400">Sai rồi.</span> Đáp án đúng là: <strong class="text-white">${correctAnswer}</strong>`;
+        feedbackEl.innerHTML = `<span class="text-rose-400">Sai rồi.</span> Đáp án đúng là: <strong class="text-white">${MiniFirewall.sanitize(correctAnswer)}</strong>`;
     }
 
     // 4. Khóa các lựa chọn
@@ -3518,8 +3565,8 @@ function showQuizResults() {
     if (qState.missed.length > 0) {
         missedListEl.innerHTML = '<h4 class="text-lg font-bold text-white mb-2">Các câu cần xem lại:</h4>' +
             qState.missed.map(q => {
-                let questionText = '';
-                let answerText = '';
+                let questionText = q.data.title || '';
+                let answerText = q.data.content || '';
 
                 switch (q.type) {
                     case 'mc_hz_vi':
@@ -3546,8 +3593,8 @@ function showQuizResults() {
                 }
 
                 return `<div class="p-3 bg-slate-800/50 rounded-lg text-sm">
-                            <p class="text-slate-400">Câu hỏi: ${questionText}</p>
-                            <p class="text-green-400">Đáp án đúng: <strong class="text-white">${answerText}</strong></p>
+                            <p class="text-slate-400">Câu hỏi: ${MiniFirewall.sanitize(questionText)}</p>
+                            <p class="text-green-400">Đáp án đúng: <strong class="text-white">${MiniFirewall.sanitize(answerText)}</strong></p>
                          </div>`;
             }).join('');
     } else {
@@ -5570,8 +5617,8 @@ async function performWebScan() {
                         if (emptyBatch.length > 0) {
                             if (currentBatch.length > 0) await new Promise(r => setTimeout(r, 5000));
 
-                            const words = emptyBatch.map(v => v.hanzi);
-                            const promptEnrich = `Viết ví dụ ngắn (HSK 3) cho: ${JSON.stringify(words)}. Trả JSON mảng: [{"h":"từ","ex":"Câu (Pinyin) - Nghĩa"}]`;
+                            const words = emptyBatch.map(v => ({hanzi:v.hanzi, meaning:v.vietnamese, level:v.hskLevel}));
+                            const promptEnrich = `Viết một ví dụ tự nhiên đúng nghĩa cho mỗi từ sau, theo cấp HSK của từng từ; nếu chưa phân cấp dùng cấu trúc đơn giản. Mỗi ví dụ gồm 3 dòng: chữ Hán, pinyin có dấu, nghĩa tiếng Việt. Không bỏ từ, không đổi từ: ${JSON.stringify(words)}. Trả JSON mảng: [{"h":"từ","ex":"Chữ Hán\\nPinyin\\nNghĩa tiếng Việt"}]`;
                             const resEnrich = await callGemini(promptEnrich);
                             const enriched = parseAiJson(resEnrich);
 
@@ -5579,10 +5626,9 @@ async function performWebScan() {
                                 const issues = [];
                                 enriched.forEach(item => {
                                     const v = NEW.vocab.find(x => x.hanzi === item.h);
-                                    if (v) {
-                                        v.example = item.ex;
-                                        // Nếu chỉ tạo ví dụ (và nghĩa đã đúng), ta coi là verified
-                                        if (!v.aiVerified) v.aiVerified = true;
+                                    if (v && emptyBatch.some(x => x.hanzi === item.h) && typeof item.ex === 'string' && item.ex.trim() && !v.example) {
+                                        v.example = item.ex.trim();
+                                        v.exampleReview = 'AI tạo, chưa duyệt thủ công';
                                         issues.push({ type: 'success', title: `+Ví dụ: ${item.h}`, detail: item.ex, action: null });
                                     }
                                 });
@@ -7154,7 +7200,7 @@ let srsChartInstance = null;
 /* ------------------------------ Stats & Logs ------------------------------ */
 function logAction(type, detail) {
     NEW.logs.unshift({ date: new Date().toISOString(), type, detail });
-    if (NEW.logs.length > 50) NEW.logs = NEW.logs.slice(0, 50);
+    if (NEW.logs.length > 5000) NEW.logs = NEW.logs.slice(0, 5000);
     storage.set('hskpro_logs', NEW.logs);
 }
 
@@ -7163,29 +7209,35 @@ function renderStats() {
     const today = todayStr();
 
     // Cập nhật các con số thống kê
-    const todayReviews = NEW.logs.filter(l => l.date.startsWith(today) && l.type === 'review').length;
+    const todayReviews = NEW.logs.filter(l => Vocabulary.date(new Date(l.date)) === today && l.type === 'review').length;
 
     // Kiểm tra an toàn các phần tử DOM trước khi gán
     const elV = $('#statV'); if (elV) elV.textContent = NEW.vocab.length;
-    const elM = $('#statM'); if (elM) elM.textContent = Object.values(NEW.srs).filter(x => x.mastered).length;
+    const elM = $('#statM'); if (elM) elM.textContent = Vocabulary.unique(NEW.vocab).filter(v => NEW.srs[v.hanzi]?.mastered).length;
     const elT = $('#statToday'); if (elT) elT.textContent = todayReviews;
     const elS = $('#statStreak'); if (elS) elS.textContent = NEW.streak.count;
 
     // --- PHẦN LOG (Giữ nguyên logic của bạn) ---
     const logListEl = $('#logList');
     if (logListEl) {
-        // ... (Giữ nguyên phần code render log của bạn) ...
-        // Để ngắn gọn, tôi không paste lại phần render log dài dòng ở đây, 
-        // bạn chỉ cần giữ nguyên phần đó.
+        const names = {'review':'Ôn từ', 'add-vocab':'Thêm từ', 'edit-vocab':'Sửa từ', 'delete-vocab':'Xóa từ', 'finish-quiz':'Làm bài tập'};
+        logListEl.replaceChildren();
+        const entries = NEW.logs.filter(l => names[l.type]).slice(0, 50);
+        if (!entries.length) logListEl.textContent = 'Chưa có hoạt động học từ vựng.';
+        entries.forEach(entry => {
+            const row = document.createElement('li'); row.className = 'p-3 border-b border-slate-700 text-sm';
+            row.textContent = `${new Date(entry.date).toLocaleString('vi-VN')} · ${names[entry.type]}: ${entry.detail || ''}`;
+            logListEl.appendChild(row);
+        });
     }
 
     // --- PHẦN BIỂU ĐỒ (SỬA LỖI CRASH Ở ĐÂY) ---
 
     // 1. Chuẩn bị dữ liệu (Giữ nguyên)
-    const hskData = [0, 0, 0, 0, 0, 0];
-    NEW.vocab.forEach(v => { if (v.hskLevel >= 1 && v.hskLevel <= 6) hskData[v.hskLevel - 1]++; });
+    const hskData = Array(10).fill(0);
+    NEW.vocab.forEach(v => { const level = vocabLevelGroup(v.hskLevel); hskData[level === 'unknown' ? 9 : Number(level) - 1]++; });
     const srsData = [0, 0, 0, 0, 0];
-    Object.values(NEW.srs).forEach(s => { if (s.box >= 1 && s.box <= 5) srsData[s.box - 1]++; });
+    Vocabulary.unique(NEW.vocab).map(v => NEW.srs[v.hanzi] || {box:1}).forEach(s => { if (s.box >= 1 && s.box <= 5) srsData[s.box - 1]++; });
 
     const computedStyle = getComputedStyle(document.body);
     const brandColor = computedStyle.getPropertyValue('--brand').trim() || '#14b8a6';
@@ -7200,7 +7252,7 @@ function renderStats() {
         hskChartInstance = new Chart(hskCtx, {
             type: 'doughnut',
             data: {
-                labels: ['HSK 1', 'HSK 2', 'HSK 3', 'HSK 4', 'HSK 5', 'HSK 6'],
+                labels: [...Array.from({length:9},(_,i) => Lingo.level(i + 1)), 'Chưa phân cấp'],
                 datasets: [{
                     label: 'Từ vựng',
                     data: hskData,
@@ -7224,7 +7276,7 @@ function renderStats() {
         srsChartInstance = new Chart(srsCtx, {
             type: 'bar',
             data: {
-                labels: ['Box 1 (Mới)', 'Box 2', 'Box 3', 'Box 4', 'Box 5 (Thuộc)'],
+                labels: ['Bậc 1', 'Bậc 2', 'Bậc 3', 'Bậc 4', 'Bậc 5'],
                 datasets: [{
                     label: 'Số thẻ',
                     data: srsData,
@@ -13073,21 +13125,6 @@ if (addButton) {
 // Sử dụng event delegation cho toàn bộ #vocabGrid
 // Sử dụng event delegation cho toàn bộ #vocabGrid
 $('#vocabGrid').addEventListener('click', (e) => {
-    // --- SỬA LỖI: SỰ KIỆN CLICK CHO THÀNH NGỮ (#idiomList) ---
-    const idiomListEl = $('#idiomList');
-    if (idiomListEl) {
-        idiomListEl.addEventListener('click', (e) => {
-            // 1. Kiểm tra xem có click vào tiêu đề thành ngữ không
-            const zoomTarget = e.target.closest('[data-zoom-target]');
-
-            if (zoomTarget) {
-                const hanzi = zoomTarget.dataset.hanzi;
-                if (hanzi) {
-                    showCharDecomposition(hanzi); // Gọi hàm phóng to
-                }
-            }
-        });
-    }
     // 1. Xử lý click vào chữ Hán để phóng to (MỚI)
     const zoomTarget = e.target.closest('[data-zoom-target]');
     if (zoomTarget) {
@@ -13219,17 +13256,7 @@ $('#bgUpload').addEventListener('change', async (e) => {
 });
 // --- DÁN ĐOẠN NÀY VÀO TRƯỚC DÒNG loadAppearance(); ---
 
-// Gắn sự kiện cho nút Đồng bộ Đám mây
-const btnPush = document.getElementById('btnPushCloud');
-const btnPull = document.getElementById('btnPullCloud');
-
-if (btnPush && btnPull) {
-    btnPush.onclick = pushToCloud;
-    btnPull.onclick = pullFromCloud;
-    console.log("Đã kích hoạt nút đồng bộ Supabase");
-} else {
-    console.error("Không tìm thấy nút đồng bộ Supabase");
-}
+// Firebase buttons are owned exclusively by firebase-connect.js.
 
 // -----------------------------------------------------
 
@@ -13954,13 +13981,13 @@ const handleImport = () => {
                                 pinyin: String(row.pinyin || '').trim(),
                                 vietnamese: String(row.vietnamese || '').trim(),
                                 example: String(row.example || '').trim(),
-                                hskLevel: Number(row.hskLevel) || 1,
+                                hskLevel: row.hskLevel == null || row.hskLevel === '' ? null : Number(row.hskLevel),
                                 partOfSpeech: String(row.partOfSpeech || ''),
                                 tags: []
                             };
                             if (!validateImportItem(item)) {
                                 item.hanzi = MiniFirewall.sanitize(item.hanzi);
-                                NEW.vocab.push(item);
+                                NEW.vocab = Vocabulary.merge(NEW.vocab, [item]).rows;
                                 if (!NEW.srs[item.hanzi]) NEW.srs[item.hanzi] = { box: 1, next: todayStr(), reviewed: 0, mastered: false };
                                 count++;
                             }
@@ -14033,7 +14060,7 @@ $('#btnTemplate').onclick = handleTemplate;
 
 $('#resetLeitner').onclick = () => {
     showConfirm('Đặt lại toàn bộ tiến độ SRS? Thao tác này sẽ đưa tất cả các thẻ về hộp 1.', () => {
-        Object.values(NEW.srs).forEach(s => { s.box = 1; s.next = todayStr(); s.mastered = false; });
+        Object.values(NEW.srs).forEach(s => { s.box = 1; s.next = todayStr(); s.mastered = false; s.reviewed = 0; s.lapses = 0; delete s.lastReviewed; });
         storage.set('hskpro_srs', NEW.srs);
         toast('Đã đặt lại tiến độ.', 'success');
         if (currentView === 'review') buildSRSQueue();
@@ -15892,6 +15919,22 @@ function removeTones(str) {
 }
 
 // --- 2. CẬP NHẬT LẠI HÀM RENDER TỪ VỰNG (VOCAB) ---
+function filteredVocabulary() {
+    const level = $('#filterHSK')?.value || 'all';
+    const state = $('#vocabStatus')?.value || 'all';
+    const sort = $('#vocabSort')?.value || 'original';
+    const query = removeTones($('#searchV')?.value || '');
+    const rows = NEW.vocab.filter(v => (level === 'all' || vocabLevelGroup(v.hskLevel) === level)
+        && (state === 'all' || Vocabulary.status(NEW.srs[v.hanzi]) === state)
+        && (!query || [v.hanzi, v.pinyin, v.vietnamese, v.partOfSpeech, ...(Array.isArray(v.tags) ? v.tags : [])].some(x => removeTones(x).includes(query))));
+    if (sort === 'word') rows.sort((a, b) => String(a.hanzi).localeCompare(String(b.hanzi)));
+    if (sort === 'due') rows.sort((a, b) => String(NEW.srs[a.hanzi]?.next || '9999').localeCompare(String(NEW.srs[b.hanzi]?.next || '9999')));
+    return rows;
+}
+function vocabPageHTML(items, limit = 24) {
+    return `<div class="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">${items.slice(0, limit).map(cardHTML).join('')}</div>` +
+        (items.length > limit ? `<button class="btn btn-secondary mt-4" data-more-vocab="true" data-limit="${limit}">Xem thêm (${Math.min(limit, items.length)}/${items.length})</button>` : '');
+}
 function renderVocab() {
     renderVocabStats(); // Cập nhật thống kê
     const grid = $('#vocabGrid');
@@ -15904,30 +15947,20 @@ function renderVocab() {
     let html = '';
 
     // Keep words whose source has no assigned level visible and searchable.
-    for (const level of [1, 2, 3, 4, 5, 6, 'unknown']) {
+    for (const level of [1, 2, 3, 4, 5, 6, 7, 8, 9, 'unknown']) {
 
         // Lọc theo cấp độ
-        const itemsInLevel = NEW.vocab.filter(v => vocabLevelGroup(v.hskLevel) === String(level));
+        const itemsInLevel = filteredVocabulary().filter(v => vocabLevelGroup(v.hskLevel) === String(level));
         if (level === 'unknown' && itemsInLevel.length === 0) continue;
 
         // Lọc theo từ khóa (Tìm cả có dấu và không dấu)
-        const items = itemsInLevel.filter(v => {
-            if (!qClean) return true;
-
-            // Chuẩn hóa dữ liệu nguồn an toàn
-            const h = String(v.hanzi || '').toLowerCase();
-            const p = removeTones(v.pinyin);
-            const vn = removeTones(v.vietnamese);
-
-            // Kiểm tra
-            return h.includes(qClean) || p.includes(qClean) || vn.includes(qClean) || String(v.hanzi || '').includes(qRaw);
-        });
+        const items = itemsInLevel;
 
         // Logic ẩn hiện nhóm
         if (hskFilter !== 'all' && hskFilter !== String(level)) continue;
-        if (items.length === 0 && qClean) continue;
+        if (items.length === 0) continue;
 
-        const newWords = itemsInLevel.filter(v => NEW.srs[v.hanzi]?.box === 1 || !NEW.srs[v.hanzi]).length;
+        const newWords = itemsInLevel.filter(v => Vocabulary.fresh(NEW.srs[v.hanzi])).length;
 
         // Tự động mở nếu đang tìm kiếm hoặc chọn filter cụ thể
         const isOpen = (hskFilter === String(level)) || (qClean && items.length > 0);
@@ -15950,7 +15983,7 @@ function renderVocab() {
                           <i data-lucide="zap" class="w-4 h-4"></i> Học ${Math.min(10, newWords)} từ mới
                       </button>
                       <button class="btn btn-secondary" data-act="cram" data-level="${level}" ${items.length === 0 ? 'disabled' : ''}>
-                          <i data-lucide="book-open" class="w-4 h-4"></i> Ôn tập toàn bộ (${items.length})
+                          <i data-lucide="book-open" class="w-4 h-4"></i> Luyện tự do (${Math.min(30, items.length)} từ)
                       </button>
                   </div>
                   
@@ -15958,7 +15991,7 @@ function renderVocab() {
                     ${isOpen
                 ? (items.length === 0
                     ? `<p class="text-slate-500 text-center">Không tìm thấy từ nào khớp với "${qRaw}".</p>`
-                    : `<div class="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">${items.map(cardHTML).join('')}</div>`)
+                    : vocabPageHTML(items))
                 : '<div class="text-center text-slate-500 p-4">(Click để mở danh sách)</div>'
             }
                   </div>
@@ -15984,22 +16017,14 @@ function renderVocab() {
                 const qRawInner = $('#searchV').value.trim().toLowerCase();
                 const qCleanInner = removeTones(qRawInner);
 
-                const items = NEW.vocab.filter(v => {
-                    if (vocabLevelGroup(v.hskLevel) !== String(level)) return false;
-                    if (!qCleanInner) return true;
-
-                    const h = String(v.hanzi || '').toLowerCase();
-                    const p = removeTones(v.pinyin);
-                    const vn = removeTones(v.vietnamese);
-                    return h.includes(qCleanInner) || p.includes(qCleanInner) || vn.includes(qCleanInner) || String(v.hanzi || '').includes(qRawInner);
-                });
+                const items = filteredVocabulary().filter(v => vocabLevelGroup(v.hskLevel) === String(level));
 
                 const placeholder = d.querySelector('[data-grid-placeholder="true"]');
                 if (placeholder) {
                     if (items.length === 0) {
                         placeholder.innerHTML = `<p class="text-slate-500 text-center">Không tìm thấy từ nào khớp với "${qRawInner}".</p>`;
                     } else {
-                        placeholder.innerHTML = `<div class="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">${items.map(cardHTML).join('')}</div>`;
+                        placeholder.innerHTML = vocabPageHTML(items);
                         lucide.createIcons(placeholder);
                     }
                 }
@@ -16123,165 +16148,34 @@ if (grammarSearchInput) {
 /* ------------------------------ LOGIC THƯ VIỆN TỪ (ĐÃ SỬA LỖI & TỐI ƯU) ------------------------------ */
 
 window.handleCheckVocabLibrary = function () {
-    console.log("Đang chạy kiểm tra từ vựng...");
-
-    const inputEl = document.getElementById('libInput');
-    const resultArea = document.getElementById('libResultArea');
-
-    if (!inputEl || !resultArea) {
-        alert("LỖI: Không tìm thấy giao diện thư viện từ.");
-        return;
-    }
-
-    const inputVal = inputEl.value;
-    if (!inputVal.trim()) {
-        if (typeof toast === 'function') toast('Vui lòng nhập từ để tra!', 'error');
-        else alert('Vui lòng nhập từ để tra!');
-        return;
-    }
-
-    // 1. Tách chuỗi nhập vào
-    const rawTerms = inputVal.split(/[\n,;]+/).map(t => t.trim()).filter(t => t !== '');
-
-    // 2. Lấy dữ liệu nguồn
-    const sourceData = (typeof NEW !== 'undefined' && NEW.vocab) ? NEW.vocab : [];
-
-    if (sourceData.length === 0) {
-        alert('Cơ sở dữ liệu web đang trống!');
-        return;
-    }
-
-    let foundHtml = '';
-    let notFoundList = [];
-
-    // 3. Duyệt và so sánh (ĐÃ SỬA LỖI)
-    rawTerms.forEach(term => {
-        const lowerTerm = term.toLowerCase();
-
-        // --- SỬA LỖI CHÍNH TẠI ĐÂY ---
-        // Sử dụng String() để bọc các giá trị, đảm bảo .toLowerCase() luôn hoạt động
-        // kể cả khi dữ liệu bị lỗi (null, undefined, số...)
-        const match = sourceData.find(item => {
-            // Kiểm tra an toàn từng trường
-            const hanzi = String(item.hanzi || '');
-            const pinyin = String(item.pinyin || '');
-            const vietnamese = String(item.vietnamese || '');
-
-            return (
-                hanzi === term ||
-                pinyin.toLowerCase() === lowerTerm ||
-                vietnamese.toLowerCase().includes(lowerTerm)
-            );
+    const terms = [...new Set($('#libInput').value.split(/[\n,;，；]+/).map(v => v.trim()).filter(Boolean))].slice(0, 100);
+    const result = $('#libResultArea'); result.replaceChildren();
+    if (!terms.length) { result.textContent = 'Nhập từ, phiên âm hoặc nghĩa để tra trong kho của bạn.'; return; }
+    terms.forEach(term => {
+        const query = removeTones(term);
+        const matches = NEW.vocab.filter(v => [v.hanzi, v.pinyin, v.vietnamese].some(value => removeTones(value).includes(query)));
+        const section = document.createElement('section');
+        const heading = document.createElement('p'); heading.className = 'font-bold mb-2';
+        heading.textContent = `${term}: ${matches.length} kết quả trong kho`; section.append(heading);
+        matches.slice(0, 20).forEach(item => {
+            const button = document.createElement('button'); button.className = 'btn btn-secondary w-full text-left mb-2';
+            button.textContent = `${item.hanzi} · ${item.pinyin || 'Chưa có phiên âm'} · ${item.vietnamese || 'Chưa có nghĩa'}`;
+            button.onclick = () => openLibDetail(item.hanzi); section.append(button);
         });
-
-        if (match) {
-            // TÌM THẤY
-            foundHtml += `
-                <div onclick="openLibDetail('${match.hanzi}')" class="group flex items-start gap-3 bg-slate-800 p-3 rounded border border-slate-600 cursor-pointer hover:bg-slate-700 hover:border-[var(--brand)] transition-all relative">
-                    
-                    <div class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity text-[var(--brand)]">
-                        <i data-lucide="info" class="w-4 h-4"></i>
-                    </div>
-
-                    <div class="bg-teal-900/50 text-teal-400 p-2 rounded font-bold text-xl min-w-[50px] text-center border border-teal-800">
-                        ${match.hanzi}
-                    </div>
-                    <div>
-                        <div class="text-slate-400 text-sm font-mono">${match.pinyin}</div>
-                        <div class="text-white font-medium group-hover:text-[var(--brand-light)] transition-colors">${match.vietnamese}</div>
-                        <div class="text-xs text-slate-500 mt-1">HSK ${match.hskLevel || '?'}</div>
-                    </div>
-                </div>
-            `;
-
-        } else {
-            // KHÔNG TÌM THẤY
-            notFoundList.push(term);
-        }
+        if (matches.length > 20) { const note = document.createElement('p'); note.textContent = 'Hiện 20 kết quả đầu. Dùng tìm kiếm trong kho để xem thêm.'; section.append(note); }
+        result.append(section);
     });
-
-    // 4. Hiển thị kết quả
-    let finalHtml = '';
-
-    if (foundHtml) {
-        finalHtml += `<div class="space-y-2 mb-6">${foundHtml}</div>`;
-    }
-
-    if (notFoundList.length > 0) {
-        finalHtml += `
-            <div class="p-4 bg-rose-900/20 border border-rose-800 rounded">
-                <h5 class="text-rose-400 font-bold text-sm mb-2 flex items-center gap-2">
-                    <i data-lucide="alert-circle" class="w-4 h-4"></i>
-                    Không tìm thấy (${notFoundList.length} từ):
-                </h5>
-                <div class="flex flex-wrap gap-2">
-                    ${notFoundList.map(t => `<span class="px-2 py-1 bg-rose-950 text-rose-300 text-xs rounded border border-rose-900">${t}</span>`).join('')}
-                </div>
-            </div>
-        `;
-    }
-
-    if (!finalHtml) finalHtml = '<div class="text-center text-slate-500 italic p-10">Không tìm thấy kết quả nào.</div>';
-
-    resultArea.innerHTML = finalHtml;
-
-    // Cập nhật icon
-    if (typeof lucide !== 'undefined') lucide.createIcons();
 };
-/* ------------------------------ LOGIC CHI TIẾT TỪ VỰNG (THƯ VIỆN) ------------------------------ */
-
 window.openLibDetail = function (hanzi) {
-    // 1. Tìm thông tin từ vựng trong CSDL
-    const item = NEW.vocab.find(v => v.hanzi === hanzi);
-
-    if (!item) {
-        toast('Không tìm thấy thông tin chi tiết.', 'error');
-        return;
-    }
-
-    const modal = document.getElementById('libDetailModal');
-    const content = document.getElementById('libDetailContent');
-
-    // 2. Tạo nội dung HTML chi tiết
-    content.innerHTML = `
-        <div class="p-8 text-center bg-gradient-to-b from-slate-800 to-slate-900">
-            <div class="inline-block mb-2 px-3 py-1 rounded-full bg-slate-700/50 border border-slate-600 text-xs text-slate-300">
-                HSK ${item.hskLevel || '?'} • ${item.partOfSpeech || 'Từ vựng'}
-            </div>
-            
-            <h2 class="text-6xl font-bold text-white mb-2 font-[serif]">${item.hanzi}</h2>
-            
-            <div class="text-xl text-[var(--brand)] font-mono mb-6 flex items-center justify-center gap-3">
-                <span>${item.pinyin}</span>
-                <button onclick="speak('${item.hanzi}', '${item.pinyin}', ${item.hskLevel})" class="btn btn-circle btn-primary w-10 h-10 p-0 flex items-center justify-center shadow-lg hover:scale-110 transition-transform">
-                    <i data-lucide="volume-2" class="w-5 h-5"></i>
-                </button>
-            </div>
-        </div>
-
-        <div class="p-6 space-y-4 bg-slate-950">
-            <div>
-                <h5 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Nghĩa tiếng Việt</h5>
-                <p class="text-lg text-white font-medium">${item.vietnamese}</p>
-            </div>
-
-            <div class="p-4 bg-slate-900 rounded-lg border border-slate-800">
-                <h5 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Ví dụ / Câu mẫu</h5>
-                <p class="text-slate-300 italic">"${item.example || 'Chưa có ví dụ.'}"</p>
-            </div>
-
-            <div class="flex gap-2 pt-2">
-                <span class="text-xs text-slate-600">Tags: ${(item.tags || []).join(', ') || 'Không có'}</span>
-            </div>
-        </div>
-    `;
-
-    // 3. Render icon và mở Modal
-    if (typeof lucide !== 'undefined') lucide.createIcons(content);
-    modal.showModal();
-
-    // Tự động phát âm khi mở (tùy chọn, nếu thích thì bỏ comment dòng dưới)
-    // speak(item.hanzi, item.pinyin, item.hskLevel);
+    const item = NEW.vocab.find(v => v.hanzi === hanzi); if (!item) return;
+    const content = $('#libDetailContent'); content.replaceChildren(); content.className = 'p-6 space-y-4';
+    const fields = [item.hanzi, item.pinyin || 'Chưa có phiên âm', item.vietnamese,
+        vocabLevelGroup(item.hskLevel) === 'unknown' ? 'Chưa phân cấp' : Lingo.level(item.hskLevel),
+        item.example || 'Chưa có ví dụ', (Array.isArray(item.tags) ? item.tags : []).join(', ')];
+    fields.forEach((value, index) => { const node = document.createElement(index === 0 ? 'h2' : 'p'); node.textContent = value; node.style.whiteSpace = 'pre-line'; if (!index) node.className = 'text-4xl font-bold pr-8'; content.append(node); });
+    const audio = document.createElement('button'); audio.className = 'btn btn-secondary'; audio.textContent = 'Nghe phát âm'; audio.onclick = () => speak(item.hanzi, item.pinyin, item.hskLevel);
+    const edit = document.createElement('button'); edit.className = 'btn btn-primary'; edit.textContent = 'Sửa từ'; edit.onclick = () => { $('#libDetailModal').close(); $('#vocabLibraryModal').close(); openEdit(item); };
+    content.append(audio, edit); $('#libDetailModal').showModal();
 };
 /* ------------------------------ AUDIO TRANSLATION & KARAOKE DOC ------------------------------ */
 

@@ -1,6 +1,5 @@
 /* Firebase is loaded only after the user supplies their own web configuration. */
 (() => {
-  // Firebase Authentication requires an http(s) origin. index.html blocks file:// before this script loads.
   // Keep local access consistent with the single Authorized domain: localhost.
   if (location.hostname === '127.0.0.1') {
     const localUrl = new URL(location.href);
@@ -9,7 +8,7 @@
     return;
   }
 
-  const keys = ['vocab','ignored_words','srs','grammar','rules','classifiers','idioms','dialogues','reading','logs','badges','streak'].map(x=>'hskpro_'+x).concat('writing_draft');
+  const keys = ['vocab','ignored_words','srs','grammar','rules','classifiers','idioms','dialogues','reading','translations','logs','badges','streak'].map(x=>'hskpro_'+x).concat('writing_draft');
   const configKey = 'lingo_firebase_web_config';
   let auth, db, sdk, busy = false;
   const panel = document.createElement('section');
@@ -21,10 +20,11 @@
     <textarea id="fb-config" class="form-input" rows="8" placeholder="const firebaseConfig = { ... };"></textarea>
     <button id="fb-config-save" class="btn btn-secondary" type="button">Lưu cấu hình và tải lại</button></details>
     <div style="display:flex;flex-wrap:wrap;gap:8px;margin:12px 0">
-    <button id="fb-login" class="btn btn-primary" disabled>Đăng nhập Google</button>
-    <button id="fb-logout" class="btn btn-secondary" disabled>Đăng xuất</button>
-    <button id="fb-push" class="btn btn-primary" disabled>Lưu lên Firebase</button>
-    <button id="fb-pull" class="btn btn-secondary" disabled>Tải từ Firebase</button></div>
+    <button id="fb-login" type="button" class="btn btn-primary" disabled>Đăng nhập Google</button>
+    <button id="fb-logout" type="button" class="btn btn-secondary" disabled>Đăng xuất</button>
+    <button id="fb-push" type="button" class="btn btn-primary" disabled>Lưu web lên Firebase</button>
+    <button id="fb-pull" type="button" class="btn btn-secondary" disabled>Khôi phục từ Firebase</button></div>
+    <p>Lưu web lên Firebase: cập nhật bản trên đám mây, không tải file xuống. Khôi phục từ Firebase: thay dữ liệu trên web bằng bản trên đám mây và tải một file dự phòng trước khi thay.</p>
     <p id="fb-status" role="status">Chưa có cấu hình Firebase.</p>
     <p>Bản sao gồm từ vựng, ôn tập, bài đọc, ngữ pháp, hội thoại, thống kê và bản nháp viết. Không gồm khóa AI, cài đặt, mã tùy chỉnh, tệp nghe/nói, ảnh và video. Hỗ trợ bản sao đến 32 MB mỗi ngôn ngữ, tự chia phần khi tải lên. Giữ bản sao trước nếu tải lên bị lỗi.</p>`;
   const el = id => panel.querySelector('#fb-'+id);
@@ -33,14 +33,21 @@
     el('login').disabled = busy || !auth || !!auth.currentUser;
     ['logout','push','pull'].forEach(id=>el(id).disabled=busy || !auth?.currentUser);
     el('config-save').disabled=busy;
+    for (const id of ['btnPushCloud','btnPullCloud']) { const button=document.getElementById(id); if(button)button.disabled=busy; }
   }
-  function snapshot() {
-    return Object.fromEntries(keys.map(k=>[k,localStorage.getItem(Lingo.prefix+k)]));
+  function snapshot(current = false) {
+    return Object.fromEntries(keys.map(k => {
+      const field = k.startsWith('hskpro_') ? k.slice(7) : null;
+      // Export current app state, including edits not yet reflected in localStorage.
+      const live = current && field && typeof NEW !== 'undefined' && Object.prototype.hasOwnProperty.call(NEW, field);
+      return [k, live ? JSON.stringify(NEW[field]) : localStorage.getItem(Lingo.prefix+k)];
+    }));
   }
   function validate(data) {
     if (!data || data.version!==1 || data.language!==Lingo.lang || !data.values || typeof data.values!=='object' || Array.isArray(data.values)) throw Error('Bản sao không đúng định dạng hoặc ngôn ngữ.');
     for(const key of keys) {
       const value=data.values[key];
+      if (key === 'hskpro_translations' && value === undefined) continue; // Older snapshots did not contain this field.
       if(value!==null && typeof value!=='string') throw Error('Bản sao thiếu hoặc sai dữ liệu.');
       if(value!==null && key!=='writing_draft') JSON.parse(value);
     }
@@ -94,8 +101,8 @@
       return el(action).onclick?.();
     };
     const pushButton=document.getElementById('btnPushCloud'),pullButton=document.getElementById('btnPullCloud');
-    if(pushButton)pushButton.onclick=()=>openFirebase('push');
-    if(pullButton)pullButton.onclick=()=>openFirebase('pull');
+    if(pushButton)pushButton.onclick=event=>{event?.preventDefault?.();return openFirebase('push');};
+    if(pullButton)pullButton.onclick=event=>{event?.preventDefault?.();return openFirebase('pull');};
     const saved=localStorage.getItem(configKey); if(!saved)return;
     el('config').value=JSON.stringify(JSON.parse(saved),null,2);
     await run(async()=>{
@@ -125,12 +132,15 @@
       el('logout').onclick=()=>run(()=>A.signOut(auth));
       const ref=()=>sdk.doc(db,'users',auth.currentUser.uid,'languages',Lingo.lang);
       el('push').onclick=()=>run(async()=>{
-        if(!confirm('Lưu dữ liệu '+Lingo.name+' trên máy này vào tài khoản '+auth.currentUser.email+'? Bản sao trên Firebase sẽ bị thay thế.'))return;
-        const data={version:1,language:Lingo.lang,values:snapshot()}; validate(data);
+        if(!auth.currentUser)throw Error('Hãy đăng nhập Google trước khi lưu.');
+        const user=auth.currentUser, target=ref();
+        if(!confirm('LƯU WEB → FIREBASE\nCập nhật dữ liệu '+Lingo.name+' đang có trên web vào tài khoản '+user.email+'? Bản trên Firebase sẽ được thay thế, dữ liệu trên web giữ nguyên. Không tải file xuống máy.')){status('Đã hủy tải lên.');return;}
+        const data={version:1,language:Lingo.lang,values:snapshot(true)}; validate(data);
         if(navigator.onLine===false)throw Error('Đang ngoại tuyến. Hãy kết nối mạng rồi lưu lại.');
         status('Đang chuẩn bị bản sao…');
-        const saved=await LingoFirebaseBackup.upload({sdk,db,ref:ref(),data,onProgress:(done,total)=>status('Đang lưu lên Firebase: '+done+'/'+total+' phần…')});
-        status('Đã lưu '+Lingo.name+' lên Firebase ('+(saved.byteLength/1024/1024).toFixed(2)+' MB).');
+        const saved=await LingoFirebaseBackup.upload({sdk,db,ref:target,data,onProgress:(done,total)=>status('Đang lưu lên Firebase: '+done+'/'+total+' phần…')});
+        const count=JSON.parse(data.values.hskpro_vocab || '[]').length;
+        status('Đã cập nhật Firebase: '+count+' từ vựng · '+Lingo.name+' · '+user.email+' · '+new Date().toLocaleTimeString('vi-VN')+' ('+(saved.byteLength/1024/1024).toFixed(2)+' MB).');
       });
       el('pull').onclick=()=>run(async()=>{
         if(navigator.onLine===false)throw Error('Đang ngoại tuyến. Hãy kết nối mạng rồi tải lại.');
@@ -139,7 +149,7 @@
         const values=validate(data);
         if(!confirm('Thay dữ liệu '+Lingo.name+' trên máy bằng bản sao từ '+auth.currentUser.email+'? Hãy lưu biểu mẫu đang nhập trước. Một bản sao dữ liệu hiện tại sẽ được tải xuống.')){status('Đã hủy khôi phục.');return;}
         const old=snapshot(); backup(old);
-        try{for(const k of keys){const v=values[k]; if(v===null)localStorage.removeItem(Lingo.prefix+k);else localStorage.setItem(Lingo.prefix+k,v);}}
+        try{for(const k of keys){const v=values[k]; if(v===undefined)continue; if(v===null)localStorage.removeItem(Lingo.prefix+k);else localStorage.setItem(Lingo.prefix+k,v);}}
         catch(error){for(const k of keys){if(old[k]===null)localStorage.removeItem(Lingo.prefix+k);else localStorage.setItem(Lingo.prefix+k,old[k]);}throw error;}
         location.reload();
       });
