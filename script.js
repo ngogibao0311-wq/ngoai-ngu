@@ -556,10 +556,12 @@ function renderAiPracticeExercise(data, contentEl) {
 
 // ************************* HÀM SPEAK ĐÃ SỬA (THEO HSK) *************************
 // SỬA LỖI: Thêm onEndCallback làm tham số thứ 4
+let speechGeneration = 0;
 let pendingSpeechTimer = null;
 let pendingAutoSpeechTimer = null;
 
 function stopSpeech() {
+    speechGeneration++;
     if (pendingSpeechTimer) {
         clearTimeout(pendingSpeechTimer);
         pendingSpeechTimer = null;
@@ -573,7 +575,10 @@ function stopSpeech() {
     }
 }
 
-function speak(text, pinyin, hskLevel = 3, onEndCallback = null) {
+function speak(text, pinyin, hskLevel = 3, onEndCallback = null, options = {}) {
+    stopSpeech();
+    const generation = speechGeneration;
+    if (typeof speechSynthesis === 'undefined') { toast('Trình duyệt chưa hỗ trợ đọc văn bản.', 'warning'); return; }
 
     // Mỗi yêu cầu mới phải hủy lần phát đang chờ để tránh phát lặp/ phát lại sau khi người dùng đổi mục.
     if (pendingSpeechTimer) {
@@ -624,10 +629,11 @@ function speak(text, pinyin, hskLevel = 3, onEndCallback = null) {
         rate = 1.0;  // Tốc độ bình thường cho HSK 4+
     }
 
-    utterance.rate = rate;
+    utterance.rate = Number(options.rate) || rate;
     // --- KẾT THÚC LOGIC TỐC ĐỘ ---
 
     utterance.onend = () => {
+        if (generation !== speechGeneration) return;
         resumeMusic(); // <-- Phát lại nhạc khi nói xong
         if (onEndCallback) { // <--- GỌI CALLBACK NẾU CÓ
             onEndCallback();
@@ -635,6 +641,8 @@ function speak(text, pinyin, hskLevel = 3, onEndCallback = null) {
     };
 
     utterance.onerror = (e) => {
+        if (generation !== speechGeneration || ['canceled','interrupted'].includes(e.error)) return;
+        if (options.onError) { options.onError(e); resumeMusic(); return; }
         console.error('Lỗi phát âm:', e);
         resumeMusic(); // <-- Phát lại nhạc ngay cả khi lỗi
         if (onEndCallback) { // <--- GỌI CALLBACK KHI LỖI (QUAN TRỌNG)
@@ -648,7 +656,7 @@ function speak(text, pinyin, hskLevel = 3, onEndCallback = null) {
     // ngăn chặn việc 'onend' không được gọi (nguyên nhân gây kẹt).
     pendingSpeechTimer = setTimeout(() => {
         pendingSpeechTimer = null;
-        speechSynthesis.speak(utterance);
+        if (generation === speechGeneration) speechSynthesis.speak(utterance);
     }, 50);
     // --- KẾT THÚC SỬA LỖI CHÍNH ---
 }
@@ -2785,7 +2793,7 @@ function showCard() {
     $('#srsShowAnswerBtn').classList.remove('hidden');
 
     // Tự động phát âm (trừ chế độ viết vì lộ đáp án)
-    if (NEW.options.autoTTS && mode !== 'write') speak(cur.hanzi, cur.pinyin, cur.hskLevel);
+    // Opening a review card never starts speech.
 }
 
 // Nút "Hiện Đáp Án" / Kiểm tra
@@ -2823,7 +2831,7 @@ function showAnswer() {
         $('#srsWriterArea').classList.add('hidden');
     } else {
         // Phát âm khi hiện đáp án ở chế độ viết
-        speak(cur.hanzi, cur.pinyin, cur.hskLevel);
+        // Use the speaker button to hear the answer.
     }
 }
 
@@ -4035,7 +4043,7 @@ async function saveRecommendedVideo(encodedData, btn) {
         // Lưu ý: AI chỉ trả về Tiêu đề, nên URL sẽ là Link tìm kiếm Google (như logic bạn đã viết trong handleAiFindVideos)
         const videoItem = {
             title: data.title,
-            desc: `(Gợi ý AI) ${data.description}\nNền tảng: ${data.platform}`,
+            desc: data.desc || data.description || '',
             hskLevel: Number(data.hskLevel) || 3,
             type: 'url',
             url: data.url // Đây là link Google Search
@@ -4045,9 +4053,9 @@ async function saveRecommendedVideo(encodedData, btn) {
         const tx = db.transaction(['videos'], 'readwrite');
         const store = tx.objectStore('videos');
         store.add(videoItem);
+        await new Promise((resolve, reject) => { tx.oncomplete = resolve; tx.onerror = () => reject(tx.error); tx.onabort = () => reject(tx.error || new Error('Không lưu được video.')); });
 
-        // Đợi lưu xong
-        tx.oncomplete = () => {
+        {
             toast(`Đã lưu video "${data.title}" vào danh sách!`, 'success');
             // Đổi trạng thái nút thành công
             btn.innerHTML = `<i data-lucide="check" class="w-3 h-3 mr-1"></i> Đã lưu`;
@@ -4056,11 +4064,7 @@ async function saveRecommendedVideo(encodedData, btn) {
 
             // Cập nhật danh sách video nếu đang ở tab đó (tùy chọn)
             // renderVideos(); 
-        };
-
-        tx.onerror = (e) => {
-            throw new Error(e.target.error);
-        };
+        }
 
     } catch (error) {
         console.error("Lỗi khi lưu video:", error);
@@ -4113,163 +4117,9 @@ window.playYoutubeSearch = function (query) {
 };
 
 // Đổi tên hàm từ gán trực tiếp thành một hàm có tên
-async function handleStartListening(e) {
-    const btn = e.currentTarget;
-    const hskLevel = $('#listeningHskLevel').value;
-    const loader = $('#listeningLoader');
-    const content = $('#listeningContent');
-
-    const originalText = btn.innerHTML;
-    btn.innerHTML = `<i data-lucide="loader" class="w-4 h-4 spinner"></i> Đang tạo...`;
-    btn.disabled = true;
-    lucide.createIcons(btn);
-
-    content.classList.add('hidden');
-    loader.classList.remove('hidden');
-    $('#listeningFeedback').textContent = '';
-
-    try {
-        const vocabPool = NEW.vocab.filter(v => v.hskLevel <= hskLevel);
-        const randomWords = shuffle(vocabPool).slice(0, 3).map(v => v.hanzi).join(', ');
-
-        // (THAY THẾ BIẾN NÀY)
-        // (THAY THẾ TOÀN BỘ BIẾN NÀY)
-        // (THAY THẾ TOÀN BỘ BIẾN NÀY)
-        const prompt = LingoAI.listening(hskLevel, randomWords, Lingo.lang);
-        // (KẾT THÚC THAY THẾ)
-
-        const result = await callGemini(prompt);
-
-        currentListeningExercise = parseAiJson(result);
-
-        displayListeningExercise(hskLevel);
-
-    } catch (error) {
-        toast(`Lỗi khi tạo bài nghe AI: ${error.message}`, 'error');
-        $('#listeningFeedback').innerHTML = `<p class="text-rose-400">Không thể tạo bài tập. Vui lòng thử lại.</p>`;
-    } finally {
-        btn.innerHTML = originalText;
-        btn.disabled = false;
-        lucide.createIcons(btn);
-        loader.classList.add('hidden');
-    }
-};
-
-function displayListeningExercise(hskLevel) { // <-- Sửa 1: Nhận hskLevel
-    if (!currentListeningExercise) return;
-
-    const cleanSpeechText = currentListeningExercise.dialogue
-        .map(line => line.line)
-        .join('。');
-
-    const content = $('#listeningContent');
-    const dialogueTextEl = $('#listeningDialogueText');
-    const questionListEl = $('#listeningQuestionList');
-    const feedbackEl = $('#listeningFeedback');
-
-    // ... (Phần code render câu hỏi giữ nguyên) ...
-    dialogueTextEl.innerHTML = '';
-    questionListEl.innerHTML = '';
-    feedbackEl.innerHTML = '';
-
-    if (currentListeningExercise.dialogue) {
-        dialogueTextEl.innerHTML = currentListeningExercise.dialogue.map(line =>
-            `<p><strong class="text-[var(--brand)]">${line.role}:</strong> ${line.line} <span class="text-slate-400">(${line.pinyin || ''})</span></p>`
-        ).join('');
-    }
-    if (currentListeningExercise.questions) {
-        questionListEl.innerHTML = currentListeningExercise.questions.map((q, index) => {
-            const optionsHTML = Object.entries(q.options).map(([key, value]) => `
-                <div>
-                    <input type="radio" name="listen_q_${index}" id="listen_q_${index}_${key}" value="${key}" class="sr-only peer">
-                    <label for="listen_q_${index}_${key}" class="btn btn-secondary w-full justify-start text-left peer-checked:bg-[var(--brand-light)] peer-checked:border-[var(--brand)] peer-checked:text-white">
-                        <span class="font-bold mr-2">${key}.</span> ${value}
-                    </label>
-                </div>
-            `).join('');
-
-            return `
-            <div class="card p-4" data-q-index="${index}">
-                <p class="font-bold text-white">${index + 1}. ${q.question}</p>
-                <div class="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    ${optionsHTML}
-                </div>
-                <div class="mt-2 h-5 text-sm font-bold" data-feedback-for="${index}"></div>
-            </div>
-            `;
-        }).join('');
-    }
-    // ... (Kết thúc phần giữ nguyên) ...
-
-    // 4. Setup audio button
-    $('#listeningAudioBtn').onclick = () => {
-        speak(cleanSpeechText, null, hskLevel); // <-- Sửa 2: Thêm hskLevel
-    };
-
-    // 4.5. (NEW) Setup pause button
-    $('#listeningPauseBtn').onclick = () => {
-        speechSynthesis.cancel();
-        // cancel() will trigger utterance.onend, which calls resumeMusic()
-    };
-
-    // 5. Setup check button
-    $('#checkListeningAnswersBtn').onclick = checkListeningAnswers;
-    $('#checkListeningAnswersBtn').disabled = false;
-
-    // 6. Hiển thị nội dung. Không tự phát âm thanh khi mở/chọn mục;
-    // người dùng chủ động bấm nút nghe khi cần.
-    content.classList.remove('hidden');
-    lucide.createIcons(content);
-}
-
-function checkListeningAnswers() {
-    if (!currentListeningExercise || !currentListeningExercise.questions) return;
-
-    let correctCount = 0;
-    const totalQuestions = currentListeningExercise.questions.length;
-    const questionListEl = $('#listeningQuestionList');
-
-    currentListeningExercise.questions.forEach((q, index) => {
-        const selectedRadio = $(`input[name="listen_q_${index}"]:checked`, questionListEl);
-        const feedbackEl = $(`[data-feedback-for="${index}"]`, questionListEl);
-        const questionCard = $(`[data-q-index="${index}"]`, questionListEl);
-
-        if (!selectedRadio) {
-            feedbackEl.innerHTML = `<span class="text-rose-400">Bạn chưa chọn đáp án.</span>`;
-            return;
-        }
-
-        const selectedAnswer = selectedRadio.value;
-        const correctAnswer = q.answer;
-
-        // Disable all options for this question
-        $$(`input[name="listen_q_${index}"]`, questionCard).forEach(radio => {
-            radio.disabled = true;
-            const label = $(`label[for="${radio.id}"]`, questionCard);
-            if (radio.value === correctAnswer) {
-                label.classList.remove('btn-secondary');
-                label.classList.add('bg-green-500/80', 'text-white', 'border-green-500');
-            } else if (radio.checked) {
-                label.classList.remove('btn-secondary');
-                label.classList.add('bg-rose-500/80', 'text-white', 'border-rose-500');
-            }
-        });
-
-        if (selectedAnswer === correctAnswer) {
-            correctCount++;
-            feedbackEl.innerHTML = `<span class="text-green-400">Chính xác!</span>`;
-        } else {
-            feedbackEl.innerHTML = `<span class="text-rose-400">Sai rồi! Đáp án đúng là ${correctAnswer}.</span>`;
-        }
-    });
-
-    // Display final score
-    const finalFeedbackEl = $('#listeningFeedback');
-    finalFeedbackEl.innerHTML = `<h4 class="text-2xl font-bold text-center text-white">Bạn đã đúng ${correctCount} / ${totalQuestions} câu!</h4>`;
-
-    // Disable check button
-    $('#checkListeningAnswersBtn').disabled = true;
-}
+async function handleStartListening(e) { return LingoListening.generate(e.currentTarget); }
+function displayListeningExercise(level) { return LingoListening.load(currentListeningExercise, level); }
+function checkListeningAnswers() { return LingoListening.check(); }
 
 /* ------------------------------ Speaking Practice (NEW) ------------------------------ */
 let currentSpeakingExercise = null;
@@ -4514,6 +4364,7 @@ writingTabs.addEventListener('click', (e) => {
 });
 
 function showWritingTab(tabName) {
+    stopSpeech();
     // Update tabs
     $$('button', writingTabs).forEach(b => {
         const isCurrent = b.dataset.tab === tabName;
@@ -6152,6 +6003,7 @@ function initSettingsView() {
 }
 
 function showSettingsTab(tabName) {
+    stopSpeech();
     console.log("showSettingsTab called with:", tabName); // LOG 1: Xem hàm có được gọi không
     const tabs = $('#settings-tabs');
     if (!tabs) {
@@ -6531,6 +6383,7 @@ const resourceInitializers = {
 };
 
 function showResourceTab(tabName) {
+    stopSpeech();
     // Update tabs
     $$('button', resourcesTabs).forEach(b => {
         const isCurrent = b.dataset.tab === tabName;
@@ -6565,7 +6418,7 @@ resourcesTabs.addEventListener('click', (e) => {
 
 // When showing the main resources view, default to the first tab
 function initResourcesView() {
-    showResourceTab(Lingo.lang === 'en' ? 'grammar' : 'tones');
+    showResourceTab('audio');
     lucide.createIcons($('#grammar-start-view')); // <-- DÒNG MỚI BẠN THÊM VÀO
 }
 
@@ -7382,12 +7235,8 @@ function startToneQuiz() {
         `).join('');
     $('#toneOptions').innerHTML = optionsHtml;
 
-    // Tự động phát trong bài thanh điệu, nhưng timer phải hủy được khi đổi menu.
-    if (pendingAutoSpeechTimer) clearTimeout(pendingAutoSpeechTimer);
-    pendingAutoSpeechTimer = setTimeout(() => {
-        pendingAutoSpeechTimer = null;
-        speak(word.hanzi, word.pinyin);
-    }, 100);
+    // Chỉ đọc khi người học bấm nút loa.
+
 }
 
 // Helper: Đường vẽ nhỏ cho nút bấm
