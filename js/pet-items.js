@@ -1,0 +1,8466 @@
+// js/pet-items.js
+
+
+// =========================================================
+// AETHER · TIỂU THIÊN QUANG — CSS RUNTIME GUARD
+// Chỉ bảo đảm CSS namespace aetlc-* có mặt khi pet được khôi phục
+// trực tiếp sau reload. Không thay đổi hiệu ứng Aether/NYX hiện có.
+// =========================================================
+function ensureAetherLittleSpiritPetStylesheet() {
+    if (typeof document === 'undefined' || !document.head) return null;
+
+    const existing = Array.from(
+        document.querySelectorAll('link[rel="stylesheet"][href]')
+    ).find(link =>
+        /(?:^|\/)aether-than-thoai(?:\(\d+\))?\.css(?:[?#].*)?$/i
+            .test(link.href || '')
+    );
+
+    if (existing) return existing;
+
+    const byId = document.getElementById(
+        'aether-little-spirit-runtime-style'
+    );
+    if (byId) return byId;
+
+    const link = document.createElement('link');
+    link.id = 'aether-little-spirit-runtime-style';
+    link.rel = 'stylesheet';
+    link.href =
+        'css/aether-than-thoai.css?v=20260917.aether-little-spirit-v1';
+    link.dataset.aetherLittleSpirit = 'true';
+    document.head.appendChild(link);
+    return link;
+}
+
+// =========================================================
+// TAMON'S B-SIDE · CHIBI II — CSS RUNTIME GUARD
+// Chỉ bảo đảm namespace tbc2-* có mặt khi pet được khôi phục trực tiếp sau F5.
+// Không bật theme/effect Tamon khác và không thay đổi stylesheet hiện có.
+// =========================================================
+function ensureTamonBsideChibi2Stylesheet() {
+    if (typeof document === 'undefined' || !document.head) return null;
+
+    const existing = Array.from(
+        document.querySelectorAll('link[rel="stylesheet"][href]')
+    ).find(link =>
+        /(?:^|\/)tamon-b-side(?:\(\d+\))?\.css(?:[?#].*)?$/i
+            .test(link.href || '')
+    );
+
+    if (existing) return existing;
+
+    const byId = document.getElementById(
+        'tamon-bside-chibi2-runtime-style'
+    );
+    if (byId) return byId;
+
+    const link = document.createElement('link');
+    link.id = 'tamon-bside-chibi2-runtime-style';
+    link.rel = 'stylesheet';
+    link.href =
+        'css/tamon-b-side.css?v=20260920.tbc2-eclipse-v1';
+    link.dataset.tamonBsideChibi2 = 'true';
+    document.head.appendChild(link);
+    return link;
+}
+
+
+// =========================================================
+// ĐÊM ĐẦY SAO · CHIBI — CSS RUNTIME GUARD
+// Dùng một file CSS riêng cho pet + card cửa hàng thường.
+// Không đụng đến runtime Đêm Đầy Sao Premium/Luxury.
+// =========================================================
+function ensureStarryNightChibiPetStylesheet() {
+    if (typeof document === 'undefined' || !document.head) return null;
+
+    // CHUNG 1 CSS với Premium Đêm Đầy Sao.
+    const existing = Array.from(
+        document.querySelectorAll('link[rel="stylesheet"][href]')
+    ).find(link =>
+        /(?:^|\/)dem-day-sao(?:\(\d+\))?\.css(?:[?#].*)?$/i
+            .test(link.href || '')
+    );
+
+    if (existing) {
+        existing.id = existing.id || 'starry-night-premium-style';
+        return existing;
+    }
+
+    const byId = document.getElementById('starry-night-premium-style');
+    if (byId) return byId;
+
+    const link = document.createElement('link');
+    link.id = 'starry-night-premium-style';
+    link.rel = 'stylesheet';
+    link.href = 'css/dem-day-sao.css?v=20260921.starry-night-merged-v4';
+    link.dataset.starryNight = 'true';
+    document.head.appendChild(link);
+    return link;
+}
+
+class PetManager {
+    static container = document.getElementById('virtual-pet-container');
+    // EFFECT QUALITY MANAGER v1.2.0
+    // Pet/Premium mới giảm số hạt trước khi tạo DOM; Cao/tắt giữ nguyên.
+    static getQualityCount(baseCount, minimum = 1) {
+        const base = Math.max(0, Number(baseCount) || 0);
+        try {
+            const manager = window.EffectQualityManager;
+            if (manager && typeof manager.getRecommendedCount === 'function') {
+                const next = manager.getRecommendedCount(base);
+                return base > 0 ? Math.max(minimum, next) : 0;
+            }
+        } catch (_) {}
+        return Math.ceil(base);
+    }
+
+    static interactionAbortController = null;
+    static premiumSpringObserver = null;
+    static nationalDayObserver = null;
+    static summerLimitedHa2Observer = null;
+
+    // =========================================================
+    // PREMIUM MÙA XUÂN — DỌN / QUẢN LÝ THẦN VỰC
+    // =========================================================
+    static clearPremiumSpringRealm() {
+        if (this.premiumSpringObserver) {
+            this.premiumSpringObserver.disconnect();
+            this.premiumSpringObserver = null;
+        }
+
+        this.container =
+            document.getElementById('virtual-pet-container') ||
+            this.container;
+
+        this.container?.classList.remove(
+            'pet-spring-vintage-stage',
+            'spring-vintage-awakening',
+            'spring-vintage-casting'
+        );
+
+        const activeImage =
+            this.container?.querySelector(
+                '#virtual-pet-img.spring-vintage-goddess-magic'
+            );
+
+        activeImage?.classList.remove(
+            'spring-vintage-goddess-magic',
+            'spring-vintage-avatar'
+        );
+
+        document
+            .querySelectorAll(
+                '.spring-vintage-trail, .spring-vintage-ultimate'
+            )
+            .forEach(node => node.remove());
+    }
+
+    static installPremiumSpringObserver() {
+        this.container =
+            document.getElementById('virtual-pet-container') ||
+            this.container;
+
+        if (!this.container) return;
+
+        if (this.premiumSpringObserver) {
+            this.premiumSpringObserver.disconnect();
+        }
+
+        this.premiumSpringObserver =
+            new MutationObserver(() => {
+                const activePet =
+                    this.container.querySelector(
+                        '#virtual-pet-img.spring-vintage-goddess-magic'
+                    );
+
+                const style =
+                    window.getComputedStyle(this.container);
+
+                const isVisible =
+                    style.display !== 'none' &&
+                    style.visibility !== 'hidden';
+
+                if (!activePet || !isVisible) {
+                    this.clearPremiumSpringRealm();
+                }
+            });
+
+        this.premiumSpringObserver.observe(
+            this.container,
+            {
+                childList: true,
+                subtree: true,
+                attributes: true,
+                attributeFilter: [
+                    'class',
+                    'style'
+                ]
+            }
+        );
+    }
+
+    // =========================================================
+    // PREMIUM MÙA HẠ · TIỂU HẠ QUANG
+    // Namespace hoàn toàn mới: ha2l-*.
+    // Không dùng summer-solstice-* và không gọi ThemeManager/EffectManager.
+    // =========================================================
+    static clearSummerLimitedHa2Realm() {
+        if (this.summerLimitedHa2Observer) {
+            this.summerLimitedHa2Observer.disconnect();
+            this.summerLimitedHa2Observer = null;
+        }
+
+        document
+            .querySelectorAll('.ha2l-screen-ultimate')
+            .forEach(node => node.remove());
+
+        document.documentElement.classList.remove(
+            'ha2l-pet-equipped',
+            'ha2l-screen-active'
+        );
+
+        this.container =
+            document.getElementById('virtual-pet-container') ||
+            this.container;
+
+        this.container?.classList.remove(
+            'pet-ha2l-summer-stage',
+            'ha2l-awakening',
+            'ha2l-casting'
+        );
+
+        if (this.container?.dataset) {
+            delete this.container.dataset.ha2lClickLocked;
+        }
+    }
+
+    static installSummerLimitedHa2Observer() {
+        this.container =
+            document.getElementById('virtual-pet-container') ||
+            this.container;
+
+        if (!this.container) return;
+
+        if (this.summerLimitedHa2Observer) {
+            this.summerLimitedHa2Observer.disconnect();
+        }
+
+        this.summerLimitedHa2Observer = new MutationObserver(() => {
+            const activePet = this.container?.querySelector(
+                '#virtual-pet-img.ha2-limited-sunleaf-magic'
+            );
+
+            const style = this.container
+                ? window.getComputedStyle(this.container)
+                : null;
+
+            const isVisible =
+                style?.display !== 'none' &&
+                style?.visibility !== 'hidden';
+
+            if (!activePet || !isVisible) {
+                this.clearSummerLimitedHa2Realm();
+            }
+        });
+
+        this.summerLimitedHa2Observer.observe(
+            this.container,
+            {
+                childList: true,
+                subtree: true,
+                attributes: true,
+                attributeFilter: ['class', 'style']
+            }
+        );
+    }
+
+    // =========================================================
+    // QUỐC KHÁNH — HÀO KHÍ ĐỘC LẬP
+    // Concept riêng: trống đồng Đông Sơn + sơn son + sao vàng.
+    // Không dùng lại realm, class hoặc animation của pet cũ.
+    // =========================================================
+    static clearNationalDayRealm() {
+        if (this.nationalDayObserver) {
+            this.nationalDayObserver.disconnect();
+            this.nationalDayObserver = null;
+        }
+
+        const realm =
+            document.getElementById(
+                'national-day-heritage-realm'
+            );
+
+        realm?.remove();
+
+        document
+            .querySelectorAll(
+                '.national-day-independence-burst,' +
+                '.national-day-dialogue-box'
+            )
+            .forEach(node => node.remove());
+
+        document.documentElement.classList.remove(
+            'national-day-heritage-equipped'
+        );
+
+        this.container =
+            document.getElementById('virtual-pet-container') ||
+            this.container;
+
+        this.container?.classList.remove(
+            'pet-national-day-stage',
+            'national-day-awakening',
+            'national-day-casting'
+        );
+    }
+
+    static createNationalDayRealm() {
+        this.clearNationalDayRealm();
+        this.clearSummerLimitedHa2Realm();
+
+        this.container =
+            document.getElementById('virtual-pet-container') ||
+            this.container;
+
+        if (!this.container) return null;
+
+        const realm = document.createElement('div');
+
+        realm.id = 'national-day-heritage-realm';
+        realm.className = 'national-day-heritage-realm';
+        realm.setAttribute('aria-hidden', 'true');
+
+        realm.innerHTML = `
+        <div class="nd-realm-lacquer-wash"></div>
+
+        <div class="nd-realm-drum-watermark">
+            <span class="nd-realm-drum-star">★</span>
+            <span class="nd-realm-drum-track track-a"></span>
+            <span class="nd-realm-drum-track track-b"></span>
+            <span class="nd-realm-drum-track track-c"></span>
+        </div>
+
+        <div class="nd-realm-gold-horizon"></div>
+        <div class="nd-realm-particle-field"></div>
+
+        <div class="nd-realm-title">
+            <small>02 · 09</small>
+            <strong>HÀO KHÍ ĐỘC LẬP</strong>
+        </div>
+    `;
+
+        const particleField =
+            realm.querySelector(
+                '.nd-realm-particle-field'
+            );
+
+        const reduced =
+            window.matchMedia?.(
+                '(max-width: 768px), (pointer: coarse), (prefers-reduced-motion: reduce)'
+            ).matches;
+
+        const particleCount = this.getQualityCount(reduced ? 10 : 22);
+
+        for (
+            let index = 0;
+            index < particleCount;
+            index++
+        ) {
+            const shard = document.createElement('span');
+
+            shard.className =
+                index % 5 === 0
+                    ? 'nd-realm-star-particle'
+                    : 'nd-realm-bronze-particle';
+
+            shard.textContent =
+                index % 5 === 0
+                    ? '★'
+                    : '';
+
+            shard.style.setProperty(
+                '--nd-x',
+                `${(index * 43 + 7) % 96}%`
+            );
+
+            shard.style.setProperty(
+                '--nd-y',
+                `${(index * 67 + 11) % 92}%`
+            );
+
+            shard.style.setProperty(
+                '--nd-delay',
+                `${-(index % 11) * 0.48}s`
+            );
+
+            shard.style.setProperty(
+                '--nd-duration',
+                `${7 + (index % 6) * 0.9}s`
+            );
+
+            shard.style.setProperty(
+                '--nd-scale',
+                `${0.62 + (index % 5) * 0.13}`
+            );
+
+            particleField?.appendChild(shard);
+        }
+
+        document.body.appendChild(realm);
+
+        document.documentElement.classList.add(
+            'national-day-heritage-equipped'
+        );
+
+        requestAnimationFrame(() => {
+            realm.classList.add('is-active');
+        });
+
+        this.nationalDayObserver =
+            new MutationObserver(() => {
+                const activePet =
+                    document.getElementById(
+                        'virtual-pet-img'
+                    );
+
+                const style =
+                    this.container
+                        ? window.getComputedStyle(
+                            this.container
+                        )
+                        : null;
+
+                const stillActive =
+                    activePet?.classList.contains(
+                        'national-day-dong-son-magic'
+                    ) &&
+                    style?.display !== 'none' &&
+                    style?.visibility !== 'hidden';
+
+                if (!stillActive) {
+                    this.clearNationalDayRealm();
+                }
+            });
+
+        this.nationalDayObserver.observe(
+            this.container,
+            {
+                childList: true,
+                subtree: true,
+                attributes: true,
+                attributeFilter: [
+                    'class',
+                    'style'
+                ]
+            }
+        );
+
+        return realm;
+    }
+
+    static clearSlothDreamRealm() {
+        const oldRealm =
+            document.getElementById('sloth-dream-realm');
+
+        if (oldRealm) {
+            if (oldRealm._slothObserver) {
+                oldRealm._slothObserver.disconnect();
+            }
+
+            oldRealm.remove();
+        }
+
+        document.documentElement.classList.remove(
+            'sloth-dream-realm-equipped'
+        );
+    }
+
+    static clearBirthday2026Realm() {
+        const oldRealm =
+            document.getElementById('birthday-2026-realm');
+
+        if (oldRealm) {
+            if (oldRealm._birthday2026Observer) {
+                oldRealm._birthday2026Observer.disconnect();
+            }
+
+            oldRealm.remove();
+        }
+
+        document.documentElement.classList.remove(
+            'birthday-2026-equipped'
+        );
+    }
+
+    static createBirthday2026Realm() {
+        this.clearBirthday2026Realm();
+
+        const realm = document.createElement('div');
+
+        realm.id = 'birthday-2026-realm';
+        realm.className = 'birthday-2026-realm';
+        realm.setAttribute('aria-hidden', 'true');
+
+        realm.innerHTML = `
+            <div class="birthday-2026-screen-wash"></div>
+
+            <div class="birthday-2026-grand-medallion">
+                <span class="birthday-2026-medallion-ring ring-one"></span>
+                <span class="birthday-2026-medallion-ring ring-two"></span>
+
+                <span class="birthday-2026-medallion-core">
+                    <b>福</b>
+                    <small>2026</small>
+                </span>
+            </div>
+
+            <div class="birthday-2026-ribbon-vault">
+                <span class="birthday-2026-vault-bow"></span>
+            </div>
+
+            <div class="birthday-2026-lantern-field"></div>
+            <div class="birthday-2026-confetti-field"></div>
+
+            <div class="birthday-2026-candle-altar">
+                <span class="birthday-2026-altar-base"></span>
+
+                <span class="birthday-2026-screen-candle candle-one">
+                    <i></i>
+                </span>
+
+                <span class="birthday-2026-screen-candle candle-two">
+                    <i></i>
+                </span>
+
+                <span class="birthday-2026-screen-candle candle-three">
+                    <i></i>
+                </span>
+            </div>
+
+            <div class="birthday-2026-screen-title">
+                <span>SINH NHẬT 2026</span>
+                <strong>PHÚC LỘC AN KHANG</strong>
+            </div>
+        `;
+
+        const lanternField =
+            realm.querySelector('.birthday-2026-lantern-field');
+
+        for (let index = 0; index < 12; index++) {
+            const lantern = document.createElement('span');
+
+            lantern.className = 'birthday-2026-screen-lantern';
+
+            const isLeft = index < 6;
+            const rowIndex = index % 6;
+
+            lantern.style.setProperty(
+                '--birthday-lantern-x',
+                isLeft
+                    ? `${2 + rowIndex * 2.5}%`
+                    : `${98 - rowIndex * 2.5}%`
+            );
+
+            lantern.style.setProperty(
+                '--birthday-lantern-y',
+                `${8 + rowIndex * 15}%`
+            );
+
+            lantern.style.setProperty(
+                '--birthday-lantern-delay',
+                `${-index * 0.48}s`
+            );
+
+            lantern.style.setProperty(
+                '--birthday-lantern-scale',
+                `${0.72 + index % 3 * 0.12}`
+            );
+
+            lanternField.appendChild(lantern);
+        }
+
+        const confettiField =
+            realm.querySelector('.birthday-2026-confetti-field');
+
+        const confettiColors = [
+            '#ef7766',
+            '#f4ca70',
+            '#31876d',
+            '#fff0bf'
+        ];
+
+        for (let index = 0; index < 38; index++) {
+            const confetti = document.createElement('span');
+
+            confetti.className = 'birthday-2026-screen-confetti';
+
+            confetti.style.setProperty(
+                '--birthday-confetti-x',
+                `${(index * 37) % 100}%`
+            );
+
+            confetti.style.setProperty(
+                '--birthday-confetti-y',
+                `${(index * 61) % 100}%`
+            );
+
+            confetti.style.setProperty(
+                '--birthday-confetti-color',
+                confettiColors[index % confettiColors.length]
+            );
+
+            confetti.style.setProperty(
+                '--birthday-confetti-delay',
+                `${-(index % 14) * 0.45}s`
+            );
+
+            confetti.style.setProperty(
+                '--birthday-confetti-duration',
+                `${6 + index % 6}s`
+            );
+
+            confetti.style.setProperty(
+                '--birthday-confetti-turn',
+                `${index % 2 === 0 ? -18 : 18}deg`
+            );
+
+            confettiField.appendChild(confetti);
+        }
+
+        document.body.appendChild(realm);
+
+        document.documentElement.classList.add(
+            'birthday-2026-equipped'
+        );
+
+        requestAnimationFrame(() => {
+            realm.classList.add('is-active');
+        });
+
+        /*
+         * Tự xóa hiệu ứng khi thú cưng bị tháo,
+         * đổi sang thú cưng khác hoặc container bị ẩn.
+         */
+        const observer = new MutationObserver(() => {
+            const activePet =
+                document.getElementById('virtual-pet-img');
+
+            const containerStyle =
+                this.container
+                    ? window.getComputedStyle(this.container)
+                    : null;
+
+            const isStillActive =
+                activePet?.classList.contains(
+                    'birthday-serpent-2026-magic'
+                ) &&
+                containerStyle?.display !== 'none' &&
+                containerStyle?.visibility !== 'hidden';
+
+            if (!isStillActive) {
+                this.clearBirthday2026Realm();
+            }
+        });
+
+        if (this.container) {
+            observer.observe(this.container, {
+                childList: true,
+                subtree: true,
+                attributes: true,
+                attributeFilter: [
+                    'class',
+                    'style'
+                ]
+            });
+        }
+
+        realm._birthday2026Observer = observer;
+
+        return realm;
+    }
+
+    static createSlothDreamRealm() {
+        this.clearSlothDreamRealm();
+
+        const realm = document.createElement('div');
+
+        realm.id = 'sloth-dream-realm';
+        realm.className = 'sloth-dream-realm';
+
+        realm.setAttribute('aria-hidden', 'true');
+
+        realm.innerHTML = `
+            <div class="sloth-realm-backdrop"></div>
+            <div class="sloth-realm-cathedral"></div>
+
+            <div
+                class="
+                    sloth-realm-curtain
+                    curtain-left
+                "
+            ></div>
+
+            <div
+                class="
+                    sloth-realm-curtain
+                    curtain-right
+                "
+            ></div>
+
+            <div class="sloth-realm-aurora"></div>
+
+            <div
+                class="
+                    sloth-realm-fog
+                    sloth-realm-fog-a
+                "
+            ></div>
+
+            <div
+                class="
+                    sloth-realm-fog
+                    sloth-realm-fog-b
+                "
+            ></div>
+
+            <div
+                class="
+                    sloth-realm-fog
+                    sloth-realm-fog-c
+                "
+            ></div>
+
+            <div class="sloth-realm-choir"></div>
+
+            <div
+                class="
+                    sloth-realm-chain
+                    chain-left
+                "
+            ></div>
+
+            <div
+                class="
+                    sloth-realm-chain
+                    chain-right
+                "
+            ></div>
+
+            <div class="sloth-realm-sigil">
+                <span
+                    class="sloth-realm-crown"
+                ></span>
+
+                <span
+                    class="
+                        sloth-realm-ring
+                        ring-one
+                    "
+                ></span>
+
+                <span
+                    class="
+                        sloth-realm-ring
+                        ring-two
+                    "
+                ></span>
+
+                <span
+                    class="
+                        sloth-realm-ring
+                        ring-three
+                    "
+                ></span>
+
+                <span class="sloth-realm-core">
+                    <b>Ⅶ</b>
+                    <small>ACEDIA</small>
+                </span>
+
+                <div
+                    class="sloth-realm-runes"
+                ></div>
+            </div>
+
+            <div class="sloth-realm-hourglass">
+                <span
+                    class="sloth-hourglass-frame"
+                ></span>
+
+                <span
+                    class="
+                        sloth-hourglass-sand
+                        sand-top
+                    "
+                ></span>
+
+                <span
+                    class="
+                        sloth-hourglass-sand
+                        sand-bottom
+                    "
+                ></span>
+            </div>
+
+            <div
+                class="sloth-realm-particles"
+            ></div>
+
+            <div class="sloth-realm-title">
+                <span>
+                    PECCATUM VII · THẤT ĐẠI TỘI
+                </span>
+
+                <strong>
+                    MỘNG GIỚI TRÌ HOÃN
+                </strong>
+
+                <small>
+                    ACEDIA · KẺ CANH GIẤC NGỦ
+                    VĨNH HẰNG
+                </small>
+            </div>
+        `;
+
+        const runeContainer =
+            realm.querySelector('.sloth-realm-runes');
+
+        for (let index = 0; index < 7; index++) {
+            const rune = document.createElement('span');
+
+            const angle = index * (360 / 7);
+
+            rune.className = 'sloth-realm-rune';
+            rune.textContent =
+                ['Ⅰ', 'Ⅱ', 'Ⅲ', 'Ⅳ', 'Ⅴ', 'Ⅵ', 'Ⅶ'][index];
+
+            rune.style.setProperty(
+                '--sloth-domain-angle',
+                `${angle}deg`
+            );
+
+            rune.style.setProperty(
+                '--sloth-domain-angle-back',
+                `${-angle}deg`
+            );
+
+            rune.style.setProperty(
+                '--sloth-domain-delay',
+                `${-index * 0.42}s`
+            );
+
+            runeContainer.appendChild(rune);
+        }
+
+        const choir =
+            realm.querySelector(
+                '.sloth-realm-choir'
+            );
+
+        const choirNumerals = [
+            'Ⅰ', 'Ⅱ', 'Ⅲ', 'Ⅳ', 'Ⅴ', 'Ⅵ', 'Ⅶ'
+        ];
+
+        for (let index = 0; index < 7; index++) {
+            const pillar =
+                document.createElement('span');
+
+            pillar.className =
+                'sloth-realm-choir-pillar';
+
+            pillar.dataset.number =
+                choirNumerals[index];
+
+            pillar.style.setProperty(
+                '--sloth-choir-index',
+                index
+            );
+
+            pillar.style.setProperty(
+                '--sloth-choir-delay',
+                `${-index * 0.56}s`
+            );
+
+            pillar.style.setProperty(
+                '--sloth-choir-height',
+                `${42 + index * 4}%`
+            );
+
+            choir.appendChild(pillar);
+        }
+
+        const particles =
+            realm.querySelector('.sloth-realm-particles');
+
+        for (let index = 0; index < 32; index++) {
+            const particle = document.createElement('span');
+
+            particle.className = 'sloth-realm-particle';
+
+            particle.style.setProperty(
+                '--realm-x',
+                `${(index * 37) % 100}%`
+            );
+
+            particle.style.setProperty(
+                '--realm-y',
+                `${(index * 61) % 100}%`
+            );
+
+            particle.style.setProperty(
+                '--realm-size',
+                `${2 + index % 5}px`
+            );
+
+            particle.style.setProperty(
+                '--realm-delay',
+                `${-(index % 12) * 0.55}s`
+            );
+
+            particle.style.setProperty(
+                '--realm-duration',
+                `${6 + index % 7}s`
+            );
+
+            particle.style.setProperty(
+                '--realm-drift',
+                `${20 + index % 6 * 11}px`
+            );
+
+            particles.appendChild(particle);
+        }
+
+        document.body.appendChild(realm);
+
+        document.documentElement.classList.add(
+            'sloth-dream-realm-equipped'
+        );
+
+        requestAnimationFrame(() => {
+            realm.classList.add('is-active');
+        });
+
+        /*
+         * Tự dọn hiệu ứng nếu thú cưng bị tháo,
+         * chuyển thú cưng hoặc bị ẩn trong chế độ thi.
+         */
+        const observer = new MutationObserver(() => {
+            const activePet =
+                document.getElementById('virtual-pet-img');
+
+            const containerStyle =
+                this.container
+                    ? window.getComputedStyle(this.container)
+                    : null;
+
+            const isStillActive =
+                activePet?.classList.contains(
+                    'seven-sins-sloth-magic'
+                ) &&
+                containerStyle?.display !== 'none' &&
+                containerStyle?.visibility !== 'hidden';
+
+            if (!isStillActive) {
+                this.clearSlothDreamRealm();
+            }
+        });
+
+        if (this.container) {
+            observer.observe(this.container, {
+                childList: true,
+                subtree: true,
+                attributes: true,
+                attributeFilter: [
+                    'class',
+                    'style'
+                ]
+            });
+        }
+
+        realm._slothObserver = observer;
+
+        return realm;
+    }
+
+    // =========================================================
+    // NYX · ĐÊM NGUYÊN SƠ V3 — ULTIMATE CANONICAL
+    // Một nơi duy nhất tạo ultimate để Luxury runtime và PetManager
+    // không còn chia đôi/mất tầng hiệu ứng khi click.
+    // =========================================================
+    static createNyxPrimordialNightUltimate(originX = null, originY = null) {
+        document
+            .querySelectorAll('.nyx-mythic-ultimate')
+            .forEach(node => node.remove());
+
+        const pet = document.querySelector(
+            '#virtual-pet-img.mythic-nyx-night-magic, #virtual-pet-img.nyx-mythic-avatar'
+        );
+        const rect = pet?.getBoundingClientRect?.();
+
+        const x = Number.isFinite(originX)
+            ? originX
+            : (rect ? rect.left + rect.width / 2 : window.innerWidth * .78);
+        const y = Number.isFinite(originY)
+            ? originY
+            : (rect ? rect.top + rect.height / 2 : window.innerHeight * .58);
+
+        const ultimate = document.createElement('div');
+        ultimate.className = 'nyx-mythic-ultimate nyx-mythic-ultimate-v3';
+        ultimate.setAttribute('aria-hidden', 'true');
+        ultimate.style.setProperty('--nyx-origin-x', `${x}px`);
+        ultimate.style.setProperty('--nyx-origin-y', `${y}px`);
+
+        ultimate.innerHTML = `
+            <div class="nyx-v3-nightfall"></div>
+            <div class="nyx-mythic-ultimate-veil"></div>
+
+            <div class="nyx-v3-abyss-gate">
+                <span class="nyx-v3-gate-ring gate-a"></span>
+                <span class="nyx-v3-gate-ring gate-b"></span>
+                <span class="nyx-v3-gate-ring gate-c"></span>
+                <span class="nyx-v3-gate-rune">ΝΥΞ</span>
+            </div>
+
+            <div class="nyx-mythic-ultimate-eclipse">
+                <span class="nyx-mythic-ultimate-core"></span>
+                <span class="nyx-mythic-ultimate-corona"></span>
+                <span class="nyx-v3-eclipse-ring ring-a"></span>
+                <span class="nyx-v3-eclipse-ring ring-b"></span>
+                <span class="nyx-v3-eclipse-crescent crescent-a">☾</span>
+                <span class="nyx-v3-eclipse-crescent crescent-b">☽</span>
+            </div>
+
+            <div class="nyx-v3-night-wings wing-left"></div>
+            <div class="nyx-v3-night-wings wing-right"></div>
+
+            <div class="nyx-v3-ray-vault"></div>
+            <div class="nyx-v3-rune-field"></div>
+            <div class="nyx-v3-shard-field"></div>
+            <div class="nyx-mythic-ultimate-stars"></div>
+
+            <div class="nyx-v3-horizon"></div>
+            <div class="nyx-v3-final-wave wave-a"></div>
+            <div class="nyx-v3-final-wave wave-b"></div>
+
+            <div class="nyx-mythic-ultimate-title">
+                <small>NYX · NỮ THẦN CỦA MÀN ĐÊM ĐẦU TIÊN</small>
+                <strong>ĐÊM NGUYÊN SƠ</strong>
+                <em>TRƯỚC ÁNH SÁNG · CHỈ CÓ HẮC DẠ</em>
+            </div>
+        `;
+
+        const reduced = window.matchMedia?.(
+            '(max-width: 768px), (pointer: coarse), (prefers-reduced-motion: reduce)'
+        ).matches;
+
+        const stars = ultimate.querySelector('.nyx-mythic-ultimate-stars');
+        const starCount = this.getQualityCount(reduced ? 22 : 54);
+        for (let index = 0; index < starCount; index++) {
+            const star = document.createElement('span');
+            star.textContent = index % 5 === 0 ? '✦' : '';
+            star.style.setProperty('--nyx-ux', `${(index * 37 + 5) % 96}%`);
+            star.style.setProperty('--nyx-uy', `${(index * 61 + 11) % 92}%`);
+            star.style.setProperty('--nyx-us', `${1.5 + (index % 6) * 1.35}px`);
+            star.style.setProperty('--nyx-ud', `${-index * .055}s`);
+            star.style.setProperty('--nyx-v3-star-drift', `${18 + (index % 7) * 8}px`);
+            stars?.appendChild(star);
+        }
+
+        const runeField = ultimate.querySelector('.nyx-v3-rune-field');
+        const runes = ['Ν', 'Υ', 'Ξ', '☾', '✦', '◈', '⋆', '☽', 'Ν', 'Υ', 'Ξ', '✧'];
+        runes.forEach((glyph, index) => {
+            const rune = document.createElement('span');
+            rune.textContent = glyph;
+            rune.style.setProperty('--nyx-v3-rune-angle', `${index * 30}deg`);
+            rune.style.setProperty('--nyx-v3-rune-radius', `${150 + (index % 3) * 32}px`);
+            rune.style.setProperty('--nyx-v3-rune-delay', `${index * .045}s`);
+            runeField?.appendChild(rune);
+        });
+
+        const shardField = ultimate.querySelector('.nyx-v3-shard-field');
+        const shardCount = this.getQualityCount(reduced ? 14 : 34);
+        for (let index = 0; index < shardCount; index++) {
+            const shard = document.createElement('i');
+            shard.style.setProperty('--nyx-v3-shard-angle', `${(index * 137.5) % 360}deg`);
+            shard.style.setProperty('--nyx-v3-shard-distance', `${120 + (index % 8) * 34}px`);
+            shard.style.setProperty('--nyx-v3-shard-delay', `${(index % 9) * .035}s`);
+            shard.style.setProperty('--nyx-v3-shard-length', `${14 + (index % 6) * 7}px`);
+            shardField?.appendChild(shard);
+        }
+
+        document.body.appendChild(ultimate);
+
+        requestAnimationFrame(() => {
+            ultimate.classList.add('is-active');
+        });
+
+        window.setTimeout(() => {
+            ultimate.classList.add('is-climax');
+        }, 1050);
+
+        window.setTimeout(() => {
+            ultimate.classList.add('is-collapse');
+        }, 3150);
+
+        window.setTimeout(() => {
+            ultimate.classList.add('is-ending');
+        }, 4300);
+
+        window.setTimeout(() => {
+            ultimate.remove();
+        }, 5400);
+
+        return ultimate;
+    }
+
+    static spawnPet(petData) {
+        this.container =
+            document.getElementById('virtual-pet-container') ||
+            this.container;
+
+        if (!this.container || !petData) return;
+
+        this.clearSlothDreamRealm();
+        this.clearBirthday2026Realm();
+        this.clearPremiumSpringRealm();
+        this.clearNationalDayRealm();
+        document
+            .querySelectorAll(
+                '.nd29-independence-flash, .nd29-pet-dialogue'
+            )
+            .forEach(node => node.remove());
+        // Dọn ultimate toàn màn hình Tamon Chibi nếu đổi / tháo pet khi hiệu ứng còn chạy.
+        document
+            .querySelectorAll('.tbc1-fullscreen-ultimate')
+            .forEach(node => node.remove());
+        // Dọn riêng Tamon B-Side Chibi II; namespace tbc2-* không đụng Tamon #1.
+        document
+            .querySelectorAll('.tbc2-fullscreen-ultimate, .tbc2-click-burst')
+            .forEach(node => node.remove());
+        // Dọn ultimate toàn màn hình Cầm Mộng Chibi nếu đổi / tháo pet khi đang chạy.
+        document
+            .querySelectorAll(
+                '.cam-mong-chibi-screen-ultimate-v2'
+            )
+            .forEach(node => node.remove());
+
+        // Dọn hiệu ứng riêng Klein Chibi EVENT (cửa hàng thường).
+        // Namespace lotme-* độc lập với Luxury Klein.
+        document
+            .querySelectorAll(
+                '.lotme-klein-click-burst, ' +
+                '.lotme-klein-right-ritual, ' +
+                '.lotme-klein-screen-ultimate'
+            )
+            .forEach(node => node.remove());
+
+        if (this.container?.dataset) {
+            delete this.container.dataset.lotmeKleinClickLocked;
+            delete this.container.dataset.lotmeKleinRightLocked;
+        }
+
+        // Dọn riêng Trung Thu · Tiểu Hằng Nga nếu đổi/tháo pet khi ultimate còn chạy.
+        document
+            .querySelectorAll(
+                '.mafc-screen-ultimate, .mafc-local-click-burst'
+            )
+            .forEach(node => node.remove());
+
+        // Dọn riêng Trung Thu · Tiểu Chú Cuội.
+        // Namespace macc2-* độc lập, không đụng bất kỳ hiệu ứng Trung Thu khác.
+        document
+            .querySelectorAll(
+                '.macc2-local-click-burst, .macc2-screen-ultimate'
+            )
+            .forEach(node => node.remove());
+
+        // Dọn riêng Mùa Thu cửa hàng thường. Namespace autreg5-* KHÔNG dùng với Luxury autumn3-*.
+        document
+            .querySelectorAll(
+                '.autreg5-local-burst, .autreg5-screen-ultimate'
+            )
+            .forEach(node => node.remove());
+
+        // Dọn riêng Acedia Chibi 850 Coin. Namespace acch1-* không dùng với Acedia sự kiện/Luxury.
+        document
+            .querySelectorAll(
+                '.acch1-local-burst, .acch1-screen-ultimate'
+            )
+            .forEach(node => node.remove());
+
+        document.documentElement.classList.remove(
+            'acch1-screen-active'
+        );
+
+        if (this.container?.dataset) {
+            delete this.container.dataset.acch1SkillLocked;
+        }
+
+        // Dọn toàn bộ tương tác và vòng lặp của thú cưng trước
+        if (
+            typeof PetInteractionManager !== 'undefined' &&
+            typeof PetInteractionManager.detachEvents === 'function'
+        ) {
+            PetInteractionManager.detachEvents({
+                keepLoop: false,
+                removeHungerBar: true
+            });
+        }
+
+        // Xóa đồ họa thú cưng cũ nếu có
+        this.container.innerHTML = '';
+        this.container.classList.remove(
+            'pet-doraemon-shizuka-stage',
+            'pet-painting-stage',
+            'pet-seven-sins-sloth-stage',
+            'sloth-dream-release',
+            'sloth-domain-casting',
+            'pet-acedia-chibi-stage',
+            'acch1-awakening',
+            'acch1-casting',
+            'pet-birthday-serpent-2026-stage',
+            'pet-saturn-cassini-stage',
+            'pet-rainy-day-stage',
+            'pet-spring-vintage-stage',
+            'spring-vintage-awakening',
+            'spring-vintage-casting',
+            'pet-autreg5-stage',
+            'autreg5-awakening',
+            'autreg5-casting',
+            'pet-ha2l-summer-stage',
+            'ha2l-awakening',
+            'ha2l-casting',
+            'pet-summer-solstice-stage',
+            'summer-solstice-awakening',
+            'summer-solstice-casting',
+            'pet-national-day-stage',
+            'national-day-awakening',
+            'national-day-casting',
+            'pet-national-day-chibi-stage',
+            'nd29-awakening',
+            'nd29-casting',
+            'pet-nyx-mythic-stage',
+            'nyx-mythic-awakening',
+            'nyx-mythic-casting',
+            'pet-nyx-little-night-stage',
+            'nyx-little-night-casting',
+            'pet-aether-little-sky-stage',
+            'aetlc-awakening',
+            'aetlc-casting',
+            'pet-tamon-bside-stage',
+            'tamon-bside-pet-casting',
+            'pet-tamon-bside-chibi-stage',
+            'tamon-bside-chibi-casting',
+            'pet-tamon-bside-chibi2-stage',
+            'tbc2-casting',
+            'pet-tamon-pinkstatic-stage',
+            'tamon-pinkstatic-casting',
+            'pet-cam-mong-chibi-stage',
+            'cam-mong-chibi-casting',
+            'pet-lotm-event-klein-stage',
+            'lotme-klein-click-casting',
+            'lotme-klein-right-casting',
+            'pet-midautumn-hangnga-chibi-stage',
+            'mafc-awakening',
+            'mafc-casting',
+            'pet-midautumn-cuoi-chibi-stage',
+            'macc2-awakening',
+            'macc2-casting',
+            'pet-linkclick-chibi-memory-stage',
+            'lcc1-casting',
+            'pet-linkclick-chibi-time-dive-stage',
+            'lcc2-casting',
+            'pet-starry-night-stage',
+            'starry-night-casting',
+            'pet-starry-night-chibi-stage',
+            'snch-awakening',
+            'snch-casting',
+            'pet-summer-solstice-stage',
+            'summer-solstice-awakening',
+            'summer-solstice-casting',
+            'summer-solstice-v3-casting',
+        );
+
+        // Dọn hiệu ứng tạm Mùa Hạ nếu người dùng đổi pet giữa lúc skill đang chạy.
+        document
+            .querySelectorAll(
+                '.summer-solstice-ultimate,' +
+                '.summer-solstice-click-burst,' +
+                '.summer-solstice-drag-trail,' +
+                '.summer-solstice-pet-dialogue'
+            )
+            .forEach(node => node.remove());
+
+        document.documentElement.classList.remove(
+            'summer-solstice-skill-active'
+        );
+
+        // LINK CLICK CHIBI V2: dọn fullscreen Time Dive nếu đổi/tháo pet giữa animation.
+        document
+            .querySelectorAll(
+                '.lcc2-screen-dive,' +
+                '.lcc2-screen-caption'
+            )
+            .forEach(node => node.remove());
+
+        document.documentElement.classList.remove(
+            'linkclick-chibi-dive-active'
+        );
+
+        // ĐÊM ĐẦY SAO: phòng vệ nếu Luxury runtime bị ngắt giữa lúc đổi pet.
+        document
+            .querySelectorAll(
+                '.snv-world,' +
+                '.snv-ui-frame,' +
+                '.snv-pet-realm,' +
+                '.snv-page-click,' +
+                '.snv-ultimate,' +
+                '.snv-dialogue,' +
+                '.snch-local-click-burst,' +
+                '.snch-screen-ultimate,' +
+                '.snch-dialogue'
+            )
+            .forEach(node => node.remove());
+
+        document.documentElement.classList.remove(
+            'starry-night-equipped',
+            'starry-night-skill-active',
+            'starry-night-chibi-equipped',
+            'starry-night-chibi-skill-active'
+        );
+
+        document.body?.classList.remove(
+            'theme-starry-night-canvas',
+            'theme-starry-night-chibi-stage'
+        );
+
+        // Dọn lớp Nyx toàn màn hình nếu người dùng đổi pet khi kỹ năng đang chạy.
+        document
+            .querySelectorAll('.nyx-mythic-ultimate')
+            .forEach(node => node.remove());
+        document.documentElement.classList.remove(
+            'nyx-mythic-pet-equipped'
+        );
+
+        // Dọn lớp Mùa Hạ Premium V3 nếu đổi/tháo pet trong lúc skill còn chạy.
+        document
+            .querySelectorAll(
+                '.summer-solstice-screen-burst-v3,' +
+                '.summer-solstice-ultimate,' +
+                '.summer-solstice-click-burst,' +
+                '.summer-solstice-drag-trail,' +
+                '.summer-solstice-pet-dialogue'
+            )
+            .forEach(node => node.remove());
+
+        document.documentElement.classList.remove(
+            'summer-solstice-equipped',
+            'summer-solstice-skill-active',
+            'summer-solstice-v3-equipped'
+        );
+
+        document.body?.classList.remove(
+            'theme-summer-solstice-stage'
+        );
+
+        let petElement;
+
+        // Xử lý tạo phần tử hiển thị: Nếu là Icon thì tạo Div text, nếu là File thì tạo Img
+        if (petData.isIcon || petData.value && petData.value.length <= 4) {
+            petElement = document.createElement('div');
+            petElement.id = 'virtual-pet-img'; // Vẫn giữ ID này để ăn CSS Animation nhảy/thở
+            petElement.innerHTML = petData.value || '🐕';
+            petElement.style.fontSize = '60px'; // Chỉnh kích cỡ icon thú cưng
+            petElement.style.filter = 'drop-shadow(0 5px 15px rgba(0,0,0,0.3))';
+            petElement.style.userSelect = 'none';
+        } else {
+            petElement = document.createElement('img');
+            petElement.id = 'virtual-pet-img';
+            const fallbackPetAsset = 'assets/pet/robot.png';
+            petElement.addEventListener('error', () => {
+                if (petElement.getAttribute('src') !== fallbackPetAsset) {
+                    petElement.src = fallbackPetAsset;
+                }
+            }, { once: true });
+            petElement.src = petData.asset || petData.value || fallbackPetAsset;
+            petElement.style.filter = 'drop-shadow(0 5px 15px rgba(0,0,0,0.3))';
+        }
+        if (petData.petEffect) {
+            petElement.classList.add(petData.petEffect);
+            petElement.style.filter = '';
+        }
+
+
+        // =========================================================
+        // LORD OF THE MYSTERIES · KLEIN CHIBI EVENT — V2
+        // PET CỬA HÀNG THƯỜNG.
+        // Idle realm chỉ quanh pet; CLICK tạo ultimate toàn màn hình.
+        // Namespace lotme-* hoàn toàn riêng, không gọi Luxury Klein.
+        // =========================================================
+        if (
+            petData.id === 'pet_lotm_klein_chibi_event_1' ||
+            petData.petEffect === 'lotm-event-klein-chibi-magic'
+        ) {
+            petElement.setAttribute('draggable', 'false');
+            petElement.classList.add('lotme-klein-chibi-avatar');
+
+            this.container.classList.add(
+                'pet-lotm-event-klein-stage'
+            );
+
+            const realm = document.createElement('div');
+            realm.className = 'lotme-klein-realm';
+            realm.setAttribute('aria-hidden', 'true');
+
+            realm.innerHTML = `
+                <span class="lotme-klein-backglow"></span>
+
+                <span class="lotme-klein-fog fog-a"></span>
+                <span class="lotme-klein-fog fog-b"></span>
+
+                <span class="lotme-klein-seal">
+                    <i class="lotme-klein-seal-ring ring-a"></i>
+                    <i class="lotme-klein-seal-ring ring-b"></i>
+                    <i class="lotme-klein-seal-ring ring-c"></i>
+                    <i class="lotme-klein-seal-eye"></i>
+                </span>
+
+                <span class="lotme-klein-thread thread-a"></span>
+                <span class="lotme-klein-thread thread-b"></span>
+                <span class="lotme-klein-thread thread-c"></span>
+
+                <span class="lotme-klein-card card-a">0</span>
+                <span class="lotme-klein-card card-b">I</span>
+                <span class="lotme-klein-card card-c">XXI</span>
+
+                <span class="lotme-klein-runes"></span>
+                <span class="lotme-klein-mote-field"></span>
+                <span class="lotme-klein-title-mark">THE FOOL</span>
+            `;
+
+            const runeField =
+                realm.querySelector('.lotme-klein-runes');
+
+            const idleRunes = [
+                '✦', '◇', 'Ⅰ', 'Ⅶ', 'Ⅹ', '0', '☽', '✧'
+            ];
+
+            const runeCount = this.getQualityCount(16, 8);
+
+            for (let index = 0; index < runeCount; index++) {
+                const rune = document.createElement('i');
+                const angle = index * (360 / runeCount);
+
+                rune.textContent = idleRunes[index % idleRunes.length];
+                rune.style.setProperty(
+                    '--lotme-rune-angle',
+                    `${angle}deg`
+                );
+                rune.style.setProperty(
+                    '--lotme-rune-angle-inverse',
+                    `${-angle}deg`
+                );
+                rune.style.setProperty(
+                    '--lotme-rune-radius',
+                    `${98 + (index % 3) * 15}px`
+                );
+                rune.style.setProperty(
+                    '--lotme-rune-delay',
+                    `${-(index % 7) * 0.31}s`
+                );
+
+                runeField?.appendChild(rune);
+            }
+
+            const moteField =
+                realm.querySelector('.lotme-klein-mote-field');
+
+            const moteCount = this.getQualityCount(26, 10);
+
+            for (let index = 0; index < moteCount; index++) {
+                const mote = document.createElement('i');
+
+                mote.className = 'lotme-klein-mote';
+
+                mote.style.setProperty(
+                    '--lotme-mote-angle',
+                    `${(index * 137.5) % 360}deg`
+                );
+
+                mote.style.setProperty(
+                    '--lotme-mote-radius',
+                    `${68 + (index % 6) * 14}px`
+                );
+
+                mote.style.setProperty(
+                    '--lotme-mote-delay',
+                    `${-(index % 10) * 0.27}s`
+                );
+
+                mote.style.setProperty(
+                    '--lotme-mote-size',
+                    `${3 + (index % 4)}px`
+                );
+
+                moteField?.appendChild(mote);
+            }
+
+            this.container.appendChild(realm);
+        }
+
+
+        // =========================================================
+        // LẠC THANH HUYỀN · TIỂU MỘNG — CẦM MỘNG CHIBI V1
+        // HIỆU ỨNG MỚI HOÀN TOÀN, CHỈ QUANH PET.
+        // Namespace: cmc2-* / cam-mong-chibi-*
+        // Không gọi ThemeManager / EffectManager.
+        // Không tạo world/full-web và không tái sử dụng effect cũ.
+        // =========================================================
+        if (
+            petData.id === 'pet_cam_mong_chibi_1' ||
+            petData.petEffect === 'cam-mong-chibi-qin-spirit-magic'
+        ) {
+            petElement.setAttribute('draggable', 'false');
+            petElement.classList.add('cam-mong-chibi-avatar-v1');
+
+            this.container.classList.add(
+                'pet-cam-mong-chibi-stage'
+            );
+
+            const realm = document.createElement('div');
+            realm.className = 'cam-mong-chibi-realm-v1';
+            realm.setAttribute('aria-hidden', 'true');
+            realm.innerHTML = `
+                <span class="cmc2-aura aura-a"></span>
+                <span class="cmc2-aura aura-b"></span>
+
+                <span class="cmc2-jade-disc">
+                    <i></i><b></b><em>琴</em>
+                </span>
+
+                <span class="cmc2-ring ring-a"></span>
+                <span class="cmc2-ring ring-b"></span>
+                <span class="cmc2-ring ring-c"></span>
+
+                <span class="cmc2-cloud cloud-a"></span>
+                <span class="cmc2-cloud cloud-b"></span>
+
+                <span class="cmc2-qin-arc">
+                    <i></i><i></i><i></i><i></i>
+                    <i></i><i></i><i></i>
+                </span>
+
+                <span class="cmc2-tassel tassel-a"></span>
+                <span class="cmc2-tassel tassel-b"></span>
+
+                <span class="cmc2-note-field"></span>
+                <span class="cmc2-petal-field"></span>
+                <span class="cmc2-spark-field"></span>
+            `;
+
+            const reduced =
+                window.matchMedia?.(
+                    '(max-width: 768px), (pointer: coarse), (prefers-reduced-motion: reduce)'
+                ).matches;
+
+            const noteField =
+                realm.querySelector('.cmc2-note-field');
+
+            const noteSymbols = [
+                '♪', '♫', '✦', '梦', '琴', '❀', '♪', '✧', '云'
+            ];
+
+            noteSymbols.forEach((symbol, index) => {
+                const note = document.createElement('i');
+
+                note.textContent = symbol;
+
+                note.style.setProperty(
+                    '--cmc2-na',
+                    `${index * (360 / noteSymbols.length)}deg`
+                );
+
+                note.style.setProperty(
+                    '--cmc2-na-back',
+                    `${index * -(360 / noteSymbols.length)}deg`
+                );
+
+                note.style.setProperty(
+                    '--cmc2-nr-neg',
+                    `${-(62 + (index % 4) * 14)}px`
+                );
+
+                note.style.setProperty(
+                    '--cmc2-nd',
+                    `${-(index % 6) * .34}s`
+                );
+
+                noteField?.appendChild(note);
+            });
+
+            const petalField =
+                realm.querySelector('.cmc2-petal-field');
+
+            const petalCount = this.getQualityCount(reduced ? 10 : 18);
+
+            for (let index = 0; index < petalCount; index++) {
+                const petal = document.createElement('i');
+
+                petal.style.setProperty(
+                    '--cmc2-pa',
+                    `${index * (360 / petalCount)}deg`
+                );
+
+                petal.style.setProperty(
+                    '--cmc2-pa-back',
+                    `${index * -(360 / petalCount)}deg`
+                );
+
+                petal.style.setProperty(
+                    '--cmc2-pr-neg',
+                    `${-(48 + (index % 6) * 14)}px`
+                );
+
+                petal.style.setProperty(
+                    '--cmc2-pd',
+                    `${-(index % 9) * .23}s`
+                );
+
+                petalField?.appendChild(petal);
+            }
+
+            const sparkField =
+                realm.querySelector('.cmc2-spark-field');
+
+            const sparkCount = this.getQualityCount(reduced ? 12 : 26);
+
+            for (let index = 0; index < sparkCount; index++) {
+                const spark = document.createElement('i');
+
+                spark.style.setProperty(
+                    '--cmc2-sx',
+                    `${9 + ((index * 41) % 82)}%`
+                );
+
+                spark.style.setProperty(
+                    '--cmc2-sy',
+                    `${8 + ((index * 59) % 83)}%`
+                );
+
+                spark.style.setProperty(
+                    '--cmc2-ss',
+                    `${2 + (index % 4) * .8}px`
+                );
+
+                spark.style.setProperty(
+                    '--cmc2-sd',
+                    `${-(index % 10) * .27}s`
+                );
+
+                sparkField?.appendChild(spark);
+            }
+
+            this.container.appendChild(realm);
+        }
+
+        // =========================================================
+        // PREMIUM MÙA HẠ · TIỂU HẠ QUANG
+        // Hiệu ứng quanh pet hoàn toàn mới: nắng xuyên tán lá,
+        // kính quang phổ và ve mùa hạ. Không dùng hiệu ứng Mùa Hạ cũ.
+        // =========================================================
+        if (
+            petData.id === 'pet_premium_mua_ha_chibi_2' ||
+            petData.petEffect === 'ha2-limited-sunleaf-magic'
+        ) {
+            petElement.setAttribute('draggable', 'false');
+            petElement.classList.add('ha2l-avatar');
+
+            this.container.classList.add(
+                'pet-ha2l-summer-stage',
+                'ha2l-awakening'
+            );
+
+            document.documentElement.classList.add(
+                'ha2l-pet-equipped'
+            );
+
+            const localRealm = document.createElement('div');
+            localRealm.className = 'ha2l-local-realm';
+            localRealm.setAttribute('aria-hidden', 'true');
+            localRealm.innerHTML = `
+                <span class="ha2l-local-sun-disc"></span>
+                <span class="ha2l-local-prism prism-a"></span>
+                <span class="ha2l-local-prism prism-b"></span>
+                <span class="ha2l-local-leaf leaf-a"></span>
+                <span class="ha2l-local-leaf leaf-b"></span>
+                <span class="ha2l-local-leaf leaf-c"></span>
+                <span class="ha2l-local-cicada">◇</span>
+                <span class="ha2l-local-ring ring-a"></span>
+                <span class="ha2l-local-ring ring-b"></span>
+                <span class="ha2l-local-ground"></span>
+                <div class="ha2l-local-spark-field"></div>
+            `;
+
+            const reducedMotion = window.matchMedia?.(
+                '(max-width: 768px), (pointer: coarse), ' +
+                '(prefers-reduced-motion: reduce)'
+            ).matches;
+
+            const sparkField = localRealm.querySelector(
+                '.ha2l-local-spark-field'
+            );
+
+            const sparkCount = this.getQualityCount(
+                reducedMotion ? 9 : 18
+            );
+
+            for (let index = 0; index < sparkCount; index++) {
+                const spark = document.createElement('i');
+                spark.className = 'ha2l-local-spark';
+                spark.style.setProperty(
+                    '--ha2l-angle',
+                    `${index * (360 / sparkCount)}deg`
+                );
+                spark.style.setProperty(
+                    '--ha2l-radius',
+                    `${58 + (index % 5) * 10}px`
+                );
+                spark.style.setProperty(
+                    '--ha2l-delay',
+                    `${-(index % 8) * .27}s`
+                );
+                spark.style.setProperty(
+                    '--ha2l-size',
+                    `${2 + (index % 4) * .8}px`
+                );
+                sparkField?.appendChild(spark);
+            }
+
+            this.container.appendChild(localRealm);
+        }
+
+
+        // =========================================================
+        // TAMON'S B-SIDE — FALLBACK LOCAL STAGE
+        // Luôn gắn class kích thước / idle trực tiếp từ PetManager.
+        // LuxuryStore sẽ bổ sung realm + world + UI sau khi spawn.
+        // =========================================================
+        if (
+            petData.id === 'pet_tamon_b_side_1' ||
+            petData.petEffect === 'tamon-b-side-soundwave-magic'
+        ) {
+            petElement.setAttribute('draggable', 'false');
+            petElement.classList.add('tamon-bside-pet');
+
+            this.container.classList.add(
+                'pet-tamon-bside-stage'
+            );
+        }
+
+
+        // =========================================================
+        // TRUNG THU · TIỂU HẰNG NGA — NGUYỆT ĐĂNG VÂN VŨ
+        // Runtime MỚI hoàn toàn, namespace mafc-*.
+        // Chỉ thao tác DOM của pet này + overlay click tạm thời.
+        // KHÔNG gọi ThemeManager / EffectManager và không dùng class effect cũ.
+        // =========================================================
+        if (
+            petData.id === 'pet_trung_thu_hang_nga_chibi_1' ||
+            petData.petEffect ===
+                'midautumn-chibi-moon-lantern-magic'
+        ) {
+            petElement.setAttribute('draggable', 'false');
+            petElement.classList.add('mafc-avatar');
+
+            this.container.classList.add(
+                'pet-midautumn-hangnga-chibi-stage',
+                'mafc-awakening'
+            );
+
+            const realm = document.createElement('div');
+            realm.className = 'mafc-local-realm';
+            realm.setAttribute('aria-hidden', 'true');
+            realm.innerHTML = `
+                <span class="mafc-local-aura"></span>
+                <span class="mafc-local-moon"></span>
+                <span class="mafc-local-ring ring-a"></span>
+                <span class="mafc-local-ring ring-b"></span>
+                <span class="mafc-local-ring ring-c"></span>
+
+                <span class="mafc-local-cloud cloud-a"></span>
+                <span class="mafc-local-cloud cloud-b"></span>
+                <span class="mafc-local-cloud cloud-c"></span>
+
+                <span class="mafc-local-lantern lantern-a">◆</span>
+                <span class="mafc-local-lantern lantern-b">◆</span>
+                <span class="mafc-local-lantern lantern-c">◆</span>
+                <span class="mafc-local-lantern lantern-d">◆</span>
+
+                <div class="mafc-local-star-field"></div>
+                <div class="mafc-local-petal-field"></div>
+                <span class="mafc-local-ground"></span>
+            `;
+
+            const reducedMotion = window.matchMedia?.(
+                '(max-width: 768px), (pointer: coarse), ' +
+                '(prefers-reduced-motion: reduce)'
+            ).matches;
+
+            const starField = realm.querySelector(
+                '.mafc-local-star-field'
+            );
+            const starCount = this.getQualityCount(
+                reducedMotion ? 10 : 22
+            );
+
+            for (let index = 0; index < starCount; index++) {
+                const star = document.createElement('i');
+                star.className = 'mafc-local-star';
+                star.textContent =
+                    index % 5 === 0
+                        ? '✦'
+                        : index % 3 === 0
+                            ? '·'
+                            : '✧';
+                star.style.setProperty(
+                    '--mafc-sa',
+                    `${index * (360 / starCount)}deg`
+                );
+                star.style.setProperty(
+                    '--mafc-sab',
+                    `${index * -(360 / starCount)}deg`
+                );
+                star.style.setProperty(
+                    '--mafc-sr',
+                    `${57 + (index % 6) * 10}px`
+                );
+                star.style.setProperty(
+                    '--mafc-sd',
+                    `${-index * .18}s`
+                );
+                starField?.appendChild(star);
+            }
+
+            const petalField = realm.querySelector(
+                '.mafc-local-petal-field'
+            );
+            const petalCount = this.getQualityCount(
+                reducedMotion ? 8 : 16
+            );
+
+            for (let index = 0; index < petalCount; index++) {
+                const petal = document.createElement('i');
+                petal.className = 'mafc-local-petal';
+                petal.style.setProperty(
+                    '--mafc-px',
+                    `${8 + ((index * 43) % 84)}%`
+                );
+                petal.style.setProperty(
+                    '--mafc-py',
+                    `${12 + ((index * 61) % 76)}%`
+                );
+                petal.style.setProperty(
+                    '--mafc-pd',
+                    `${-(index % 9) * .31}s`
+                );
+                petal.style.setProperty(
+                    '--mafc-pr',
+                    `${-28 + (index % 7) * 11}deg`
+                );
+                petalField?.appendChild(petal);
+            }
+
+            this.container.appendChild(realm);
+
+            window.setTimeout(() => {
+                this.container?.classList.remove(
+                    'mafc-awakening'
+                );
+            }, 1500);
+
+            let mafcClickLocked = false;
+
+            petElement.addEventListener('click', event => {
+                if (mafcClickLocked) return;
+
+                if (
+                    typeof PetInteractionManager !== 'undefined' &&
+                    PetInteractionManager.isPetDragging
+                ) {
+                    return;
+                }
+
+                event.preventDefault();
+                event.stopPropagation();
+                event.stopImmediatePropagation();
+
+                mafcClickLocked = true;
+
+                this.container.classList.remove('mafc-casting');
+                void this.container.offsetWidth;
+                this.container.classList.add('mafc-casting');
+
+                // -----------------------------
+                // NỔ CỤC BỘ QUANH NHÂN VẬT
+                // -----------------------------
+                const localBurst = document.createElement('div');
+                localBurst.className = 'mafc-local-click-burst';
+                localBurst.setAttribute('aria-hidden', 'true');
+                localBurst.innerHTML = `
+                    <span class="mafc-click-moon"></span>
+                    <span class="mafc-click-ring ring-a"></span>
+                    <span class="mafc-click-ring ring-b"></span>
+                    <div class="mafc-click-rays"></div>
+                    <div class="mafc-click-sparks"></div>
+                `;
+
+                const clickSparks = localBurst.querySelector(
+                    '.mafc-click-sparks'
+                );
+                const clickCount = this.getQualityCount(
+                    reducedMotion ? 10 : 20
+                );
+
+                for (let index = 0; index < clickCount; index++) {
+                    const spark = document.createElement('i');
+                    spark.className = 'mafc-click-spark';
+                    spark.textContent = index % 4 === 0 ? '✦' : '';
+                    spark.style.setProperty(
+                        '--mafc-ca',
+                        `${index * (360 / clickCount)}deg`
+                    );
+                    spark.style.setProperty(
+                        '--mafc-cd',
+                        `${76 + (index % 5) * 18}px`
+                    );
+                    spark.style.setProperty(
+                        '--mafc-cdelay',
+                        `${(index % 5) * .025}s`
+                    );
+                    clickSparks?.appendChild(spark);
+                }
+
+                this.container.appendChild(localBurst);
+
+                // -----------------------------
+                // ULTIMATE TOÀN MÀN HÌNH RIÊNG
+                // -----------------------------
+                document
+                    .querySelectorAll('.mafc-screen-ultimate')
+                    .forEach(node => node.remove());
+
+                const ultimate = document.createElement('div');
+                ultimate.className = 'mafc-screen-ultimate';
+                ultimate.setAttribute('aria-hidden', 'true');
+                ultimate.innerHTML = `
+                    <div class="mafc-screen-flash"></div>
+                    <div class="mafc-screen-vignette"></div>
+                    <div class="mafc-screen-night"></div>
+
+                    <div class="mafc-screen-moon">
+                        <span class="moon-glow"></span>
+                        <span class="moon-disc"></span>
+                        <span class="moon-rabbit"></span>
+                    </div>
+
+                    <span class="mafc-screen-ring ring-one"></span>
+                    <span class="mafc-screen-ring ring-two"></span>
+                    <span class="mafc-screen-ring ring-three"></span>
+
+                    <div class="mafc-screen-cloud cloud-left"></div>
+                    <div class="mafc-screen-cloud cloud-right"></div>
+                    <div class="mafc-screen-cloud cloud-bottom"></div>
+
+                    <div class="mafc-screen-lantern-field"></div>
+                    <div class="mafc-screen-star-field"></div>
+                    <div class="mafc-screen-petal-field"></div>
+
+                    <div class="mafc-screen-title">
+                        <small>TRUNG THU · NGUYỆT ĐĂNG</small>
+                        <strong>NGUYỆT HẠ HOA ĐĂNG</strong>
+                        <span>✦ 月下花燈 ✦</span>
+                    </div>
+                `;
+
+                const lanternField = ultimate.querySelector(
+                    '.mafc-screen-lantern-field'
+                );
+                const lanternCount = this.getQualityCount(
+                    reducedMotion ? 8 : 16
+                );
+
+                for (
+                    let index = 0;
+                    index < lanternCount;
+                    index++
+                ) {
+                    const lantern = document.createElement('i');
+                    lantern.className = 'mafc-screen-lantern';
+                    lantern.innerHTML = '<b></b><span></span>';
+                    lantern.style.setProperty(
+                        '--mafc-lx',
+                        `${5 + ((index * 37) % 90)}%`
+                    );
+                    lantern.style.setProperty(
+                        '--mafc-ly',
+                        `${8 + ((index * 53) % 78)}%`
+                    );
+                    lantern.style.setProperty(
+                        '--mafc-ld',
+                        `${-(index % 8) * .24}s`
+                    );
+                    lantern.style.setProperty(
+                        '--mafc-ls',
+                        `${.7 + (index % 4) * .12}`
+                    );
+                    lanternField?.appendChild(lantern);
+                }
+
+                const screenStarField = ultimate.querySelector(
+                    '.mafc-screen-star-field'
+                );
+                const screenStarCount = this.getQualityCount(
+                    reducedMotion ? 16 : 38
+                );
+
+                for (
+                    let index = 0;
+                    index < screenStarCount;
+                    index++
+                ) {
+                    const star = document.createElement('i');
+                    star.className = 'mafc-screen-star';
+                    star.textContent = index % 6 === 0 ? '✦' : '·';
+                    star.style.setProperty(
+                        '--mafc-fx',
+                        `${(index * 41 + 7) % 100}%`
+                    );
+                    star.style.setProperty(
+                        '--mafc-fy',
+                        `${(index * 67 + 11) % 100}%`
+                    );
+                    star.style.setProperty(
+                        '--mafc-fd',
+                        `${-(index % 11) * .13}s`
+                    );
+                    screenStarField?.appendChild(star);
+                }
+
+                const screenPetalField = ultimate.querySelector(
+                    '.mafc-screen-petal-field'
+                );
+                const screenPetalCount = this.getQualityCount(
+                    reducedMotion ? 12 : 28
+                );
+
+                for (
+                    let index = 0;
+                    index < screenPetalCount;
+                    index++
+                ) {
+                    const petal = document.createElement('i');
+                    petal.className = 'mafc-screen-petal';
+                    petal.style.setProperty(
+                        '--mafc-ppx',
+                        `${(index * 29 + 5) % 100}%`
+                    );
+                    petal.style.setProperty(
+                        '--mafc-ppy',
+                        `${(index * 47 + 9) % 100}%`
+                    );
+                    petal.style.setProperty(
+                        '--mafc-ppd',
+                        `${-(index % 10) * .17}s`
+                    );
+                    screenPetalField?.appendChild(petal);
+                }
+
+                document.body.appendChild(ultimate);
+
+                requestAnimationFrame(() => {
+                    ultimate.classList.add('is-active');
+                });
+
+                window.setTimeout(() => {
+                    ultimate.classList.add('is-leaving');
+                }, 2800);
+
+                window.setTimeout(() => {
+                    ultimate.remove();
+                }, 3700);
+
+                window.setTimeout(() => {
+                    localBurst.remove();
+                    this.container?.classList.remove(
+                        'mafc-casting'
+                    );
+                }, 1300);
+
+                window.setTimeout(() => {
+                    mafcClickLocked = false;
+                }, 4100);
+            });
+        }
+
+        // =========================================================
+        // TRUNG THU · TIỂU CHÚ CUỘI — QUẾ ẢNH THỤ QUANG
+        // HIỆU ỨNG MỚI HOÀN TOÀN, chỉ quanh pet + hiệu ứng nhấn.
+        // Namespace duy nhất: macc2-*.
+        // KHÔNG dùng mafc-* / midautumn-cuoi-* / EffectManager / ThemeManager.
+        // =========================================================
+        if (
+            petData.id === 'pet_trung_thu_chu_cuoi_chibi_2' ||
+            petData.petEffect ===
+                'midautumn-cuoi-chibi-banyan-magic'
+        ) {
+            petElement.setAttribute('draggable', 'false');
+            petElement.classList.add('macc2-avatar');
+
+            this.container.classList.add(
+                'pet-midautumn-cuoi-chibi-stage',
+                'macc2-awakening'
+            );
+
+            const localRealm = document.createElement('div');
+            localRealm.className = 'macc2-local-realm';
+            localRealm.setAttribute('aria-hidden', 'true');
+            localRealm.innerHTML = `
+                <span class="macc2-aura"></span>
+                <span class="macc2-moon-disc"></span>
+                <span class="macc2-banyan-crown"></span>
+
+                <span class="macc2-ring ring-a"></span>
+                <span class="macc2-ring ring-b"></span>
+
+                <span class="macc2-branch branch-left"></span>
+                <span class="macc2-branch branch-right"></span>
+
+                <span class="macc2-lantern lantern-left">◆</span>
+                <span class="macc2-lantern lantern-right">◆</span>
+
+                <div class="macc2-leaf-field"></div>
+                <div class="macc2-firefly-field"></div>
+
+                <span class="macc2-ground-glow"></span>
+            `;
+
+            const reducedMotion = window.matchMedia?.(
+                '(max-width: 768px), (pointer: coarse), ' +
+                '(prefers-reduced-motion: reduce)'
+            ).matches;
+
+            const leafField = localRealm.querySelector(
+                '.macc2-leaf-field'
+            );
+            const leafCount = this.getQualityCount(
+                reducedMotion ? 8 : 18
+            );
+
+            for (let index = 0; index < leafCount; index++) {
+                const leaf = document.createElement('i');
+                leaf.className = 'macc2-leaf';
+                leaf.style.setProperty(
+                    '--macc2-la',
+                    `${index * (360 / leafCount)}deg`
+                );
+                leaf.style.setProperty(
+                    '--macc2-lab',
+                    `${index * -(360 / leafCount)}deg`
+                );
+                leaf.style.setProperty(
+                    '--macc2-lr',
+                    `${54 + (index % 6) * 11}px`
+                );
+                leaf.style.setProperty(
+                    '--macc2-ld',
+                    `${-(index % 9) * .24}s`
+                );
+                leafField?.appendChild(leaf);
+            }
+
+            const fireflyField = localRealm.querySelector(
+                '.macc2-firefly-field'
+            );
+            const fireflyCount = this.getQualityCount(
+                reducedMotion ? 10 : 24
+            );
+
+            for (let index = 0; index < fireflyCount; index++) {
+                const firefly = document.createElement('i');
+                firefly.className = 'macc2-firefly';
+                firefly.style.setProperty(
+                    '--macc2-fx',
+                    `${8 + ((index * 43) % 84)}%`
+                );
+                firefly.style.setProperty(
+                    '--macc2-fy',
+                    `${10 + ((index * 61) % 76)}%`
+                );
+                firefly.style.setProperty(
+                    '--macc2-fd',
+                    `${-(index % 10) * .29}s`
+                );
+                firefly.style.setProperty(
+                    '--macc2-fs',
+                    `${2 + (index % 4) * .7}px`
+                );
+                fireflyField?.appendChild(firefly);
+            }
+
+            this.container.appendChild(localRealm);
+
+            window.setTimeout(() => {
+                this.container?.classList.remove(
+                    'macc2-awakening'
+                );
+            }, 1250);
+
+            let macc2ClickLocked = false;
+
+            petElement.addEventListener('click', event => {
+                if (macc2ClickLocked) return;
+
+                if (
+                    typeof PetInteractionManager !== 'undefined' &&
+                    PetInteractionManager.isPetDragging
+                ) {
+                    return;
+                }
+
+                event.preventDefault();
+                event.stopPropagation();
+                event.stopImmediatePropagation();
+
+                macc2ClickLocked = true;
+
+                this.container.classList.remove(
+                    'macc2-casting'
+                );
+                void this.container.offsetWidth;
+                this.container.classList.add(
+                    'macc2-casting'
+                );
+
+                const burst = document.createElement('div');
+                burst.className = 'macc2-local-click-burst';
+                burst.setAttribute('aria-hidden', 'true');
+                burst.innerHTML = `
+                    <span class="macc2-click-moon"></span>
+                    <span class="macc2-click-ring ring-a"></span>
+                    <span class="macc2-click-ring ring-b"></span>
+                    <span class="macc2-click-tree-rune">桂</span>
+                    <div class="macc2-click-ray-field"></div>
+                    <div class="macc2-click-leaf-field"></div>
+                    <div class="macc2-click-firefly-field"></div>
+                `;
+
+                const clickLeafField = burst.querySelector(
+                    '.macc2-click-leaf-field'
+                );
+                const clickLeafCount = this.getQualityCount(
+                    reducedMotion ? 10 : 22
+                );
+
+                for (
+                    let index = 0;
+                    index < clickLeafCount;
+                    index++
+                ) {
+                    const leaf = document.createElement('i');
+                    leaf.className = 'macc2-click-leaf';
+                    leaf.style.setProperty(
+                        '--macc2-ca',
+                        `${index * (360 / clickLeafCount)}deg`
+                    );
+                    leaf.style.setProperty(
+                        '--macc2-cab',
+                        `${index * -(360 / clickLeafCount)}deg`
+                    );
+                    leaf.style.setProperty(
+                        '--macc2-cd',
+                        `${62 + (index % 6) * 17}px`
+                    );
+                    leaf.style.setProperty(
+                        '--macc2-cdelay',
+                        `${(index % 6) * .025}s`
+                    );
+                    clickLeafField?.appendChild(leaf);
+                }
+
+                const clickFireflyField = burst.querySelector(
+                    '.macc2-click-firefly-field'
+                );
+                const clickFireflyCount = this.getQualityCount(
+                    reducedMotion ? 8 : 16
+                );
+
+                for (
+                    let index = 0;
+                    index < clickFireflyCount;
+                    index++
+                ) {
+                    const spark = document.createElement('i');
+                    spark.className = 'macc2-click-firefly';
+                    spark.textContent =
+                        index % 4 === 0
+                            ? '✦'
+                            : '';
+                    spark.style.setProperty(
+                        '--macc2-sca',
+                        `${index * (360 / clickFireflyCount)}deg`
+                    );
+                    spark.style.setProperty(
+                        '--macc2-scab',
+                        `${index * -(360 / clickFireflyCount)}deg`
+                    );
+                    spark.style.setProperty(
+                        '--macc2-scd',
+                        `${76 + (index % 5) * 16}px`
+                    );
+                    spark.style.setProperty(
+                        '--macc2-sdelay',
+                        `${(index % 5) * .03}s`
+                    );
+                    clickFireflyField?.appendChild(spark);
+                }
+
+                this.container.appendChild(burst);
+
+                // -----------------------------
+                // ULTIMATE TOÀN WEB RIÊNG · QUẾ ẢNH THỤ QUANG
+                // Namespace macc2-* hoàn toàn độc lập.
+                // Không tái sử dụng mafc-* / Nguyệt Hạ Hoa Đăng.
+                // -----------------------------
+                document
+                    .querySelectorAll('.macc2-screen-ultimate')
+                    .forEach(node => node.remove());
+
+                const ultimate = document.createElement('div');
+                ultimate.className = 'macc2-screen-ultimate';
+                ultimate.setAttribute('aria-hidden', 'true');
+                ultimate.innerHTML = `
+                    <div class="macc2-screen-night"></div>
+                    <div class="macc2-screen-aurora aurora-a"></div>
+                    <div class="macc2-screen-aurora aurora-b"></div>
+
+                    <div class="macc2-screen-moon">
+                        <span class="moon-halo"></span>
+                        <span class="moon-disc"></span>
+                        <span class="moon-rune">桂</span>
+                    </div>
+
+                    <div class="macc2-screen-banyan">
+                        <span class="banyan-crown crown-a"></span>
+                        <span class="banyan-crown crown-b"></span>
+                        <span class="banyan-trunk"></span>
+                        <span class="banyan-root root-a"></span>
+                        <span class="banyan-root root-b"></span>
+                    </div>
+
+                    <span class="macc2-screen-ring ring-one"></span>
+                    <span class="macc2-screen-ring ring-two"></span>
+                    <span class="macc2-screen-ring ring-three"></span>
+
+                    <div class="macc2-screen-cloud cloud-left"></div>
+                    <div class="macc2-screen-cloud cloud-right"></div>
+
+                    <div class="macc2-screen-leaf-field"></div>
+                    <div class="macc2-screen-firefly-field"></div>
+                    <div class="macc2-screen-star-field"></div>
+
+                    <div class="macc2-screen-title">
+                        <small>TRUNG THU · TIỂU CHÚ CUỘI</small>
+                        <strong>QUẾ ẢNH THỤ QUANG</strong>
+                        <span>✦ 桂影月華 ✦</span>
+                    </div>
+                `;
+
+                const screenLeafField = ultimate.querySelector(
+                    '.macc2-screen-leaf-field'
+                );
+                const screenLeafCount = this.getQualityCount(
+                    reducedMotion ? 14 : 34
+                );
+
+                for (
+                    let index = 0;
+                    index < screenLeafCount;
+                    index++
+                ) {
+                    const leaf = document.createElement('i');
+                    leaf.className = 'macc2-screen-leaf';
+                    leaf.style.setProperty(
+                        '--macc2-slx',
+                        `${(index * 37 + 5) % 100}%`
+                    );
+                    leaf.style.setProperty(
+                        '--macc2-sly',
+                        `${-10 - (index % 9) * 6}vh`
+                    );
+                    leaf.style.setProperty(
+                        '--macc2-sld',
+                        `${-(index % 12) * .19}s`
+                    );
+                    leaf.style.setProperty(
+                        '--macc2-slr',
+                        `${-34 + (index % 8) * 11}deg`
+                    );
+                    leaf.style.setProperty(
+                        '--macc2-sls',
+                        `${.72 + (index % 5) * .12}`
+                    );
+                    screenLeafField?.appendChild(leaf);
+                }
+
+                const screenFireflyField = ultimate.querySelector(
+                    '.macc2-screen-firefly-field'
+                );
+                const screenFireflyCount = this.getQualityCount(
+                    reducedMotion ? 16 : 42
+                );
+
+                for (
+                    let index = 0;
+                    index < screenFireflyCount;
+                    index++
+                ) {
+                    const firefly = document.createElement('i');
+                    firefly.className = 'macc2-screen-firefly';
+                    firefly.textContent =
+                        index % 7 === 0
+                            ? '✦'
+                            : '';
+                    firefly.style.setProperty(
+                        '--macc2-sfx',
+                        `${(index * 43 + 9) % 100}%`
+                    );
+                    firefly.style.setProperty(
+                        '--macc2-sfy',
+                        `${(index * 61 + 13) % 100}%`
+                    );
+                    firefly.style.setProperty(
+                        '--macc2-sfd',
+                        `${-(index % 11) * .17}s`
+                    );
+                    firefly.style.setProperty(
+                        '--macc2-sfs',
+                        `${2 + (index % 4) * .7}px`
+                    );
+                    screenFireflyField?.appendChild(firefly);
+                }
+
+                const screenStarField = ultimate.querySelector(
+                    '.macc2-screen-star-field'
+                );
+                const screenStarCount = this.getQualityCount(
+                    reducedMotion ? 12 : 30
+                );
+
+                for (
+                    let index = 0;
+                    index < screenStarCount;
+                    index++
+                ) {
+                    const star = document.createElement('i');
+                    star.className = 'macc2-screen-star';
+                    star.textContent = index % 5 === 0 ? '✧' : '·';
+                    star.style.setProperty(
+                        '--macc2-ssx',
+                        `${(index * 47 + 3) % 100}%`
+                    );
+                    star.style.setProperty(
+                        '--macc2-ssy',
+                        `${(index * 71 + 7) % 100}%`
+                    );
+                    star.style.setProperty(
+                        '--macc2-ssd',
+                        `${-(index % 10) * .14}s`
+                    );
+                    screenStarField?.appendChild(star);
+                }
+
+                document.body.appendChild(ultimate);
+
+                requestAnimationFrame(() => {
+                    ultimate.classList.add('is-active');
+                });
+
+                window.setTimeout(() => {
+                    ultimate.classList.add('is-leaving');
+                }, 2700);
+
+                window.setTimeout(() => {
+                    ultimate.remove();
+                }, 3600);
+
+                window.setTimeout(() => {
+                    burst.remove();
+                    this.container?.classList.remove(
+                        'macc2-casting'
+                    );
+                }, 1450);
+
+                window.setTimeout(() => {
+                    macc2ClickLocked = false;
+                }, 3900);
+            });
+        }
+
+        // =========================================================
+        // TAMON'S B-SIDE · CHIBI SIGNAL — EFFECT RIÊNG
+        // Không dùng class/keyframe của tamon-bside cũ hoặc Pink Static.
+        // =========================================================
+        if (
+            petData.id === 'pet_tamon_bside_chibi_1' ||
+            petData.petEffect === 'tamon-bside-chibi-signal-magic'
+        ) {
+            petElement.setAttribute('draggable', 'false');
+            petElement.classList.add('tamon-bside-chibi-avatar');
+            this.container.classList.add('pet-tamon-bside-chibi-stage');
+
+            const realm = document.createElement('div');
+            realm.className = 'tamon-bside-chibi-realm';
+            realm.setAttribute('aria-hidden', 'true');
+            realm.innerHTML = `
+                <span class="tbc1-halo halo-a"></span>
+                <span class="tbc1-halo halo-b"></span>
+                <span class="tbc1-signal-ring ring-a"></span>
+                <span class="tbc1-signal-ring ring-b"></span>
+                <span class="tbc1-wave wave-a"></span>
+                <span class="tbc1-wave wave-b"></span>
+                <div class="tbc1-spark-field"></div>
+            `;
+
+            const sparkField = realm.querySelector('.tbc1-spark-field');
+            const reducedMotion = window.matchMedia?.(
+                '(max-width: 768px), (pointer: coarse), (prefers-reduced-motion: reduce)'
+            ).matches;
+            const sparkCount = this.getQualityCount(reducedMotion ? 8 : 16);
+
+            for (let index = 0; index < sparkCount; index++) {
+                const spark = document.createElement('i');
+                spark.className = 'tbc1-ambient-spark';
+                spark.style.setProperty('--tbc1-angle', `${index * (360 / sparkCount)}deg`);
+                spark.style.setProperty('--tbc1-radius', `${54 + (index % 5) * 9}px`);
+                spark.style.setProperty('--tbc1-delay', `${-index * 0.18}s`);
+                sparkField?.appendChild(spark);
+            }
+
+            this.container.appendChild(realm);
+
+            let tamonBsideChibiClickLocked = false;
+            petElement.addEventListener('click', event => {
+                if (tamonBsideChibiClickLocked) return;
+                if (
+                    typeof PetInteractionManager !== 'undefined' &&
+                    PetInteractionManager.isPetDragging
+                ) return;
+
+                event.preventDefault();
+                event.stopPropagation();
+                tamonBsideChibiClickLocked = true;
+
+                this.container.classList.remove('tamon-bside-chibi-casting');
+                void this.container.offsetWidth;
+                this.container.classList.add('tamon-bside-chibi-casting');
+
+                const burst = document.createElement('div');
+                burst.className = 'tamon-bside-chibi-click-burst';
+                burst.setAttribute('aria-hidden', 'true');
+                burst.innerHTML = `
+                    <span class="tbc1-click-ring ring-a"></span>
+                    <span class="tbc1-click-ring ring-b"></span>
+                    <div class="tbc1-click-sparks"></div>
+                `;
+
+                const clickSparks = burst.querySelector('.tbc1-click-sparks');
+                for (let index = 0; index < 12; index++) {
+                    const spark = document.createElement('i');
+                    spark.className = 'tbc1-click-spark';
+                    spark.style.setProperty('--tbc1-click-angle', `${index * 30}deg`);
+                    spark.style.setProperty('--tbc1-click-distance', `${62 + (index % 4) * 13}px`);
+                    clickSparks?.appendChild(spark);
+                }
+
+                this.container.appendChild(burst);
+
+                // =====================================================
+                // TAMON'S B-SIDE CHIBI — FULLSCREEN CLICK ULTIMATE
+                // Hiệu ứng mới hoàn toàn, chỉ tồn tại khi nhấn pet này.
+                // Namespace tbc1-* không dùng class / keyframe effect cũ.
+                // =====================================================
+                document
+                    .querySelectorAll('.tbc1-fullscreen-ultimate')
+                    .forEach(node => node.remove());
+
+                const ultimate = document.createElement('div');
+                ultimate.className = 'tbc1-fullscreen-ultimate';
+                ultimate.setAttribute('aria-hidden', 'true');
+                ultimate.innerHTML = `
+                    <div class="tbc1-screen-flash"></div>
+                    <div class="tbc1-screen-vignette"></div>
+                    <div class="tbc1-screen-split split-blue"></div>
+                    <div class="tbc1-screen-split split-pink"></div>
+                    <div class="tbc1-screen-scanlines"></div>
+                    <div class="tbc1-screen-grid"></div>
+                    <div class="tbc1-screen-orbit orbit-a"></div>
+                    <div class="tbc1-screen-orbit orbit-b"></div>
+                    <div class="tbc1-screen-core">
+                        <span class="tbc1-screen-core-ring ring-one"></span>
+                        <span class="tbc1-screen-core-ring ring-two"></span>
+                        <span class="tbc1-screen-core-dot"></span>
+                    </div>
+                    <div class="tbc1-screen-wave wave-one"></div>
+                    <div class="tbc1-screen-wave wave-two"></div>
+                    <div class="tbc1-screen-wave wave-three"></div>
+                    <div class="tbc1-screen-shards"></div>
+                    <div class="tbc1-screen-eq"></div>
+                    <div class="tbc1-screen-signature">
+                        <small>TAMON'S B-SIDE</small>
+                        <strong>SIGNAL BREAK</strong>
+                    </div>
+                `;
+
+                const shardField = ultimate.querySelector('.tbc1-screen-shards');
+                const eqField = ultimate.querySelector('.tbc1-screen-eq');
+                const ultimateReduced = window.matchMedia?.(
+                    '(max-width: 768px), (pointer: coarse), (prefers-reduced-motion: reduce)'
+                ).matches;
+
+                const shardCount = this.getQualityCount(ultimateReduced ? 12 : 28);
+                for (let index = 0; index < shardCount; index++) {
+                    const shard = document.createElement('i');
+                    shard.className = 'tbc1-screen-shard';
+                    shard.style.setProperty('--tbc1-fx-x', `${(index * 37 + 9) % 100}%`);
+                    shard.style.setProperty('--tbc1-fx-y', `${(index * 61 + 13) % 100}%`);
+                    shard.style.setProperty('--tbc1-fx-delay', `${-(index % 9) * 0.07}s`);
+                    shard.style.setProperty('--tbc1-fx-rot', `${-28 + (index % 8) * 9}deg`);
+                    shard.style.setProperty('--tbc1-fx-scale', `${0.65 + (index % 5) * 0.18}`);
+                    shardField?.appendChild(shard);
+                }
+
+                const eqCount = this.getQualityCount(ultimateReduced ? 14 : 30);
+                for (let index = 0; index < eqCount; index++) {
+                    const bar = document.createElement('i');
+                    bar.className = 'tbc1-screen-eq-bar';
+                    bar.style.setProperty('--tbc1-eq-index', index);
+                    bar.style.setProperty('--tbc1-eq-height', `${18 + ((index * 17) % 66)}px`);
+                    bar.style.setProperty('--tbc1-eq-delay', `${-(index % 10) * 0.045}s`);
+                    eqField?.appendChild(bar);
+                }
+
+                document.body.appendChild(ultimate);
+
+                requestAnimationFrame(() => {
+                    ultimate.classList.add('is-active');
+                });
+
+                window.setTimeout(() => {
+                    ultimate.classList.add('is-leaving');
+                }, 2200);
+
+                window.setTimeout(() => {
+                    ultimate.remove();
+                }, 2850);
+
+                window.setTimeout(() => burst.remove(), 1050);
+                window.setTimeout(() => {
+                    this.container?.classList.remove('tamon-bside-chibi-casting');
+                    tamonBsideChibiClickLocked = false;
+                }, 1150);
+            });
+        }
+
+
+        // =========================================================
+        // TAMON'S B-SIDE · CHIBI II — ECLIPSE ENCORE
+        // Vật phẩm mới hoàn toàn, namespace tbc2-*.
+        // Không dùng DOM/class/keyframe của tbc1, Pink Static hay Tamon Luxury.
+        // Chỉ tạo realm quanh pet + ultimate khi nhấn chính pet này.
+        // =========================================================
+        if (
+            petData.id === 'pet_tamon_bside_chibi_2' ||
+            petData.petEffect === 'tamon-bside-chibi2-eclipse-magic'
+        ) {
+            ensureTamonBsideChibi2Stylesheet();
+
+            petElement.setAttribute('draggable', 'false');
+            petElement.classList.add('tamon-bside-chibi2-avatar');
+            this.container.classList.add('pet-tamon-bside-chibi2-stage');
+
+            const realm = document.createElement('div');
+            realm.className = 'tbc2-realm';
+            realm.setAttribute('aria-hidden', 'true');
+            realm.innerHTML = `
+                <span class="tbc2-eclipse-disc"></span>
+                <span class="tbc2-orbit orbit-a"></span>
+                <span class="tbc2-orbit orbit-b"></span>
+                <span class="tbc2-ribbon ribbon-a"></span>
+                <span class="tbc2-ribbon ribbon-b"></span>
+                <div class="tbc2-mote-field"></div>
+            `;
+
+            const moteField = realm.querySelector('.tbc2-mote-field');
+            const reducedMotion = window.matchMedia?.(
+                '(max-width: 768px), (pointer: coarse), (prefers-reduced-motion: reduce)'
+            ).matches;
+            const moteCount = this.getQualityCount(reducedMotion ? 7 : 15);
+
+            for (let index = 0; index < moteCount; index++) {
+                const mote = document.createElement('i');
+                mote.className = index % 4 === 0
+                    ? 'tbc2-mote is-star'
+                    : 'tbc2-mote';
+                mote.textContent = index % 4 === 0 ? '✦' : '';
+                mote.style.setProperty(
+                    '--tbc2-angle',
+                    `${index * (360 / Math.max(1, moteCount))}deg`
+                );
+                mote.style.setProperty(
+                    '--tbc2-radius',
+                    `${58 + (index % 5) * 10}px`
+                );
+                mote.style.setProperty(
+                    '--tbc2-delay',
+                    `${-index * 0.21}s`
+                );
+                moteField?.appendChild(mote);
+            }
+
+            this.container.appendChild(realm);
+
+            let tbc2ClickLocked = false;
+
+            petElement.addEventListener('click', event => {
+                if (tbc2ClickLocked) return;
+                if (
+                    typeof PetInteractionManager !== 'undefined' &&
+                    PetInteractionManager.isPetDragging
+                ) return;
+
+                event.preventDefault();
+                event.stopPropagation();
+                event.stopImmediatePropagation?.();
+
+                tbc2ClickLocked = true;
+
+                this.container.classList.remove('tbc2-casting');
+                void this.container.offsetWidth;
+                this.container.classList.add('tbc2-casting');
+
+                const localBurst = document.createElement('div');
+                localBurst.className = 'tbc2-click-burst';
+                localBurst.setAttribute('aria-hidden', 'true');
+                localBurst.innerHTML = `
+                    <span class="tbc2-click-crescent crescent-a"></span>
+                    <span class="tbc2-click-crescent crescent-b"></span>
+                    <div class="tbc2-click-stars"></div>
+                `;
+
+                const clickStars = localBurst.querySelector('.tbc2-click-stars');
+                const clickStarCount = this.getQualityCount(reducedMotion ? 8 : 16);
+                for (let index = 0; index < clickStarCount; index++) {
+                    const star = document.createElement('i');
+                    star.className = 'tbc2-click-star';
+                    star.style.setProperty(
+                        '--tbc2-click-angle',
+                        `${index * (360 / Math.max(1, clickStarCount))}deg`
+                    );
+                    star.style.setProperty(
+                        '--tbc2-click-distance',
+                        `${72 + (index % 4) * 14}px`
+                    );
+                    clickStars?.appendChild(star);
+                }
+                this.container.appendChild(localBurst);
+
+                document
+                    .querySelectorAll('.tbc2-fullscreen-ultimate')
+                    .forEach(node => node.remove());
+
+                const ultimate = document.createElement('div');
+                ultimate.className = 'tbc2-fullscreen-ultimate';
+                ultimate.setAttribute('aria-hidden', 'true');
+                ultimate.innerHTML = `
+                    <div class="tbc2-screen-night"></div>
+                    <div class="tbc2-screen-flash"></div>
+                    <div class="tbc2-screen-eclipse">
+                        <span class="tbc2-screen-moon"></span>
+                        <span class="tbc2-screen-corona"></span>
+                    </div>
+                    <span class="tbc2-screen-arc arc-a"></span>
+                    <span class="tbc2-screen-arc arc-b"></span>
+                    <div class="tbc2-screen-ribbons">
+                        <i class="ribbon-a"></i>
+                        <i class="ribbon-b"></i>
+                        <i class="ribbon-c"></i>
+                    </div>
+                    <div class="tbc2-screen-starfield"></div>
+                    <div class="tbc2-screen-title">
+                        <small>TAMON'S B-SIDE</small>
+                        <strong>ECLIPSE ENCORE</strong>
+                    </div>
+                `;
+
+                const starField = ultimate.querySelector('.tbc2-screen-starfield');
+                const screenStarCount = this.getQualityCount(reducedMotion ? 14 : 34);
+                for (let index = 0; index < screenStarCount; index++) {
+                    const star = document.createElement('i');
+                    star.className = index % 5 === 0
+                        ? 'tbc2-screen-star is-hot'
+                        : 'tbc2-screen-star';
+                    star.style.setProperty('--tbc2-sx', `${(index * 37 + 11) % 100}%`);
+                    star.style.setProperty('--tbc2-sy', `${(index * 61 + 7) % 100}%`);
+                    star.style.setProperty('--tbc2-sdelay', `${-(index % 11) * 0.08}s`);
+                    star.style.setProperty('--tbc2-sscale', `${0.55 + (index % 5) * 0.16}`);
+                    starField?.appendChild(star);
+                }
+
+                document.body.appendChild(ultimate);
+
+                requestAnimationFrame(() => {
+                    ultimate.classList.add('is-active');
+                });
+
+                window.setTimeout(() => {
+                    ultimate.classList.add('is-leaving');
+                }, 2550);
+
+                window.setTimeout(() => {
+                    ultimate.remove();
+                }, 3300);
+
+                window.setTimeout(() => {
+                    localBurst.remove();
+                    this.container?.classList.remove('tbc2-casting');
+                }, 1200);
+
+                window.setTimeout(() => {
+                    tbc2ClickLocked = false;
+                }, 3500);
+            });
+        }
+
+
+        // =========================================================
+        // TAMON · PINK STATIC — FALLBACK LOCAL STAGE
+        // Class riêng hoàn toàn, không dùng tamon-bside-*.
+        // =========================================================
+        if (
+            petData.id === 'pet_tamon_b_side_2' ||
+            petData.petEffect === 'tamon-pink-static-magic'
+        ) {
+            petElement.setAttribute('draggable', 'false');
+            petElement.classList.add('tamon-pinkstatic-pet');
+            this.container.classList.add(
+                'pet-tamon-pinkstatic-stage'
+            );
+        }
+
+        // =========================================================
+        // QUỐC KHÁNH 2/9 — SỨ GIẢ SAO VÀNG
+        // Vật phẩm mới hoàn toàn.
+        // KHÔNG dùng national-day-dong-son-magic của pet cũ.
+        // =========================================================
+        if (
+            petData.petEffect ===
+            'national-day-chibi-star-magic'
+        ) {
+            petElement.setAttribute('draggable', 'false');
+
+            this.container.classList.add(
+                'pet-national-day-chibi-stage',
+                'nd29-awakening'
+            );
+
+            const emblem = document.createElement('div');
+
+            emblem.className = 'nd29-pet-emblem';
+            emblem.setAttribute('aria-hidden', 'true');
+
+            emblem.innerHTML = `
+        <span class="nd29-halo halo-outer"></span>
+        <span class="nd29-halo halo-inner"></span>
+
+        <span class="nd29-emblem-star">
+            ★
+        </span>
+
+        <span class="nd29-ribbon ribbon-left"></span>
+        <span class="nd29-ribbon ribbon-right"></span>
+
+        <div class="nd29-ambient-particles"></div>
+    `;
+
+            const particleField =
+                emblem.querySelector(
+                    '.nd29-ambient-particles'
+                );
+
+            const reducedMotion =
+                window.matchMedia?.(
+                    '(max-width: 768px), ' +
+                    '(pointer: coarse), ' +
+                    '(prefers-reduced-motion: reduce)'
+                ).matches;
+
+            const particleCount =
+                this.getQualityCount(reducedMotion ? 8 : 16);
+
+            for (
+                let index = 0;
+                index < particleCount;
+                index++
+            ) {
+                const particle =
+                    document.createElement('span');
+
+                particle.className =
+                    index % 4 === 0
+                        ? 'nd29-ambient-star'
+                        : 'nd29-ambient-spark';
+
+                particle.textContent =
+                    index % 4 === 0
+                        ? '★'
+                        : '';
+
+                particle.style.setProperty(
+                    '--nd29-angle',
+                    `${index *
+                    (360 / particleCount)}deg`
+                );
+
+                particle.style.setProperty(
+                    '--nd29-radius',
+                    `${56 +
+                    (index % 5) * 8}px`
+                );
+
+                particle.style.setProperty(
+                    '--nd29-delay',
+                    `${-index * 0.22}s`
+                );
+
+                particleField?.appendChild(
+                    particle
+                );
+            }
+
+            this.container.appendChild(emblem);
+
+            window.setTimeout(() => {
+                this.container?.classList.remove(
+                    'nd29-awakening'
+                );
+            }, 1450);
+        }
+
+        // =========================================================
+        // VIỆT LINH · HÀO KHÍ ĐỘC LẬP
+        // Idle local: trống đồng, sơn son, quỹ đạo sao và mảnh đồng.
+        // =========================================================
+        if (
+            petData.petEffect ===
+            'national-day-dong-son-magic'
+        ) {
+            petElement.setAttribute(
+                'draggable',
+                'false'
+            );
+
+            this.container.classList.add(
+                'pet-national-day-stage'
+            );
+
+            const drum = document.createElement('div');
+
+            drum.className =
+                'national-day-pet-drum';
+
+            drum.setAttribute(
+                'aria-hidden',
+                'true'
+            );
+
+            drum.innerHTML = `
+        <span class="nd-pet-drum-disc"></span>
+        <span class="nd-pet-drum-ring ring-one"></span>
+        <span class="nd-pet-drum-ring ring-two"></span>
+        <span class="nd-pet-drum-star">★</span>
+        <span class="nd-pet-lacquer-arc arc-left"></span>
+        <span class="nd-pet-lacquer-arc arc-right"></span>
+        <div class="nd-pet-orbit-field"></div>
+        <div class="nd-pet-bronze-shards"></div>
+    `;
+
+            const orbitField =
+                drum.querySelector(
+                    '.nd-pet-orbit-field'
+                );
+
+            for (
+                let index = 0;
+                index < 5;
+                index++
+            ) {
+                const star =
+                    document.createElement('span');
+
+                star.className =
+                    'nd-pet-orbit-star';
+
+                star.textContent = '★';
+
+                star.style.setProperty(
+                    '--nd-pet-angle',
+                    `${index * 72}deg`
+                );
+
+                star.style.setProperty(
+                    '--nd-pet-angle-back',
+                    `${index * -72}deg`
+                );
+
+                star.style.setProperty(
+                    '--nd-pet-delay',
+                    `${-index * 0.44}s`
+                );
+
+                orbitField?.appendChild(star);
+            }
+
+            const shardField =
+                drum.querySelector(
+                    '.nd-pet-bronze-shards'
+                );
+
+            for (
+                let index = 0;
+                index < 12;
+                index++
+            ) {
+                const shard =
+                    document.createElement('span');
+
+                shard.className =
+                    'nd-pet-bronze-shard';
+
+                shard.style.setProperty(
+                    '--nd-shard-angle',
+                    `${index * 30}deg`
+                );
+
+                shard.style.setProperty(
+                    '--nd-shard-delay',
+                    `${-index * 0.22}s`
+                );
+
+                shardField?.appendChild(shard);
+            }
+
+            this.container.appendChild(drum);
+        }
+
+        // =========================================================
+        // NYX · HẮC DẠ NGUYÊN SƠ — THẦN THOẠI
+        // Realm cục bộ hoàn toàn mới: nguyệt thực + sợi đêm + tinh tú.
+        // Không dùng class/keyframe của Mùa Xuân, Quốc khánh hay pet khác.
+        // =========================================================
+        if (
+            petData.petEffect ===
+            'mythic-nyx-night-magic'
+        ) {
+            petElement.setAttribute('draggable', 'false');
+            petElement.classList.add('nyx-mythic-avatar');
+
+            this.container.classList.add(
+                'pet-nyx-mythic-stage',
+                'nyx-mythic-awakening'
+            );
+
+            document.documentElement.classList.add(
+                'nyx-mythic-pet-equipped'
+            );
+
+            const realm = document.createElement('div');
+            realm.className = 'nyx-mythic-pet-realm';
+            realm.setAttribute('aria-hidden', 'true');
+
+            realm.innerHTML = `
+                <span class="nyx-v3-local-aura"></span>
+                <span class="nyx-mythic-local-eclipse"></span>
+                <span class="nyx-mythic-local-ring ring-a"></span>
+                <span class="nyx-mythic-local-ring ring-b"></span>
+                <span class="nyx-mythic-local-ring ring-c"></span>
+
+                <div class="nyx-v3-local-rune-wheel">
+                    <i>Ν</i><i>Υ</i><i>Ξ</i><i>☾</i>
+                    <i>✦</i><i>☽</i><i>◈</i><i>⋆</i>
+                </div>
+
+                <span class="nyx-v3-shadow-wing wing-left"></span>
+                <span class="nyx-v3-shadow-wing wing-right"></span>
+
+                <span class="nyx-mythic-night-thread thread-a"></span>
+                <span class="nyx-mythic-night-thread thread-b"></span>
+                <span class="nyx-mythic-night-thread thread-c"></span>
+
+                <div class="nyx-v3-crescent-orbit">
+                    <b class="crescent crescent-a">☾</b>
+                    <b class="crescent crescent-b">☽</b>
+                    <b class="crescent crescent-c">✦</b>
+                </div>
+
+                <div class="nyx-mythic-star-orbit"></div>
+                <div class="nyx-mythic-void-motes"></div>
+                <span class="nyx-v3-ground-sigil"></span>
+            `;
+
+            const orbit = realm.querySelector(
+                '.nyx-mythic-star-orbit'
+            );
+            const moteField = realm.querySelector(
+                '.nyx-mythic-void-motes'
+            );
+
+            const reduced = window.matchMedia?.(
+                '(max-width: 768px), (pointer: coarse), (prefers-reduced-motion: reduce)'
+            ).matches;
+
+            const starCount = this.getQualityCount(reduced ? 10 : 18);
+            for (let index = 0; index < starCount; index++) {
+                const star = document.createElement('span');
+                star.className = 'nyx-mythic-orbit-star';
+                star.textContent = index % 3 === 0 ? '✦' : '·';
+                star.style.setProperty('--nyx-angle', `${index * (360 / starCount)}deg`);
+                star.style.setProperty('--nyx-radius', `${68 + (index % 5) * 11}px`);
+                star.style.setProperty('--nyx-delay', `${-index * .31}s`);
+                orbit?.appendChild(star);
+            }
+
+            const moteCount = this.getQualityCount(reduced ? 12 : 28);
+            for (let index = 0; index < moteCount; index++) {
+                const mote = document.createElement('span');
+                mote.className = 'nyx-mythic-void-mote';
+                mote.style.setProperty('--nyx-mx', `${(index * 47 + 9) % 100}%`);
+                mote.style.setProperty('--nyx-my', `${(index * 71 + 13) % 100}%`);
+                mote.style.setProperty('--nyx-md', `${-index * .27}s`);
+                mote.style.setProperty('--nyx-ms', `${2 + (index % 4)}px`);
+                moteField?.appendChild(mote);
+            }
+
+            this.container.appendChild(realm);
+
+            window.setTimeout(() => {
+                this.container?.classList.remove(
+                    'nyx-mythic-awakening'
+                );
+            }, 1500);
+        }
+
+        // =========================================================
+        // PREMIUM MÙA HẠ · CLICK TOÀN MÀN HÌNH
+        // "HẠ QUANG VẠN ẢNH" — namespace ha2l-* độc lập.
+        // =========================================================
+        if (
+            petData.id === 'pet_premium_mua_ha_chibi_2' ||
+            petData.petEffect === 'ha2-limited-sunleaf-magic'
+        ) {
+            requestAnimationFrame(() => {
+                this.installSummerLimitedHa2Observer();
+
+                window.setTimeout(() => {
+                    this.container?.classList.remove('ha2l-awakening');
+                }, 1250);
+            });
+
+            petElement.addEventListener(
+                'click',
+                event => {
+                    if (
+                        typeof PetInteractionManager !== 'undefined' &&
+                        PetInteractionManager.isPetDragging
+                    ) {
+                        return;
+                    }
+
+                    if (
+                        this.container?.dataset?.ha2lClickLocked === '1'
+                    ) {
+                        return;
+                    }
+
+                    event.preventDefault();
+                    event.stopPropagation();
+
+                    if (this.container?.dataset) {
+                        this.container.dataset.ha2lClickLocked = '1';
+                    }
+
+                    this.container?.classList.remove('ha2l-casting');
+                    void this.container?.offsetWidth;
+                    this.container?.classList.add('ha2l-casting');
+
+                    document
+                        .querySelectorAll('.ha2l-screen-ultimate')
+                        .forEach(node => node.remove());
+
+                    document.documentElement.classList.add(
+                        'ha2l-screen-active'
+                    );
+
+                    const rect = petElement.getBoundingClientRect();
+                    const originX =
+                        Number.isFinite(event.clientX) && event.clientX > 0
+                            ? event.clientX
+                            : rect.left + rect.width / 2;
+                    const originY =
+                        Number.isFinite(event.clientY) && event.clientY > 0
+                            ? event.clientY
+                            : rect.top + rect.height / 2;
+
+                    const ultimate = document.createElement('div');
+                    ultimate.className = 'ha2l-screen-ultimate';
+                    ultimate.setAttribute('aria-hidden', 'true');
+                    ultimate.style.setProperty(
+                        '--ha2l-origin-x',
+                        `${originX}px`
+                    );
+                    ultimate.style.setProperty(
+                        '--ha2l-origin-y',
+                        `${originY}px`
+                    );
+
+                    ultimate.innerHTML = `
+                        <div class="ha2l-screen-wash"></div>
+                        <div class="ha2l-screen-canopy"></div>
+                        <div class="ha2l-screen-flare"></div>
+                        <div class="ha2l-screen-prism prism-a"></div>
+                        <div class="ha2l-screen-prism prism-b"></div>
+                        <div class="ha2l-screen-prism prism-c"></div>
+                        <span class="ha2l-screen-ring ring-a"></span>
+                        <span class="ha2l-screen-ring ring-b"></span>
+                        <span class="ha2l-screen-ring ring-c"></span>
+                        <div class="ha2l-screen-leaf-field"></div>
+                        <div class="ha2l-screen-glint-field"></div>
+                        <div class="ha2l-screen-cicada-seal">◇</div>
+                        <div class="ha2l-screen-title">
+                            <small>PREMIUM · MÙA HẠ</small>
+                            <strong>HẠ QUANG VẠN ẢNH</strong>
+                            <span>TIỂU HẠ QUANG · ÁNH NẮNG XUYÊN TÁN LÁ</span>
+                        </div>
+                    `;
+
+                    const leafField = ultimate.querySelector(
+                        '.ha2l-screen-leaf-field'
+                    );
+                    const glintField = ultimate.querySelector(
+                        '.ha2l-screen-glint-field'
+                    );
+                    const reducedMotion = window.matchMedia?.(
+                        '(max-width: 768px), (pointer: coarse), ' +
+                        '(prefers-reduced-motion: reduce)'
+                    ).matches;
+
+                    const leafCount = this.getQualityCount(
+                        reducedMotion ? 14 : 30
+                    );
+                    const glintCount = this.getQualityCount(
+                        reducedMotion ? 12 : 26
+                    );
+
+                    for (let index = 0; index < leafCount; index++) {
+                        const leaf = document.createElement('i');
+                        leaf.className = 'ha2l-screen-leaf';
+                        leaf.style.setProperty(
+                            '--ha2l-leaf-x',
+                            `${(index * 37 + 9) % 100}%`
+                        );
+                        leaf.style.setProperty(
+                            '--ha2l-leaf-delay',
+                            `${(index % 9) * .045}s`
+                        );
+                        leaf.style.setProperty(
+                            '--ha2l-leaf-spin',
+                            `${-42 + (index % 8) * 13}deg`
+                        );
+                        leaf.style.setProperty(
+                            '--ha2l-leaf-scale',
+                            `${.62 + (index % 5) * .12}`
+                        );
+                        leafField?.appendChild(leaf);
+                    }
+
+                    for (let index = 0; index < glintCount; index++) {
+                        const glint = document.createElement('i');
+                        glint.className = 'ha2l-screen-glint';
+                        glint.style.setProperty(
+                            '--ha2l-glint-angle',
+                            `${index * (360 / glintCount)}deg`
+                        );
+                        glint.style.setProperty(
+                            '--ha2l-glint-distance',
+                            `${24 + (index % 7) * 7}vmin`
+                        );
+                        glint.style.setProperty(
+                            '--ha2l-glint-delay',
+                            `${(index % 8) * .035}s`
+                        );
+                        glintField?.appendChild(glint);
+                    }
+
+                    document.body.appendChild(ultimate);
+                    requestAnimationFrame(() => {
+                        ultimate.classList.add('is-active');
+                    });
+
+                    window.setTimeout(() => {
+                        ultimate.classList.add('is-ending');
+                    }, 3650);
+
+                    window.setTimeout(() => {
+                        ultimate.remove();
+                        document.documentElement.classList.remove(
+                            'ha2l-screen-active'
+                        );
+                        this.container?.classList.remove('ha2l-casting');
+                        if (this.container?.dataset) {
+                            delete this.container.dataset.ha2lClickLocked;
+                        }
+                    }, 4550);
+                },
+                {
+                    signal: this.interactionAbortController?.signal
+                }
+            );
+        }
+
+        // =========================================================
+        // AETHER · TIỂU THIÊN QUANG — AETLC V1
+        // Concept RIÊNG: la bàn thiên không + lăng kính bình minh + nhật tinh.
+        // Chỉ tạo hiệu ứng quanh pet; KHÔNG gọi/đụng Aether Luxury, NYX,
+        // ThemeManager hay EffectManager.
+        // =========================================================
+        if (
+            petData.id === 'pet_truyenthuyet_aether_chibi_2' ||
+            petData.petEffect === 'aether-little-daystar-magic'
+        ) {
+            ensureAetherLittleSpiritPetStylesheet();
+
+            petElement.setAttribute('draggable', 'false');
+            petElement.classList.add('aetlc-avatar');
+
+            this.container.classList.add(
+                'pet-aether-little-sky-stage',
+                'aetlc-awakening'
+            );
+
+            const realm = document.createElement('div');
+            realm.className = 'aetlc-realm';
+            realm.setAttribute('aria-hidden', 'true');
+            realm.innerHTML = `
+                <span class="aetlc-backglow glow-a"></span>
+                <span class="aetlc-backglow glow-b"></span>
+
+                <span class="aetlc-sky-compass">
+                    <i class="aetlc-compass-ring ring-a"></i>
+                    <i class="aetlc-compass-ring ring-b"></i>
+                    <i class="aetlc-compass-axis axis-a"></i>
+                    <i class="aetlc-compass-axis axis-b"></i>
+                    <b class="aetlc-compass-core">✦</b>
+                </span>
+
+                <span class="aetlc-prism-orbit orbit-a"></span>
+                <span class="aetlc-prism-orbit orbit-b"></span>
+
+                <span class="aetlc-wing-trace wing-left"></span>
+                <span class="aetlc-wing-trace wing-right"></span>
+
+                <div class="aetlc-prism-field"></div>
+                <div class="aetlc-mote-field"></div>
+
+                <span class="aetlc-floor-disc"></span>
+                <span class="aetlc-floor-line"></span>
+            `;
+
+            const prismField = realm.querySelector('.aetlc-prism-field');
+            const prismCount = this.getQualityCount(8, 5);
+
+            for (let index = 0; index < prismCount; index++) {
+                const prism = document.createElement('i');
+                prism.className = 'aetlc-prism';
+                prism.style.setProperty(
+                    '--aetlc-prism-angle',
+                    `${index * (360 / prismCount)}deg`
+                );
+                prism.style.setProperty(
+                    '--aetlc-prism-angle-back',
+                    `${-index * (360 / prismCount)}deg`
+                );
+                prism.style.setProperty(
+                    '--aetlc-prism-radius',
+                    `${72 + (index % 3) * 13}px`
+                );
+                prism.style.setProperty(
+                    '--aetlc-prism-delay',
+                    `${-index * .37}s`
+                );
+                prismField?.appendChild(prism);
+            }
+
+            const moteField = realm.querySelector('.aetlc-mote-field');
+            const moteCount = this.getQualityCount(20, 10);
+
+            for (let index = 0; index < moteCount; index++) {
+                const mote = document.createElement('i');
+                mote.className =
+                    index % 5 === 0
+                        ? 'aetlc-mote is-star'
+                        : 'aetlc-mote';
+                mote.textContent = index % 5 === 0 ? '✧' : '';
+                mote.style.setProperty(
+                    '--aetlc-mote-x',
+                    `${8 + (index * 37) % 84}%`
+                );
+                mote.style.setProperty(
+                    '--aetlc-mote-y',
+                    `${10 + (index * 53) % 76}%`
+                );
+                mote.style.setProperty(
+                    '--aetlc-mote-delay',
+                    `${-(index % 9) * .29}s`
+                );
+                mote.style.setProperty(
+                    '--aetlc-mote-size',
+                    `${2 + (index % 4)}px`
+                );
+                moteField?.appendChild(mote);
+            }
+
+            this.container.appendChild(realm);
+
+            window.setTimeout(() => {
+                this.container?.classList.remove('aetlc-awakening');
+            }, 1350);
+        }
+
+        // =========================================================
+        // NYX · TIỂU DẠ TINH LINH
+        // Concept: tinh linh đêm + trăng non + bụi sao.
+        // KHÔNG dùng realm / class / animation Hắc Dạ Nguyên Sơ.
+        // =========================================================
+
+        if (
+            petData.petEffect ===
+            'nyx-little-night-spirit-magic'
+        ) {
+            petElement.setAttribute(
+                'draggable',
+                'false'
+            );
+
+            this.container.classList.add(
+                'pet-nyx-little-night-stage'
+            );
+
+            const realm =
+                document.createElement('div');
+
+            realm.className =
+                'nyx-little-pet-realm';
+
+            realm.setAttribute(
+                'aria-hidden',
+                'true'
+            );
+
+            realm.innerHTML = `
+        <span class="nyx-little-aura"></span>
+
+        <span
+            class="
+                nyx-little-orbit
+                orbit-one
+            "
+        ></span>
+
+        <span
+            class="
+                nyx-little-orbit
+                orbit-two
+            "
+        ></span>
+
+        <span class="nyx-little-crescent">
+            ☾
+        </span>
+
+        <span class="nyx-little-floor"></span>
+
+        <div
+            class="nyx-little-star-field"
+        ></div>
+    `;
+
+            const starField =
+                realm.querySelector(
+                    '.nyx-little-star-field'
+                );
+
+            /*
+             * Tinh tú quay quanh pet
+             */
+            for (
+                let index = 0;
+                index < 14;
+                index++
+            ) {
+                const star =
+                    document.createElement('span');
+
+                star.className =
+                    'nyx-little-pet-star';
+
+                star.textContent =
+                    index % 4 === 0
+                        ? '✦'
+                        : '·';
+
+                const littleAngle =
+                    index * (360 / 14);
+
+                star.style.setProperty(
+                    '--nyx-little-angle',
+                    `${littleAngle}deg`
+                );
+
+                star.style.setProperty(
+                    '--nyx-little-angle-back',
+                    `${-littleAngle}deg`
+                );
+
+                star.style.setProperty(
+                    '--nyx-little-radius',
+                    `${55 + (index % 4) * 9}px`
+                );
+
+                star.style.setProperty(
+                    '--nyx-little-delay',
+                    `${-index * 0.31}s`
+                );
+
+                starField?.appendChild(
+                    star
+                );
+            }
+
+            this.container.appendChild(
+                realm
+            );
+        }
+
+        // =========================================================
+        // MÈO NHỎ NGÀY MƯA — KHUNG MƯA CỤC BỘ
+        // Chỉ tạo phần tử bên trong container thú cưng.
+        // Không phủ toàn màn hình và không dùng lại hiệu ứng cũ.
+        // =========================================================
+        if (petData.petEffect === 'rainy-day-cat-magic') {
+            petElement.setAttribute('draggable', 'false');
+            this.container.classList.add('pet-rainy-day-stage');
+
+            const rainBackdrop = document.createElement('div');
+            rainBackdrop.className = 'rainy-day-local-backdrop';
+            rainBackdrop.setAttribute('aria-hidden', 'true');
+            this.container.appendChild(rainBackdrop);
+
+            const drizzleField = document.createElement('div');
+            drizzleField.className = 'rainy-day-drizzle-field';
+            drizzleField.setAttribute('aria-hidden', 'true');
+
+            for (let index = 0; index < 11; index++) {
+                const drop = document.createElement('span');
+                drop.className = 'rainy-day-idle-drop';
+
+                drop.style.setProperty(
+                    '--rainy-idle-x',
+                    `${7 + (index * 17) % 88}%`
+                );
+
+                drop.style.setProperty(
+                    '--rainy-idle-delay',
+                    `${-index * 0.27}s`
+                );
+
+                drop.style.setProperty(
+                    '--rainy-idle-duration',
+                    `${1.45 + (index % 4) * 0.18}s`
+                );
+
+                drop.style.setProperty(
+                    '--rainy-idle-length',
+                    `${10 + (index % 3) * 4}px`
+                );
+
+                drizzleField.appendChild(drop);
+            }
+
+            this.container.appendChild(drizzleField);
+
+            const puddle = document.createElement('div');
+            puddle.className = 'rainy-day-puddle';
+            puddle.setAttribute('aria-hidden', 'true');
+
+            const puddleSheen = document.createElement('span');
+            puddleSheen.className = 'rainy-day-puddle-sheen';
+            puddle.appendChild(puddleSheen);
+
+            const rippleA = document.createElement('span');
+            rippleA.className = 'rainy-day-puddle-ripple';
+            puddle.appendChild(rippleA);
+
+            const rippleB = document.createElement('span');
+            rippleB.className = 'rainy-day-puddle-ripple ripple-b';
+            puddle.appendChild(rippleB);
+
+            this.container.appendChild(puddle);
+        }
+        // Hiệu ứng Giai Điệu Học Đường riêng của Shizuka
+        if (
+            petData.petEffect ===
+            'doraemon-shizuka-study-magic'
+        ) {
+            this.container.classList.add(
+                'pet-doraemon-shizuka-stage'
+            );
+
+            petElement.setAttribute('draggable', 'false');
+        }
+
+        // Hiệu ứng riêng của Kỳ Lân Biển Mộng Mơ
+        if (petData.petEffect === 'fairy-narwhal-bubble-magic') {
+            petElement.setAttribute('draggable', 'false');
+
+            // Hào quang nước phía sau thú cưng
+            const waterAura = document.createElement('div');
+            waterAura.className = 'fairy-narwhal-water-aura';
+            this.container.appendChild(waterAura);
+
+            // Các bong bóng bao quanh thú cưng
+            for (let i = 0; i < 7; i++) {
+                const orbitBubble = document.createElement('span');
+                orbitBubble.className = 'fairy-narwhal-orbit-bubble';
+
+                const angle = (Math.PI * 2 * i) / 7;
+
+                orbitBubble.style.left =
+                    `${50 + Math.cos(angle) * 48}%`;
+
+                orbitBubble.style.top =
+                    `${50 + Math.sin(angle) * 40}%`;
+
+                orbitBubble.style.setProperty(
+                    '--orbit-delay',
+                    `${-i * 0.42}s`
+                );
+
+                orbitBubble.style.setProperty(
+                    '--orbit-size',
+                    `${7 + (i % 3) * 4}px`
+                );
+
+                this.container.appendChild(orbitBubble);
+            }
+        }
+
+        // THIÊN SỨ THỜI GIAN AMON — THẦN QUỐC BIÊN NIÊN
+        if (petData.petEffect === 'amon-time-magic') {
+            petElement.setAttribute('draggable', 'false');
+
+            const chronicleCourt = document.createElement('div');
+
+            chronicleCourt.className = 'amon-chronicle-court';
+
+            chronicleCourt.innerHTML = `
+        <span class="amon-chronicle-halo halo-outer"></span>
+        <span class="amon-chronicle-halo halo-middle"></span>
+        <span class="amon-chronicle-halo halo-inner"></span>
+
+        <span class="amon-chronicle-crown"></span>
+        <span class="amon-chronicle-throne"></span>
+        <span class="amon-chronicle-floor"></span>
+
+        <span class="amon-chronicle-shadow shadow-left"></span>
+        <span class="amon-chronicle-shadow shadow-right"></span>
+    `;
+
+            const numerals = [
+                'Ⅰ', 'Ⅱ', 'Ⅲ', 'Ⅳ', 'Ⅴ', 'Ⅵ',
+                'Ⅶ', 'Ⅷ', 'Ⅸ', 'Ⅹ', 'Ⅺ', 'Ⅻ'
+            ];
+
+            numerals.forEach((numeral, index) => {
+                const mark = document.createElement('span');
+
+                mark.className = 'amon-chronicle-mark';
+                mark.textContent = numeral;
+
+                mark.style.setProperty(
+                    '--mark-angle',
+                    `${index * 30}deg`
+                );
+
+                mark.style.setProperty(
+                    '--mark-angle-inverse',
+                    `${index * -30}deg`
+                );
+
+                mark.style.setProperty(
+                    '--mark-delay',
+                    `${-index * 0.18}s`
+                );
+
+                chronicleCourt.appendChild(mark);
+            });
+
+            // Bốn trang biên niên giả bị tráo đổi.
+            for (let i = 0; i < 4; i++) {
+                const page = document.createElement('span');
+
+                page.className = 'amon-counterfeit-page';
+
+                page.style.setProperty('--page-index', i);
+                page.style.setProperty('--page-angle', `${i * 90}deg`);
+                page.style.setProperty('--page-angle-inverse', `${i * -90}deg`);
+                page.style.setProperty('--page-delay', `${-i * 0.9}s`);
+
+                chronicleCourt.appendChild(page);
+            }
+
+            this.container.appendChild(chronicleCourt);
+        }
+
+        // =========================================================
+        // NÀNG HỌA SĨ TINH LINH — HIỆU ỨNG HỘI HỌA
+        // Chỉ hiển thị quanh thú cưng, không phủ toàn màn hình.
+        // Không có hiệu ứng khi nhấn.
+        // =========================================================
+        if (petData.petEffect === 'painting-muse-magic') {
+            petElement.setAttribute('draggable', 'false');
+
+            this.container.classList.add('pet-painting-stage');
+
+            // Hào quang pha màu phía sau
+            const canvasAura = document.createElement('div');
+            canvasAura.className = 'painting-canvas-aura';
+            canvasAura.setAttribute('aria-hidden', 'true');
+            this.container.appendChild(canvasAura);
+
+            // Nét cọ ánh sáng
+            const brushStroke = document.createElement('span');
+            brushStroke.className = 'painting-brush-stroke';
+            brushStroke.setAttribute('aria-hidden', 'true');
+            this.container.appendChild(brushStroke);
+
+            // Những giọt màu bay xung quanh
+            const pigmentColors = [
+                '#22d3ee',
+                '#a78bfa',
+                '#f472b6',
+                '#fbbf24',
+                '#34d399',
+                '#fb7185'
+            ];
+
+            pigmentColors.forEach((color, index) => {
+                const pigment = document.createElement('span');
+
+                pigment.className = 'painting-pigment';
+                pigment.setAttribute('aria-hidden', 'true');
+
+                const startAngle = index * 60;
+                const middleAngle = startAngle + 16;
+                const endAngle = startAngle + 28;
+
+                pigment.style.setProperty('--paint-color', color);
+
+                pigment.style.setProperty(
+                    '--paint-angle',
+                    `${startAngle}deg`
+                );
+
+                pigment.style.setProperty(
+                    '--paint-angle-inverse',
+                    `${-startAngle}deg`
+                );
+
+                pigment.style.setProperty(
+                    '--paint-angle-middle',
+                    `${middleAngle}deg`
+                );
+
+                pigment.style.setProperty(
+                    '--paint-angle-middle-inverse',
+                    `${-middleAngle}deg`
+                );
+
+                pigment.style.setProperty(
+                    '--paint-angle-end',
+                    `${endAngle}deg`
+                );
+
+                pigment.style.setProperty(
+                    '--paint-angle-end-inverse',
+                    `${-endAngle}deg`
+                );
+
+                pigment.style.setProperty(
+                    '--paint-radius',
+                    `${72 + (index % 2) * 10}px`
+                );
+
+                pigment.style.setProperty(
+                    '--paint-delay',
+                    `${-index * 0.52}s`
+                );
+
+                this.container.appendChild(pigment);
+            });
+        }
+
+        // =========================================================
+        // THẤT ĐẠI TỘI — LƯỜI BIẾNG
+        // Hiệu ứng đứng chờ quanh thú cưng
+        // =========================================================
+        if (petData.petEffect === 'seven-sins-sloth-magic') {
+            this.container.classList.add(
+                'pet-seven-sins-sloth-stage'
+            );
+
+            petElement.setAttribute('draggable', 'false');
+
+            const dreamHaze = document.createElement('div');
+            dreamHaze.className = 'sloth-dream-haze';
+            dreamHaze.setAttribute('aria-hidden', 'true');
+            this.container.appendChild(dreamHaze);
+
+            const dreamThrone =
+                document.createElement('div');
+
+            dreamThrone.className =
+                'sloth-dream-throne';
+
+            dreamThrone.setAttribute(
+                'aria-hidden',
+                'true'
+            );
+
+            this.container.appendChild(
+                dreamThrone
+            );
+
+            const dreamHalo =
+                document.createElement('div');
+
+            dreamHalo.className =
+                'sloth-dream-halo';
+
+            dreamHalo.setAttribute(
+                'aria-hidden',
+                'true'
+            );
+
+            this.container.appendChild(
+                dreamHalo
+            );
+
+            const dreamHourglass =
+                document.createElement('div');
+
+            dreamHourglass.className =
+                'sloth-pet-hourglass';
+
+            dreamHourglass.setAttribute(
+                'aria-hidden',
+                'true'
+            );
+
+            dreamHourglass.innerHTML = `
+                <span
+                    class="pet-hourglass-frame"
+                ></span>
+
+                <span
+                    class="pet-hourglass-sand"
+                ></span>
+            `;
+
+            this.container.appendChild(
+                dreamHourglass
+            );
+
+            const dreamSeal = document.createElement('div');
+            dreamSeal.className = 'sloth-dream-seal';
+            dreamSeal.setAttribute('aria-hidden', 'true');
+            this.container.appendChild(dreamSeal);
+
+            const runeRing = document.createElement('div');
+            runeRing.className = 'sloth-rune-ring';
+            runeRing.setAttribute('aria-hidden', 'true');
+
+            const runes = [
+                'Ⅰ', 'Ⅱ', 'Ⅲ', 'Ⅳ', 'Ⅴ', 'Ⅵ', 'Ⅶ'
+            ];
+
+            runes.forEach((symbol, index) => {
+                const rune = document.createElement('span');
+                const angle = index * (360 / runes.length);
+
+                rune.className = 'sloth-orbit-rune';
+                rune.textContent = symbol;
+
+                rune.style.transform = `
+            rotate(${angle}deg)
+            translateX(78px)
+            rotate(${-angle}deg)
+        `;
+
+                rune.style.setProperty(
+                    '--sloth-rune-delay',
+                    `${-index * 0.38}s`
+                );
+
+                runeRing.appendChild(rune);
+            });
+
+            this.container.appendChild(runeRing);
+
+            for (
+                let index = 0;
+                index < 7;
+                index++
+            ) {
+                const feather =
+                    document.createElement('span');
+
+                const angle =
+                    index * (360 / 7);
+
+                feather.className =
+                    'sloth-dream-feather';
+
+                feather.textContent =
+                    index === 6 ? 'Ⅶ' : '✦';
+
+                feather.setAttribute(
+                    'aria-hidden',
+                    'true'
+                );
+
+                feather.style.setProperty(
+                    '--sloth-feather-angle',
+                    `${angle}deg`
+                );
+
+                feather.style.setProperty(
+                    '--sloth-feather-angle-back',
+                    `${-angle}deg`
+                );
+
+                feather.style.setProperty(
+                    '--sloth-feather-delay',
+                    `${-index * 0.44}s`
+                );
+
+                this.container.appendChild(
+                    feather
+                );
+            }
+
+            for (let index = 0; index < 6; index++) {
+                const mote = document.createElement('span');
+
+                mote.className = 'sloth-sleep-mote';
+                mote.textContent = index % 2 === 0 ? 'z' : '✦';
+                mote.setAttribute('aria-hidden', 'true');
+
+                mote.style.setProperty(
+                    '--sloth-x',
+                    `${18 + index * 13}%`
+                );
+
+                mote.style.setProperty(
+                    '--sloth-delay',
+                    `${-index * 0.72}s`
+                );
+
+                mote.style.setProperty(
+                    '--sloth-duration',
+                    `${3.8 + (index % 3) * 0.65}s`
+                );
+
+                mote.style.setProperty(
+                    '--sloth-size',
+                    `${10 + (index % 3) * 3}px`
+                );
+
+                this.container.appendChild(mote);
+            }
+        }
+
+        // =========================================================
+        // ACEDIA · LINH THÚ LƯỜI BIẾNG CHIBI — 850 COIN
+        // Hiệu ứng chỉ quanh pet, namespace acch1-* hoàn toàn riêng.
+        // Không dùng dream realm của Acedia sự kiện và không gọi Luxury runtime.
+        // =========================================================
+        if (
+            petData.id === 'pet_thatdaitoi_luoibieng_chibi_1' ||
+            petData.petEffect === 'acedia-chibi-dream-magic'
+        ) {
+            petElement.setAttribute('draggable', 'false');
+
+            this.container.classList.add(
+                'pet-acedia-chibi-stage',
+                'acch1-awakening'
+            );
+
+            const localRealm = document.createElement('div');
+            localRealm.className = 'acch1-local-realm';
+            localRealm.setAttribute('aria-hidden', 'true');
+
+            localRealm.innerHTML = `
+                <span class="acch1-dream-haze haze-a"></span>
+                <span class="acch1-dream-haze haze-b"></span>
+
+                <span class="acch1-local-sigil">
+                    <i class="acch1-sigil-ring ring-a"></i>
+                    <i class="acch1-sigil-ring ring-b"></i>
+                    <i class="acch1-sigil-ring ring-c"></i>
+                    <b>Ⅶ</b>
+                </span>
+
+                <span class="acch1-moon-crown">☾</span>
+                <span class="acch1-sleep-cloud cloud-a"></span>
+                <span class="acch1-sleep-cloud cloud-b"></span>
+                <span class="acch1-orbit-field"></span>
+            `;
+
+            const orbitField = localRealm.querySelector(
+                '.acch1-orbit-field'
+            );
+
+            for (let index = 0; index < 7; index++) {
+                const rune = document.createElement('i');
+                const angle = index * (360 / 7);
+
+                rune.className = 'acch1-orbit-rune';
+                rune.textContent = index === 6 ? 'Ⅶ' : '✦';
+                rune.style.setProperty(
+                    '--acch1-angle',
+                    `${angle}deg`
+                );
+                rune.style.setProperty(
+                    '--acch1-angle-back',
+                    `${-angle}deg`
+                );
+                rune.style.setProperty(
+                    '--acch1-delay',
+                    `${-index * 0.36}s`
+                );
+
+                orbitField?.appendChild(rune);
+            }
+
+            for (let index = 0; index < 10; index++) {
+                const mote = document.createElement('span');
+
+                mote.className = 'acch1-dream-mote';
+                mote.textContent = index % 3 === 0 ? 'z' : '✧';
+                mote.setAttribute('aria-hidden', 'true');
+                mote.style.setProperty(
+                    '--acch1-x',
+                    `${10 + ((index * 23) % 80)}%`
+                );
+                mote.style.setProperty(
+                    '--acch1-delay',
+                    `${-index * 0.43}s`
+                );
+                mote.style.setProperty(
+                    '--acch1-duration',
+                    `${4.2 + (index % 4) * 0.55}s`
+                );
+                mote.style.setProperty(
+                    '--acch1-size',
+                    `${9 + (index % 4) * 2}px`
+                );
+
+                localRealm.appendChild(mote);
+            }
+
+            this.container.appendChild(localRealm);
+
+            requestAnimationFrame(() => {
+                this.container?.classList.remove(
+                    'acch1-awakening'
+                );
+            });
+        }
+
+        // =========================================================
+        // BÉ RẮN PHÚC LỘC 2026
+        // Trang trí riêng quanh thú cưng.
+        // Hiệu ứng toàn màn hình được tạo sau khi pet đã xuất hiện.
+        // Không có hiệu ứng nhấn.
+        // =========================================================
+        if (petData.petEffect === 'birthday-serpent-2026-magic') {
+            petElement.setAttribute('draggable', 'false');
+
+            this.container.classList.add(
+                'pet-birthday-serpent-2026-stage'
+            );
+
+            const petCrest = document.createElement('div');
+
+            petCrest.className = 'birthday-2026-pet-crest';
+            petCrest.setAttribute('aria-hidden', 'true');
+
+            petCrest.innerHTML = `
+                <span class="birthday-2026-pet-ring ring-outer"></span>
+                <span class="birthday-2026-pet-ring ring-inner"></span>
+                <span class="birthday-2026-pet-platform"></span>
+                <span class="birthday-2026-pet-plaque">2026</span>
+            `;
+
+            for (let index = 0; index < 10; index++) {
+                const bead = document.createElement('span');
+
+                bead.className = 'birthday-2026-blessing-bead';
+
+                bead.style.setProperty(
+                    '--birthday-bead-angle',
+                    `${index * 36}deg`
+                );
+
+                bead.style.setProperty(
+                    '--birthday-bead-angle-back',
+                    `${index * -36}deg`
+                );
+
+                bead.style.setProperty(
+                    '--birthday-bead-delay',
+                    `${-index * 0.32}s`
+                );
+
+                petCrest.appendChild(bead);
+            }
+
+            this.container.appendChild(petCrest);
+        }
+
+        // =========================================================
+
+        // =========================================================
+        // LINH THÚ TRÁI ĐẤT — HIỆU ỨNG RIÊNG
+        // Không tái chế hiệu ứng cũ
+        // =========================================================
+        if (petData.petEffect === 'earth-guardian-magic') {
+            petElement.setAttribute('draggable', 'false');
+            this.container.classList.add('pet-earth-guardian-stage');
+
+            // Hào quang sinh quyển
+            const aura = document.createElement('div');
+            aura.className = 'earth-guardian-aura';
+            aura.setAttribute('aria-hidden', 'true');
+            this.container.appendChild(aura);
+
+            // Vòng nhịp sống
+            const pulse = document.createElement('div');
+            pulse.className = 'earth-life-pulse';
+            pulse.setAttribute('aria-hidden', 'true');
+            this.container.appendChild(pulse);
+
+            // Quỹ đạo mặt trăng
+            const moonOrbit = document.createElement('div');
+            moonOrbit.className = 'earth-moon-orbit';
+            moonOrbit.setAttribute('aria-hidden', 'true');
+            moonOrbit.innerHTML = `<span class="earth-moon"></span>`;
+            this.container.appendChild(moonOrbit);
+
+            // Hạt sinh thái xoay quanh pet
+            const particleKinds = ['leaf', 'water', 'cloud', 'spark'];
+
+            for (let i = 0; i < 12; i++) {
+                const particle = document.createElement('span');
+                particle.className = `earth-orbit-particle earth-particle-${particleKinds[i % particleKinds.length]}`;
+                particle.setAttribute('aria-hidden', 'true');
+
+                particle.style.setProperty('--earth-angle', `${i * 30}deg`);
+                particle.style.setProperty('--earth-delay', `${-i * 0.35}s`);
+                particle.style.setProperty('--earth-size', `${6 + (i % 3) * 3}px`);
+                particle.style.setProperty('--earth-radius', `${68 + (i % 2) * 10}px`);
+
+                this.container.appendChild(particle);
+            }
+        }
+
+        // =========================================================
+        // LINH THÚ SAO THỔ — CỘNG HƯỞNG CASSINI
+        // Hiệu ứng chỉ được tạo bên trong container của pet.
+        // Không phủ toàn màn hình, không có hiệu ứng nhấn.
+        // =========================================================
+        if (petData.petEffect === 'saturn-cassini-magic') {
+            petElement.setAttribute('draggable', 'false');
+
+            this.container.classList.add(
+                'pet-saturn-cassini-stage'
+            );
+
+            // Nửa vành đai nằm phía sau pet
+            const ringBack = document.createElement('div');
+
+            ringBack.className =
+                'saturn-cassini-plane saturn-cassini-plane-back';
+
+            ringBack.setAttribute('aria-hidden', 'true');
+
+            ringBack.innerHTML = `
+        <span class="saturn-ring-band saturn-ring-amber"></span>
+        <span class="saturn-ring-band saturn-ring-ivory"></span>
+        <span class="saturn-cassini-gap"></span>
+    `;
+
+            this.container.appendChild(ringBack);
+
+            // Cơn bão hình lục giác đặc trưng tại cực Sao Thổ
+            const polarStorm = document.createElement('div');
+
+            polarStorm.className = 'saturn-polar-hexagon';
+            polarStorm.setAttribute('aria-hidden', 'true');
+
+            polarStorm.innerHTML = `
+        <span class="saturn-hexagon-line"></span>
+        <span class="saturn-storm-eye"></span>
+    `;
+
+            this.container.appendChild(polarStorm);
+
+            // Các vệ tinh nhỏ chuyển động quanh pet
+            const moonField = document.createElement('div');
+
+            moonField.className = 'saturn-shepherd-moons';
+            moonField.setAttribute('aria-hidden', 'true');
+
+            const moonPalette = [
+                '#f4e6c8',
+                '#d8c09a',
+                '#bba37d',
+                '#efe2cf',
+                '#c9b28e',
+                '#e8d5b2'
+            ];
+
+            for (let index = 0; index < 6; index++) {
+                const moon = document.createElement('span');
+
+                moon.className = 'saturn-shepherd-moon';
+
+                moon.style.setProperty(
+                    '--saturn-moon-delay',
+                    `${-index * 0.68}s`
+                );
+
+                moon.style.setProperty(
+                    '--saturn-moon-size',
+                    `${4 + index % 3 * 2}px`
+                );
+
+                moon.style.setProperty(
+                    '--saturn-moon-color',
+                    moonPalette[index]
+                );
+
+                moon.style.setProperty(
+                    '--saturn-moon-track',
+                    `${56 + index % 2 * 18}px`
+                );
+
+                moon.style.setProperty(
+                    '--saturn-moon-phase',
+                    `${index * 60}deg`
+                );
+
+                moonField.appendChild(moon);
+            }
+
+            this.container.appendChild(moonField);
+
+            // Nửa vành đai nằm phía trước pet
+            const ringFront = document.createElement('div');
+
+            ringFront.className =
+                'saturn-cassini-plane saturn-cassini-plane-front';
+
+            ringFront.setAttribute('aria-hidden', 'true');
+
+            ringFront.innerHTML = `
+        <span class="saturn-ring-band saturn-ring-amber"></span>
+        <span class="saturn-ring-band saturn-ring-ivory"></span>
+        <span class="saturn-cassini-gap"></span>
+        <span class="saturn-ring-sheen"></span>
+    `;
+
+            this.container.appendChild(ringFront);
+        }
+
+        // =========================================================
+        // NỮ THẦN MÙA XUÂN — XUÂN TỬU HOA VIÊN
+        // Concept mới hoàn toàn: nho tím, dây leo ánh kim, rượu hồng ngọc
+        // và thủy tinh màu. Không dùng cánh hoa, bướm, vương miện, cổng
+        // hay mặt trời từ các hiệu ứng Mùa Xuân cũ.
+        // =========================================================
+        if (
+            petData.petEffect ===
+            'spring-vintage-goddess-magic'
+        ) {
+            petElement.setAttribute('draggable', 'false');
+            petElement.classList.add('spring-vintage-avatar');
+
+            this.container.classList.add(
+                'pet-spring-vintage-stage'
+            );
+
+            const relic = document.createElement('div');
+            relic.className = 'spring-vintage-pet-relic';
+            relic.setAttribute('aria-hidden', 'true');
+
+            relic.innerHTML = `
+                <div class="spring-vintage-glass-disc">
+                    <span class="spring-vintage-glass-cut cut-a"></span>
+                    <span class="spring-vintage-glass-cut cut-b"></span>
+                    <span class="spring-vintage-glass-cut cut-c"></span>
+                </div>
+
+                <span class="spring-vintage-vine arc-left"></span>
+                <span class="spring-vintage-vine arc-right"></span>
+
+                <div class="spring-vintage-grape-orbit orbit-a"></div>
+                <div class="spring-vintage-grape-orbit orbit-b"></div>
+
+                <div class="spring-vintage-nectar-vessel">
+                    <span class="spring-vintage-nectar-surface"></span>
+                    <span class="spring-vintage-nectar-glint"></span>
+                </div>
+
+                <div class="spring-vintage-gem-field"></div>
+            `;
+
+            const grapeOrbits = relic.querySelectorAll(
+                '.spring-vintage-grape-orbit'
+            );
+
+            grapeOrbits.forEach((orbit, orbitIndex) => {
+                const grapeCount = this.getQualityCount(orbitIndex === 0 ? 9 : 7);
+
+                for (let index = 0; index < grapeCount; index++) {
+                    const grape = document.createElement('span');
+                    grape.className = 'spring-vintage-grape';
+                    grape.style.setProperty(
+                        '--sv-grape-angle',
+                        `${index * (360 / grapeCount) + orbitIndex * 19}deg`
+                    );
+                    grape.style.setProperty(
+                        '--sv-grape-delay',
+                        `${-(index + orbitIndex * 2) * 0.19}s`
+                    );
+                    grape.style.setProperty(
+                        '--sv-grape-scale',
+                        `${0.72 + (index % 4) * 0.09}`
+                    );
+                    orbit.appendChild(grape);
+                }
+            });
+
+            const gemField = relic.querySelector(
+                '.spring-vintage-gem-field'
+            );
+
+            const gemCount = this.getQualityCount(window.matchMedia?.(
+                '(max-width: 768px), (pointer: coarse)'
+            ).matches ? 10 : 18);
+
+            for (let index = 0; index < gemCount; index++) {
+                const gem = document.createElement('span');
+                gem.className = 'spring-vintage-gem';
+                gem.style.setProperty(
+                    '--sv-gem-x',
+                    `${8 + (index * 31) % 84}%`
+                );
+                gem.style.setProperty(
+                    '--sv-gem-y',
+                    `${9 + (index * 47) % 77}%`
+                );
+                gem.style.setProperty(
+                    '--sv-gem-delay',
+                    `${-index * 0.31}s`
+                );
+                gem.style.setProperty(
+                    '--sv-gem-size',
+                    `${3 + index % 4}px`
+                );
+                gemField?.appendChild(gem);
+            }
+
+            this.container.appendChild(relic);
+
+            // Kỹ năng nhấn riêng: "Xuân Tửu Khai Yến".
+            // Listener gắn trực tiếp vào pet nên không gọi hiệu ứng click chung.
+            let springCastLocked = false;
+
+            petElement.addEventListener('click', event => {
+                if (springCastLocked) return;
+
+                if (
+                    typeof PetInteractionManager !== 'undefined' &&
+                    PetInteractionManager.isPetDragging
+                ) {
+                    return;
+                }
+
+                event.preventDefault();
+                event.stopPropagation();
+                springCastLocked = true;
+
+                this.container.classList.remove(
+                    'spring-vintage-casting'
+                );
+
+                void this.container.offsetWidth;
+
+                this.container.classList.add(
+                    'spring-vintage-casting'
+                );
+
+                const localBurst = document.createElement('div');
+                localBurst.className = 'spring-vintage-local-burst';
+                localBurst.setAttribute('aria-hidden', 'true');
+
+                for (let index = 0; index < 16; index++) {
+                    const drop = document.createElement('span');
+                    drop.className = index % 3 === 0
+                        ? 'spring-vintage-burst-grape'
+                        : 'spring-vintage-burst-drop';
+
+                    drop.style.setProperty(
+                        '--sv-burst-angle',
+                        `${index * (360 / 16)}deg`
+                    );
+                    drop.style.setProperty(
+                        '--sv-burst-distance',
+                        `${58 + index % 4 * 14}px`
+                    );
+                    drop.style.setProperty(
+                        '--sv-burst-delay',
+                        `${(index % 4) * 0.025}s`
+                    );
+                    localBurst.appendChild(drop);
+                }
+
+                this.container.appendChild(localBurst);
+
+                if (
+                    typeof EffectManager !== 'undefined' &&
+                    typeof EffectManager.pulsePremiumSpringCrown === 'function'
+                ) {
+                    const rect = petElement.getBoundingClientRect();
+
+                    EffectManager.pulsePremiumSpringCrown(
+                        rect.left + rect.width / 2,
+                        rect.top + rect.height / 2
+                    );
+                }
+
+                window.setTimeout(() => {
+                    localBurst.remove();
+                    this.container?.classList.remove(
+                        'spring-vintage-casting'
+                    );
+                }, 1550);
+
+                window.setTimeout(() => {
+                    springCastLocked = false;
+                }, 6000);
+            });
+        }
+
+
+        // =========================================================
+        // MÙA THU · TIỂU PHONG DIỆP — CỬA HÀNG THƯỜNG
+        // Namespace RIÊNG: autreg5-*.
+        // Không gọi ThemeManager/EffectManager và không dùng autumn3-* của Luxury.
+        // Idle chỉ nằm quanh pet; click kích hoạt Ultimate tạm thời toàn màn hình.
+        // =========================================================
+        if (
+            petData.id === 'pet_premium_mua_thu_chibi_3' ||
+            petData.petEffect === 'autreg5-maple-chibi-magic'
+        ) {
+            petElement.setAttribute('draggable', 'false');
+            petElement.classList.add('autreg5-maple-avatar');
+
+            this.container.classList.add('pet-autreg5-stage');
+
+            const realm = document.createElement('div');
+            realm.className = 'autreg5-pet-realm';
+            realm.setAttribute('aria-hidden', 'true');
+            realm.innerHTML = `
+                <span class="autreg5-aura autreg5-aura-outer"></span>
+                <span class="autreg5-aura autreg5-aura-inner"></span>
+                <span class="autreg5-maple-ring autreg5-maple-ring-a"></span>
+                <span class="autreg5-maple-ring autreg5-maple-ring-b"></span>
+                <span class="autreg5-ground-glow"></span>
+                <span class="autreg5-sigil">秋</span>
+                <div class="autreg5-leaf-field"></div>
+                <div class="autreg5-ember-field"></div>
+            `;
+
+            const leafField = realm.querySelector('.autreg5-leaf-field');
+            const leafCount = this.getQualityCount(
+                window.matchMedia?.('(max-width: 768px), (pointer: coarse)').matches
+                    ? 12
+                    : 22,
+                8
+            );
+
+            for (let index = 0; index < leafCount; index++) {
+                const leaf = document.createElement('i');
+                leaf.className = 'autreg5-leaf';
+                leaf.textContent = index % 3 === 0 ? '◆' : '✦';
+                leaf.style.setProperty('--a4-angle', `${(index * 137.5) % 360}deg`);
+                leaf.style.setProperty('--a4-radius', `${48 + (index % 6) * 11}px`);
+                leaf.style.setProperty('--a4-delay', `${-(index % 9) * .47}s`);
+                leaf.style.setProperty('--a4-size', `${5 + (index % 4) * 2}px`);
+                leafField?.appendChild(leaf);
+            }
+
+            const emberField = realm.querySelector('.autreg5-ember-field');
+            const emberCount = this.getQualityCount(18, 7);
+            for (let index = 0; index < emberCount; index++) {
+                const ember = document.createElement('i');
+                ember.className = 'autreg5-ember';
+                ember.style.setProperty('--a4-x', `${8 + (index * 37) % 84}%`);
+                ember.style.setProperty('--a4-y', `${12 + (index * 53) % 72}%`);
+                ember.style.setProperty('--a4-delay', `${-(index % 8) * .51}s`);
+                ember.style.setProperty('--a4-drift', `${10 + (index % 5) * 7}px`);
+                realm.querySelector('.autreg5-ember-field')?.appendChild(ember);
+            }
+
+            this.container.appendChild(realm);
+
+            let autreg5CastLocked = false;
+
+            petElement.addEventListener('click', event => {
+                if (autreg5CastLocked) return;
+
+                if (
+                    typeof PetInteractionManager !== 'undefined' &&
+                    PetInteractionManager.isPetDragging
+                ) {
+                    return;
+                }
+
+                event.preventDefault();
+                event.stopPropagation();
+                autreg5CastLocked = true;
+
+                this.container.classList.remove('autreg5-casting');
+                void this.container.offsetWidth;
+                this.container.classList.add('autreg5-casting');
+
+                const localBurst = document.createElement('div');
+                localBurst.className = 'autreg5-local-burst';
+                localBurst.setAttribute('aria-hidden', 'true');
+
+                const localCount = this.getQualityCount(20, 10);
+                for (let index = 0; index < localCount; index++) {
+                    const shard = document.createElement('i');
+                    shard.textContent = index % 2 === 0 ? '◆' : '✦';
+                    shard.style.setProperty('--a4-burst-angle', `${index * (360 / localCount)}deg`);
+                    shard.style.setProperty('--a4-burst-distance', `${66 + (index % 5) * 15}px`);
+                    shard.style.setProperty('--a4-burst-delay', `${(index % 4) * .035}s`);
+                    localBurst.appendChild(shard);
+                }
+                this.container.appendChild(localBurst);
+
+                document
+                    .querySelectorAll('.autreg5-screen-ultimate')
+                    .forEach(node => node.remove());
+
+                const ultimate = document.createElement('div');
+                ultimate.className = 'autreg5-screen-ultimate';
+                ultimate.setAttribute('aria-hidden', 'true');
+                ultimate.innerHTML = `
+                    <div class="autreg5-ultimate-vignette"></div>
+                    <div class="autreg5-ultimate-sun"></div>
+                    <div class="autreg5-ultimate-gate gate-left"></div>
+                    <div class="autreg5-ultimate-gate gate-right"></div>
+                    <div class="autreg5-ultimate-river"></div>
+                    <div class="autreg5-ultimate-seal">
+                        <span>秋</span>
+                        <small>PHONG DIỆP · THIÊN GIÁNG</small>
+                    </div>
+                    <div class="autreg5-ultimate-leaves"></div>
+                    <div class="autreg5-ultimate-sparks"></div>
+                `;
+
+                const ultimateLeaves = ultimate.querySelector('.autreg5-ultimate-leaves');
+                const screenLeafCount = this.getQualityCount(
+                    window.matchMedia?.('(max-width: 768px), (pointer: coarse)').matches
+                        ? 26
+                        : 54,
+                    16
+                );
+                for (let index = 0; index < screenLeafCount; index++) {
+                    const leaf = document.createElement('i');
+                    leaf.textContent = index % 4 === 0 ? '◆' : '✦';
+                    leaf.style.setProperty('--a4-u-x', `${(index * 47) % 101}%`);
+                    leaf.style.setProperty('--a4-u-y', `${-12 - (index % 7) * 8}vh`);
+                    leaf.style.setProperty('--a4-u-delay', `${(index % 13) * .055}s`);
+                    leaf.style.setProperty('--a4-u-drift', `${-110 + (index % 11) * 24}px`);
+                    leaf.style.setProperty('--a4-u-spin', `${180 + (index % 8) * 70}deg`);
+                    leaf.style.setProperty('--a4-u-size', `${7 + (index % 5) * 3}px`);
+                    ultimateLeaves?.appendChild(leaf);
+                }
+
+                const sparks = ultimate.querySelector('.autreg5-ultimate-sparks');
+                const sparkCount = this.getQualityCount(34, 12);
+                for (let index = 0; index < sparkCount; index++) {
+                    const spark = document.createElement('i');
+                    spark.style.setProperty('--a4-s-x', `${4 + (index * 61) % 92}%`);
+                    spark.style.setProperty('--a4-s-y', `${12 + (index * 43) % 76}%`);
+                    spark.style.setProperty('--a4-s-delay', `${(index % 10) * .08}s`);
+                    sparks?.appendChild(spark);
+                }
+
+                document.body.appendChild(ultimate);
+
+                requestAnimationFrame(() => {
+                    ultimate.classList.add('is-active');
+                });
+
+                window.setTimeout(() => {
+                    ultimate.classList.add('is-climax');
+                }, 900);
+
+                window.setTimeout(() => {
+                    ultimate.classList.add('is-ending');
+                    this.container?.classList.remove('autreg5-casting');
+                }, 3600);
+
+                window.setTimeout(() => {
+                    localBurst.remove();
+                    ultimate.remove();
+                }, 4700);
+
+                window.setTimeout(() => {
+                    autreg5CastLocked = false;
+                }, 5400);
+            });
+
+            requestAnimationFrame(() => {
+                this.container.classList.add('autreg5-awakening');
+                window.setTimeout(() => {
+                    this.container?.classList.remove('autreg5-awakening');
+                }, 1200);
+            });
+        }
+
+        // =========================================================
+        // LINK CLICK · CHENG XIAOSHI CHIBI — TIME DIVE V2
+        // Concept RIÊNG hoàn toàn so với Cheng Xiaoshi Luxury:
+        // - Không đồng hồ vòng tròn
+        // - Không focus frame camera
+        // - Không film strip
+        // - Không polaroid
+        // - Realm: glitch plate + echo màu + data tile + scan slice
+        // - Click: fullscreen Memory Glitch / Time Dive toàn website
+        // Namespace mới: lcc2-* / linkclick-chibi-time-dive-*.
+        // =========================================================
+        if (
+            petData.id ===
+                'pet_linkclick_cheng_xiaoshi_chibi_1' ||
+            petData.petEffect ===
+                'linkclick-chibi-memory-snap-magic'
+        ) {
+            petElement.setAttribute('draggable', 'false');
+
+            petElement.classList.remove(
+                'linkclick-chibi-memory-avatar'
+            );
+
+            petElement.classList.add(
+                'linkclick-chibi-time-dive-avatar'
+            );
+
+            this.container.classList.remove(
+                'pet-linkclick-chibi-memory-stage',
+                'lcc1-casting'
+            );
+
+            this.container.classList.add(
+                'pet-linkclick-chibi-time-dive-stage'
+            );
+
+            // ---------------------------------------------
+            // REALM V2 — DATA GLITCH / CHROMATIC ECHO
+            // ---------------------------------------------
+            const realm =
+                document.createElement('div');
+
+            realm.className =
+                'lcc2-realm';
+
+            realm.setAttribute(
+                'aria-hidden',
+                'true'
+            );
+
+            realm.innerHTML = `
+                <span class="lcc2-backplate plate-a"></span>
+                <span class="lcc2-backplate plate-b"></span>
+
+                <img
+                    class="lcc2-echo echo-cyan"
+                    src="assets/Premium/Lock/Cheng Xiaoshi -chibi1.png"
+                    alt=""
+                    draggable="false"
+                >
+
+                <img
+                    class="lcc2-echo echo-magenta"
+                    src="assets/Premium/Lock/Cheng Xiaoshi -chibi1.png"
+                    alt=""
+                    draggable="false"
+                >
+
+                <span class="lcc2-scan-slice slice-a"></span>
+                <span class="lcc2-scan-slice slice-b"></span>
+                <span class="lcc2-scan-slice slice-c"></span>
+
+                <span class="lcc2-memory-tile tile-a">
+                    <i>05</i><b>12</b>
+                </span>
+
+                <span class="lcc2-memory-tile tile-b">
+                    <i>F03</i><b>LINK</b>
+                </span>
+
+                <span class="lcc2-memory-tile tile-c">
+                    <i>ΔT</i><b>-08</b>
+                </span>
+
+                <span class="lcc2-data-ribbon">
+                    <small>MEMORY</small>
+                    <strong>TIME DIVE</strong>
+                </span>
+
+                <span class="lcc2-pixel-field"></span>
+            `;
+
+            const pixelField =
+                realm.querySelector(
+                    '.lcc2-pixel-field'
+                );
+
+            const reduced =
+                window.matchMedia?.(
+                    '(max-width: 768px), ' +
+                    '(pointer: coarse), ' +
+                    '(prefers-reduced-motion: reduce)'
+                ).matches;
+
+            const pixelCount =
+                this.getQualityCount(
+                    reduced ? 10 : 24
+                );
+
+            for (
+                let index = 0;
+                index < pixelCount;
+                index++
+            ) {
+                const pixel =
+                    document.createElement('i');
+
+                pixel.className =
+                    index % 5 === 0
+                        ? 'lcc2-pixel is-hot'
+                        : index % 3 === 0
+                            ? 'lcc2-pixel is-cold'
+                            : 'lcc2-pixel';
+
+                pixel.style.setProperty(
+                    '--lcc2-px',
+                    `${4 + ((index * 41) % 92)}%`
+                );
+
+                pixel.style.setProperty(
+                    '--lcc2-py',
+                    `${5 + ((index * 59) % 90)}%`
+                );
+
+                pixel.style.setProperty(
+                    '--lcc2-psize',
+                    `${2 + (index % 4) * 2}px`
+                );
+
+                pixel.style.setProperty(
+                    '--lcc2-pdelay',
+                    `${-(index % 11) * 0.31}s`
+                );
+
+                pixelField?.appendChild(
+                    pixel
+                );
+            }
+
+            this.container.appendChild(
+                realm
+            );
+
+            let clickLocked = false;
+
+            petElement.addEventListener(
+                'click',
+                event => {
+                    if (clickLocked) {
+                        return;
+                    }
+
+                    if (
+                        typeof PetInteractionManager !==
+                            'undefined' &&
+                        PetInteractionManager.isPetDragging
+                    ) {
+                        return;
+                    }
+
+                    event.preventDefault();
+                    event.stopPropagation();
+
+                    // Không cho click effect chung / Luxury cùng chạy trên cùng click.
+                    if (
+                        typeof event.stopImmediatePropagation ===
+                        'function'
+                    ) {
+                        event.stopImmediatePropagation();
+                    }
+
+                    clickLocked = true;
+
+                    const petRect =
+                        petElement.getBoundingClientRect();
+
+                    const originX =
+                        Number.isFinite(event.clientX) &&
+                        event.clientX > 0
+                            ? event.clientX
+                            : petRect.left +
+                              petRect.width / 2;
+
+                    const originY =
+                        Number.isFinite(event.clientY) &&
+                        event.clientY > 0
+                            ? event.clientY
+                            : petRect.top +
+                              petRect.height / 2;
+
+                    this.container.classList.remove(
+                        'lcc2-casting'
+                    );
+
+                    void this.container.offsetWidth;
+
+                    this.container.classList.add(
+                        'lcc2-casting'
+                    );
+
+                    document
+                        .querySelectorAll(
+                            '.lcc2-screen-dive,' +
+                            '.lcc2-screen-caption'
+                        )
+                        .forEach(node => node.remove());
+
+                    document.documentElement
+                        .classList
+                        .remove(
+                            'linkclick-chibi-dive-active'
+                        );
+
+                    const screen =
+                        document.createElement('div');
+
+                    screen.className =
+                        'lcc2-screen-dive';
+
+                    screen.setAttribute(
+                        'aria-hidden',
+                        'true'
+                    );
+
+                    screen.style.setProperty(
+                        '--lcc2-origin-x',
+                        `${originX}px`
+                    );
+
+                    screen.style.setProperty(
+                        '--lcc2-origin-y',
+                        `${originY}px`
+                    );
+
+                    screen.innerHTML = `
+                        <div class="lcc2-screen-flash"></div>
+                        <div class="lcc2-screen-noise"></div>
+                        <div class="lcc2-screen-scan"></div>
+
+                        <div class="lcc2-screen-splits">
+                            <i class="split-1"></i>
+                            <i class="split-2"></i>
+                            <i class="split-3"></i>
+                            <i class="split-4"></i>
+                        </div>
+
+                        <div class="lcc2-screen-slashes">
+                            <i class="slash-a"></i>
+                            <i class="slash-b"></i>
+                            <i class="slash-c"></i>
+                        </div>
+
+                        <div class="lcc2-screen-window">
+                            <span>05 : 12</span>
+                            <b>MEMORY CHANNEL</b>
+                            <em>SYNC_03</em>
+                        </div>
+
+                        <div class="lcc2-screen-tiles"></div>
+                        <div class="lcc2-screen-code"></div>
+
+                        <div class="lcc2-screen-title">
+                            <small>LINK CLICK // MEMORY ACCESS</small>
+                            <strong>TIME DIVE</strong>
+                            <span>FRAME 05:12 · REWRITE IN PROGRESS</span>
+                        </div>
+                    `;
+
+                    const tileField =
+                        screen.querySelector(
+                            '.lcc2-screen-tiles'
+                        );
+
+                    const tileCount =
+                        this.getQualityCount(
+                            reduced ? 14 : 32
+                        );
+
+                    for (
+                        let index = 0;
+                        index < tileCount;
+                        index++
+                    ) {
+                        const tile =
+                            document.createElement('i');
+
+                        tile.className =
+                            index % 4 === 0
+                                ? 'is-magenta'
+                                : index % 3 === 0
+                                    ? 'is-white'
+                                    : 'is-cyan';
+
+                        const angle =
+                            index *
+                            (360 / tileCount);
+
+                        const distance =
+                            110 +
+                            (index % 8) * 42;
+
+                        tile.style.setProperty(
+                            '--lcc2-angle',
+                            `${angle}deg`
+                        );
+
+                        tile.style.setProperty(
+                            '--lcc2-distance',
+                            `${distance}px`
+                        );
+
+                        tile.style.setProperty(
+                            '--lcc2-delay',
+                            `${(index % 7) *
+                                0.035}s`
+                        );
+
+                        tile.style.setProperty(
+                            '--lcc2-w',
+                            `${12 + (index % 5) * 9}px`
+                        );
+
+                        tile.style.setProperty(
+                            '--lcc2-h',
+                            `${5 + (index % 4) * 4}px`
+                        );
+
+                        tileField?.appendChild(
+                            tile
+                        );
+                    }
+
+                    const codeField =
+                        screen.querySelector(
+                            '.lcc2-screen-code'
+                        );
+
+                    const codeText = [
+                        '05:12',
+                        'FRAME_03',
+                        'MEM_021',
+                        'SYNC',
+                        'ΔT-08',
+                        'LINK',
+                        'DIVE',
+                        'REWRITE'
+                    ];
+
+                    const codeCount =
+                        this.getQualityCount(
+                            reduced ? 8 : 18
+                        );
+
+                    for (
+                        let index = 0;
+                        index < codeCount;
+                        index++
+                    ) {
+                        const code =
+                            document.createElement('span');
+
+                        code.textContent =
+                            codeText[
+                                index %
+                                codeText.length
+                            ];
+
+                        code.style.setProperty(
+                            '--lcc2-cx',
+                            `${5 +
+                                ((index * 47) %
+                                    90)}%`
+                        );
+
+                        code.style.setProperty(
+                            '--lcc2-cy',
+                            `${8 +
+                                ((index * 61) %
+                                    82)}%`
+                        );
+
+                        code.style.setProperty(
+                            '--lcc2-cdelay',
+                            `${(index % 6) *
+                                0.05}s`
+                        );
+
+                        codeField?.appendChild(
+                            code
+                        );
+                    }
+
+                    document.body.appendChild(
+                        screen
+                    );
+
+                    document.documentElement
+                        .classList
+                        .add(
+                            'linkclick-chibi-dive-active'
+                        );
+
+                    requestAnimationFrame(() => {
+                        screen.classList.add(
+                            'is-active'
+                        );
+                    });
+
+                    window.setTimeout(() => {
+                        screen.classList.add(
+                            'is-ending'
+                        );
+                    }, 2050);
+
+                    window.setTimeout(() => {
+                        screen.remove();
+
+                        document.documentElement
+                            .classList
+                            .remove(
+                                'linkclick-chibi-dive-active'
+                            );
+
+                        this.container
+                            ?.classList
+                            .remove(
+                                'lcc2-casting'
+                            );
+                    }, 2650);
+
+                    window.setTimeout(() => {
+                        clickLocked = false;
+                    }, 2950);
+                },
+                true
+            );
+        }
+
+
+        // =========================================================
+        // ĐÊM ĐẦY SAO · CHIBI — TIỂU LỮ KHÁCH
+        // Chỉ có realm quanh pet + click burst + ultimate riêng.
+        // Namespace snch-* độc lập, không đụng hiệu ứng Premium/Luxury.
+        // =========================================================
+        if (
+            petData.id === 'pet_dem_day_sao_chibi_1' ||
+            petData.petEffect === 'starry-night-chibi-wanderer-magic'
+        ) {
+            ensureStarryNightChibiPetStylesheet();
+
+            petElement.setAttribute('draggable', 'false');
+            petElement.classList.add('starry-night-chibi-avatar');
+
+            this.container.classList.add(
+                'pet-starry-night-chibi-stage',
+                'snch-awakening'
+            );
+
+            document.documentElement.classList.add(
+                'starry-night-chibi-equipped'
+            );
+            document.body?.classList.add('theme-starry-night-chibi-stage');
+
+            const realm = document.createElement('div');
+            realm.className = 'snch-local-realm';
+            realm.setAttribute('aria-hidden', 'true');
+            realm.innerHTML = `
+                <span class="snch-aura"></span>
+                <span class="snch-aura aura-b"></span>
+                <span class="snch-moon"></span>
+                <span class="snch-swirl swirl-a"></span>
+                <span class="snch-swirl swirl-b"></span>
+                <span class="snch-cypress"></span>
+                <span class="snch-ground"></span>
+                <div class="snch-star-field"></div>
+                <div class="snch-dust-field"></div>
+            `;
+
+            const reducedMotion = window.matchMedia?.(
+                '(max-width: 768px), (pointer: coarse), (prefers-reduced-motion: reduce)'
+            ).matches;
+
+            const starField = realm.querySelector('.snch-star-field');
+            const starCount = this.getQualityCount(reducedMotion ? 12 : 26);
+
+            for (let index = 0; index < starCount; index++) {
+                const star = document.createElement('i');
+                star.className = 'snch-star';
+                star.textContent = index % 5 === 0 ? '✦' : '•';
+                star.style.setProperty('--snch-sx', `${8 + ((index * 41) % 82)}%`);
+                star.style.setProperty('--snch-sy', `${6 + ((index * 53) % 84)}%`);
+                star.style.setProperty('--snch-sd', `${-(index % 10) * 0.24}s`);
+                star.style.setProperty('--snch-ss', `${0.74 + (index % 4) * 0.12}`);
+                starField?.appendChild(star);
+            }
+
+            const dustField = realm.querySelector('.snch-dust-field');
+            const dustCount = this.getQualityCount(reducedMotion ? 8 : 18);
+            for (let index = 0; index < dustCount; index++) {
+                const dust = document.createElement('i');
+                dust.className = 'snch-dust';
+                dust.style.setProperty('--snch-dx', `${10 + ((index * 37) % 80)}%`);
+                dust.style.setProperty('--snch-dy', `${14 + ((index * 29) % 74)}%`);
+                dust.style.setProperty('--snch-dd', `${-(index % 8) * 0.3}s`);
+                dust.style.setProperty('--snch-dr', `${48 + (index % 5) * 12}px`);
+                dustField?.appendChild(dust);
+            }
+
+            this.container.appendChild(realm);
+
+            window.setTimeout(() => {
+                this.container?.classList.remove('snch-awakening');
+            }, 1300);
+
+            let clickLocked = false;
+
+            petElement.addEventListener('click', event => {
+                if (clickLocked) return;
+
+                if (
+                    typeof PetInteractionManager !== 'undefined' &&
+                    PetInteractionManager.isPetDragging
+                ) {
+                    return;
+                }
+
+                event.preventDefault();
+                event.stopPropagation();
+                event.stopImmediatePropagation();
+
+                clickLocked = true;
+
+                this.container.classList.remove('snch-casting');
+                void this.container.offsetWidth;
+                this.container.classList.add('snch-casting');
+
+                const burst = document.createElement('div');
+                burst.className = 'snch-local-click-burst';
+                burst.setAttribute('aria-hidden', 'true');
+                burst.innerHTML = `
+                    <span class="snch-burst-core"></span>
+                    <span class="snch-burst-ring ring-a"></span>
+                    <span class="snch-burst-ring ring-b"></span>
+                    <span class="snch-burst-ring ring-c"></span>
+                    <div class="snch-burst-rays"></div>
+                `;
+
+                const rayField = burst.querySelector('.snch-burst-rays');
+                const rayCount = this.getQualityCount(reducedMotion ? 10 : 20);
+                for (let index = 0; index < rayCount; index++) {
+                    const ray = document.createElement('i');
+                    ray.className = 'snch-burst-ray';
+                    ray.style.setProperty('--snch-ra', `${index * (360 / rayCount)}deg`);
+                    ray.style.setProperty('--snch-rd', `${72 + (index % 5) * 16}px`);
+                    ray.style.setProperty('--snch-rdelay', `${(index % 5) * 0.03}s`);
+                    rayField?.appendChild(ray);
+                }
+                this.container.appendChild(burst);
+
+                document.querySelectorAll('.snch-screen-ultimate, .snch-dialogue')
+                    .forEach(node => node.remove());
+
+                const ultimate = document.createElement('div');
+                ultimate.className = 'snch-screen-ultimate';
+                ultimate.setAttribute('aria-hidden', 'true');
+                ultimate.innerHTML = `
+                    <div class="snch-screen-wash"></div>
+                    <div class="snch-screen-vortex vortex-a"></div>
+                    <div class="snch-screen-vortex vortex-b"></div>
+                    <div class="snch-screen-moon"></div>
+                    <div class="snch-screen-horizon"></div>
+                    <div class="snch-screen-cypress"></div>
+                    <div class="snch-screen-stars"></div>
+                    <div class="snch-screen-brushes"></div>
+                    <div class="snch-screen-title">
+                        <small>ĐÊM ĐẦY SAO · TINH DẠ</small>
+                        <strong>MỘNG DU DẠ HỌA</strong>
+                        <span>✦ Starry Chibi Bloom ✦</span>
+                    </div>
+                `;
+
+                const screenStars = ultimate.querySelector('.snch-screen-stars');
+                const screenStarCount = this.getQualityCount(reducedMotion ? 18 : 42);
+                for (let index = 0; index < screenStarCount; index++) {
+                    const star = document.createElement('i');
+                    star.className = 'snch-screen-star';
+                    star.textContent = index % 6 === 0 ? '✦' : '·';
+                    star.style.setProperty('--snch-ux', `${(index * 43 + 7) % 100}%`);
+                    star.style.setProperty('--snch-uy', `${(index * 59 + 11) % 100}%`);
+                    star.style.setProperty('--snch-ud', `${-(index % 8) * 0.16}s`);
+                    screenStars?.appendChild(star);
+                }
+
+                const screenBrushes = ultimate.querySelector('.snch-screen-brushes');
+                const brushCount = this.getQualityCount(reducedMotion ? 8 : 18);
+                for (let index = 0; index < brushCount; index++) {
+                    const brush = document.createElement('i');
+                    brush.className = 'snch-screen-brush';
+                    brush.style.setProperty('--snch-bx', `${6 + ((index * 47) % 90)}%`);
+                    brush.style.setProperty('--snch-by', `${12 + ((index * 31) % 74)}%`);
+                    brush.style.setProperty('--snch-bw', `${140 + (index % 5) * 42}px`);
+                    brush.style.setProperty('--snch-br', `${-24 + (index % 8) * 8}deg`);
+                    brush.style.setProperty('--snch-bdelay', `${(index % 6) * 0.04}s`);
+                    screenBrushes?.appendChild(brush);
+                }
+
+                const dialogue = document.createElement('div');
+                dialogue.className = 'snch-dialogue';
+                dialogue.setAttribute('aria-hidden', 'true');
+                dialogue.innerHTML = `
+                    <small>TINH DẠ · TIỂU LỮ KHÁCH</small>
+                    <strong>“Đêm nay, những vì sao sẽ nở thành vệt cọ.”</strong>
+                `;
+
+                document.body.appendChild(ultimate);
+                document.body.appendChild(dialogue);
+                document.documentElement.classList.add(
+                    'starry-night-chibi-skill-active'
+                );
+
+                requestAnimationFrame(() => {
+                    burst.classList.add('is-active');
+                    ultimate.classList.add('is-active');
+                    dialogue.classList.add('is-active');
+                });
+
+                window.setTimeout(() => burst.remove(), 980);
+                window.setTimeout(() => ultimate.classList.add('is-ending'), 2350);
+                window.setTimeout(() => dialogue.classList.add('is-ending'), 2500);
+
+                window.setTimeout(() => {
+                    ultimate.remove();
+                    dialogue.remove();
+                    document.documentElement.classList.remove(
+                        'starry-night-chibi-skill-active'
+                    );
+                    this.container?.classList.remove('snch-casting');
+                    clickLocked = false;
+                }, 3350);
+            }, true);
+        }
+
+        // One size contract for equipped companions, independent of each item's skin.
+        // Height keeps tall portraits comparable; the width cap protects wide artwork.
+        const premiumCompanion = petData.luxuryOnly === true;
+        this.container.dataset.petSizeTier = premiumCompanion ? 'premium' : 'regular';
+        if (petElement.tagName === 'IMG') {
+            petElement.style.setProperty('height', premiumCompanion
+                ? 'min(300px, 38vh, 48vw)' : 'min(160px, 22vh, 36vw)', 'important');
+            petElement.style.setProperty('width', 'auto', 'important');
+            petElement.style.setProperty('max-width', premiumCompanion
+                ? 'min(275px, 42vw)' : 'min(175px, 36vw)', 'important');
+            petElement.style.setProperty('max-height', premiumCompanion
+                ? 'min(300px, 38vh, 48vw)' : 'min(160px, 22vh, 36vw)', 'important');
+            petElement.style.setProperty('object-fit', 'contain', 'important');
+        } else {
+            petElement.style.setProperty('font-size', 'min(100px, 25vw)', 'important');
+        }
+        this.container.style.setProperty('width', 'max-content', 'important');
+        this.container.style.setProperty('height', 'auto', 'important');
+        this.container.style.setProperty('max-width', '70vw', 'important');
+        this.container.appendChild(petElement);
+
+        // =========================================================
+        // KHÔI PHỤC HIỂN THỊ CHUNG CHO MỌI THÚ CƯNG
+        // applyEquippedItems() / unapplyItem() có thể để container
+        // ở display:none. spawnPet phải chủ động bật lại container.
+        // =========================================================
+        this.container.style.display =
+            petData.id === 'pet_sinh_nhat_2026'
+                ? 'grid'
+                : 'block';
+
+        this.container.style.visibility = 'visible';
+        this.container.style.opacity = '1';
+        this.container.style.pointerEvents = 'auto';
+        this.container.removeAttribute('hidden');
+        this.container.setAttribute('aria-hidden', 'false');
+
+        this.container.classList.add('pet-idle');
+
+        /*
+         * Bé Rắn dùng vị trí riêng như cơ chế cũ.
+         * Các pet khác giữ vị trí đã có/được kéo bởi người dùng.
+         */
+        if (petData.id === 'pet_sinh_nhat_2026') {
+            requestAnimationFrame(() => {
+                const container = this.container;
+
+                if (!container) return;
+
+                container.style.position = 'fixed';
+                container.style.left = 'auto';
+                container.style.top = 'auto';
+                container.style.right = '42px';
+                container.style.bottom = '72px';
+                container.style.margin = '0';
+                container.style.zIndex = '5000';
+                container.style.removeProperty('transform');
+            });
+        }
+
+        // =========================================================
+        // NÚT THÁO THÚ CƯNG — KHÔI PHỤC CƠ CHẾ CHUNG
+        // =========================================================
+        const closeBtn = document.createElement('button');
+
+        closeBtn.type = 'button';
+        closeBtn.className = 'pet-close-btn';
+        closeBtn.innerHTML = '✖';
+        closeBtn.title = 'Tháo thú cưng';
+        closeBtn.setAttribute('aria-label', 'Tháo thú cưng');
+
+        closeBtn.style.cssText = `
+    position: absolute;
+    top: -5px;
+    right: -15px;
+    width: 24px;
+    height: 24px;
+    padding: 0;
+    border: 0;
+    background: rgba(225, 29, 72, 0.18);
+    color: #e11d48;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 11px;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.2s, transform 0.2s;
+    font-weight: bold;
+    z-index: 20;
+`;
+
+        const isTouchDevice =
+            window.matchMedia?.('(pointer: coarse)').matches;
+
+        closeBtn.style.opacity = isTouchDevice ? '0.82' : '0';
+
+        this.container.onmouseenter = () => {
+            closeBtn.style.opacity = '1';
+        };
+
+        this.container.onmouseleave = () => {
+            closeBtn.style.opacity = isTouchDevice ? '0.82' : '0';
+        };
+
+        closeBtn.addEventListener('pointerdown', event => {
+            event.stopPropagation();
+        });
+
+        closeBtn.addEventListener('click', event => {
+            event.preventDefault();
+            event.stopPropagation();
+
+            if (
+                typeof StoreManager !== 'undefined' &&
+                typeof StoreManager.unapplyItem === 'function'
+            ) {
+                StoreManager.unapplyItem(petData.id);
+            }
+        });
+
+        this.container.appendChild(closeBtn);
+
+        // Khôi phục kéo-thả + lưu pet hiện tại như cơ chế cũ.
+        this.makePetDraggable();
+        localStorage.setItem('active_pet', petData.id);
+
+        // =========================================================
+        // ACEDIA · CHIBI — CLICK ULTIMATE TOÀN MÀN HÌNH
+        // "THẤT TRỌNG MIÊN GIỚI"
+        // Namespace acch1-* độc lập hoàn toàn với seven-sins-sloth-magic/Luxury.
+        // =========================================================
+        if (
+            petData.id === 'pet_thatdaitoi_luoibieng_chibi_1' ||
+            petData.petEffect === 'acedia-chibi-dream-magic'
+        ) {
+            let acch1SkillLocked = false;
+
+            petElement.addEventListener(
+                'click',
+                event => {
+                    if (acch1SkillLocked) return;
+
+                    if (
+                        typeof PetInteractionManager !== 'undefined' &&
+                        PetInteractionManager.isPetDragging
+                    ) {
+                        return;
+                    }
+
+                    event.preventDefault();
+                    event.stopPropagation();
+                    event.stopImmediatePropagation?.();
+
+                    acch1SkillLocked = true;
+
+                    const acch1CastToken =
+                        `${Date.now()}-${Math.random()
+                            .toString(36)
+                            .slice(2, 9)}`;
+
+                    this.container.dataset.acch1SkillLocked =
+                        acch1CastToken;
+
+                    this.container.classList.add('acch1-casting');
+
+                    document
+                        .querySelectorAll(
+                            '.acch1-local-burst, .acch1-screen-ultimate'
+                        )
+                        .forEach(node => node.remove());
+
+                    const localBurst = document.createElement('div');
+                    localBurst.className = 'acch1-local-burst';
+                    localBurst.setAttribute('aria-hidden', 'true');
+
+                    for (let index = 0; index < 14; index++) {
+                        const shard = document.createElement('span');
+                        shard.style.setProperty(
+                            '--acch1-burst-angle',
+                            `${index * (360 / 14)}deg`
+                        );
+                        shard.style.setProperty(
+                            '--acch1-burst-distance',
+                            `${72 + (index % 4) * 18}px`
+                        );
+                        shard.style.setProperty(
+                            '--acch1-burst-delay',
+                            `${(index % 5) * 0.025}s`
+                        );
+                        localBurst.appendChild(shard);
+                    }
+
+                    this.container.appendChild(localBurst);
+
+                    const ultimate = document.createElement('div');
+                    ultimate.className = 'acch1-screen-ultimate';
+                    ultimate.setAttribute('aria-hidden', 'true');
+                    ultimate.innerHTML = `
+                        <div class="acch1-screen-veil"></div>
+                        <div class="acch1-screen-mist mist-a"></div>
+                        <div class="acch1-screen-mist mist-b"></div>
+                        <div class="acch1-screen-eclipse">
+                            <span class="acch1-eclipse-core">Ⅶ</span>
+                            <span class="acch1-eclipse-ring ring-a"></span>
+                            <span class="acch1-eclipse-ring ring-b"></span>
+                            <span class="acch1-eclipse-ring ring-c"></span>
+                        </div>
+                        <div class="acch1-screen-gate">
+                            <span class="acch1-gate-wing wing-left"></span>
+                            <span class="acch1-gate-wing wing-right"></span>
+                            <span class="acch1-gate-seal">☾</span>
+                        </div>
+                        <div class="acch1-seven-field"></div>
+                        <div class="acch1-screen-title">
+                            <small>ACEDIA · SOMNIA VII</small>
+                            <strong>THẤT TRỌNG MIÊN GIỚI</strong>
+                        </div>
+                    `;
+
+                    const sevenField = ultimate.querySelector(
+                        '.acch1-seven-field'
+                    );
+
+                    for (let index = 0; index < 21; index++) {
+                        const rune = document.createElement('span');
+                        rune.textContent =
+                            index % 7 === 6
+                                ? 'Ⅶ'
+                                : index % 3 === 0
+                                    ? '☾'
+                                    : '✦';
+                        const screenAngle =
+                            index * (360 / 21);
+
+                        rune.style.setProperty(
+                            '--acch1-screen-angle',
+                            `${screenAngle}deg`
+                        );
+                        rune.style.setProperty(
+                            '--acch1-screen-angle-back',
+                            `${-screenAngle}deg`
+                        );
+                        rune.style.setProperty(
+                            '--acch1-screen-radius',
+                            `${18 + (index % 7) * 7}vmin`
+                        );
+                        rune.style.setProperty(
+                            '--acch1-screen-delay',
+                            `${(index % 7) * 0.045}s`
+                        );
+                        sevenField?.appendChild(rune);
+                    }
+
+                    document.body.appendChild(ultimate);
+                    document.documentElement.classList.add(
+                        'acch1-screen-active'
+                    );
+
+                    requestAnimationFrame(() => {
+                        ultimate.classList.add('is-active');
+                    });
+
+                    window.setTimeout(() => {
+                        ultimate.classList.add('is-collapse');
+                    }, 2800);
+
+                    window.setTimeout(() => {
+                        ultimate.classList.add('is-ending');
+                    }, 4050);
+
+                    window.setTimeout(() => {
+                        localBurst.remove();
+                        ultimate.remove();
+
+                        const isCurrentCast =
+                            this.container?.dataset
+                                ?.acch1SkillLocked ===
+                            acch1CastToken;
+
+                        if (isCurrentCast) {
+                            document.documentElement.classList.remove(
+                                'acch1-screen-active'
+                            );
+
+                            this.container?.classList.remove(
+                                'acch1-casting'
+                            );
+
+                            delete this.container.dataset
+                                .acch1SkillLocked;
+
+                            acch1SkillLocked = false;
+                        }
+                    }, 5100);
+                },
+                {
+                    signal: this.interactionAbortController?.signal
+                }
+            );
+        }
+
+        // =========================================================
+        // AETHER · TIỂU THIÊN QUANG — CLICK ULTIMATE TOÀN MÀN HÌNH
+        // "QUANG LĂNG KHAI ẤN"
+        // Khi nhấn vào pet ở góc phải sẽ tạo một hiệu ứng full-screen
+        // hoàn toàn riêng bằng namespace aetlc-screen-*.
+        // Không dùng lại DOM/class/keyframe của Aether Luxury hay NYX.
+        // =========================================================
+        if (
+            petData.id === 'pet_truyenthuyet_aether_chibi_2' ||
+            petData.petEffect === 'aether-little-daystar-magic'
+        ) {
+            let aetherLittleClickLocked = false;
+
+            petElement.addEventListener('click', event => {
+                if (aetherLittleClickLocked) return;
+
+                if (
+                    typeof PetInteractionManager !== 'undefined' &&
+                    PetInteractionManager.isPetDragging
+                ) {
+                    return;
+                }
+
+                event.preventDefault();
+                event.stopPropagation();
+                event.stopImmediatePropagation?.();
+
+                aetherLittleClickLocked = true;
+
+                const rect = petElement.getBoundingClientRect();
+                const originX = event.clientX > 0
+                    ? event.clientX
+                    : rect.left + rect.width / 2;
+                const originY = event.clientY > 0
+                    ? event.clientY
+                    : rect.top + rect.height / 2;
+
+                document
+                    .querySelectorAll('.aetlc-screen-ultimate')
+                    .forEach(node => node.remove());
+
+                this.container?.classList.remove('aetlc-casting');
+                if (this.container) void this.container.offsetWidth;
+                this.container?.classList.add('aetlc-casting');
+
+                document.documentElement.classList.remove(
+                    'aetlc-screen-casting'
+                );
+                void document.documentElement.offsetWidth;
+                document.documentElement.classList.add(
+                    'aetlc-screen-casting'
+                );
+
+                const ultimate = document.createElement('div');
+                ultimate.className = 'aetlc-screen-ultimate';
+                ultimate.setAttribute('aria-hidden', 'true');
+                ultimate.style.setProperty(
+                    '--aetlc-origin-x',
+                    `${originX}px`
+                );
+                ultimate.style.setProperty(
+                    '--aetlc-origin-y',
+                    `${originY}px`
+                );
+
+                ultimate.innerHTML = `
+                    <div class="aetlc-screen-veil"></div>
+                    <div class="aetlc-screen-origin-burst"></div>
+
+                    <div class="aetlc-screen-solaris">
+                        <span class="aetlc-screen-core"></span>
+                        <span class="aetlc-screen-halo halo-a"></span>
+                        <span class="aetlc-screen-halo halo-b"></span>
+                        <span class="aetlc-screen-halo halo-c"></span>
+                        <span class="aetlc-screen-cross cross-a"></span>
+                        <span class="aetlc-screen-cross cross-b"></span>
+                    </div>
+
+                    <div class="aetlc-screen-mandala">
+                        <span class="aetlc-screen-mandala-ring ring-a"></span>
+                        <span class="aetlc-screen-mandala-ring ring-b"></span>
+                        <span class="aetlc-screen-mandala-diamond diamond-a"></span>
+                        <span class="aetlc-screen-mandala-diamond diamond-b"></span>
+                    </div>
+
+                    <div class="aetlc-screen-rune-circle"></div>
+                    <div class="aetlc-screen-beam-field"></div>
+                    <div class="aetlc-screen-starfield"></div>
+                    <div class="aetlc-screen-feather-field"></div>
+
+                    <span class="aetlc-screen-wing wing-left"></span>
+                    <span class="aetlc-screen-wing wing-right"></span>
+                    <span class="aetlc-screen-crown">✦</span>
+
+                    <div class="aetlc-screen-title">
+                        <small>AETHER · TIỂU THIÊN QUANG</small>
+                        <strong>QUANG LĂNG KHAI ẤN</strong>
+                        <em>Ánh thiên quang mở lối trên toàn cõi màn đêm</em>
+                    </div>
+                `;
+
+                const reducedMotion = window.matchMedia?.(
+                    '(max-width: 768px), (pointer: coarse), (prefers-reduced-motion: reduce)'
+                ).matches;
+
+                const beamField = ultimate.querySelector('.aetlc-screen-beam-field');
+                const beamCount = this.getQualityCount(reducedMotion ? 18 : 28, reducedMotion ? 12 : 18);
+                for (let index = 0; index < beamCount; index++) {
+                    const beam = document.createElement('i');
+                    beam.style.setProperty(
+                        '--aetlc-screen-beam-angle',
+                        `${index * (360 / beamCount)}deg`
+                    );
+                    beam.style.setProperty(
+                        '--aetlc-screen-beam-length',
+                        `${24 + (index % 6) * 2}vmin`
+                    );
+                    beam.style.setProperty(
+                        '--aetlc-screen-beam-delay',
+                        `${(index % 9) * .025}s`
+                    );
+                    beamField?.appendChild(beam);
+                }
+
+                const runeCircle = ultimate.querySelector('.aetlc-screen-rune-circle');
+                const runes = ['ΑΙ', 'Θ', 'Η', 'Ρ', '✦', '☼', '✧', '✦'];
+                runes.forEach((symbol, index) => {
+                    const rune = document.createElement('span');
+                    const angle = index * (360 / runes.length);
+                    rune.textContent = symbol;
+                    rune.style.setProperty(
+                        '--aetlc-screen-rune-angle',
+                        `${angle}deg`
+                    );
+                    rune.style.setProperty(
+                        '--aetlc-screen-rune-angle-back',
+                        `${-angle}deg`
+                    );
+                    rune.style.setProperty(
+                        '--aetlc-screen-rune-delay',
+                        `${index * .08}s`
+                    );
+                    runeCircle?.appendChild(rune);
+                });
+
+                const starField = ultimate.querySelector('.aetlc-screen-starfield');
+                const starCount = this.getQualityCount(reducedMotion ? 34 : 54, reducedMotion ? 24 : 36);
+                for (let index = 0; index < starCount; index++) {
+                    const star = document.createElement('span');
+                    star.textContent = index % 5 === 0 ? '✦' : (index % 3 === 0 ? '·' : '✧');
+                    star.style.setProperty(
+                        '--aetlc-screen-star-x',
+                        `${(index * 37 + 9) % 100}%`
+                    );
+                    star.style.setProperty(
+                        '--aetlc-screen-star-y',
+                        `${(index * 53 + 17) % 100}%`
+                    );
+                    star.style.setProperty(
+                        '--aetlc-screen-star-size',
+                        `${10 + (index % 7) * 2}px`
+                    );
+                    star.style.setProperty(
+                        '--aetlc-screen-star-delay',
+                        `${(index % 12) * .07}s`
+                    );
+                    starField?.appendChild(star);
+                }
+
+                const featherField = ultimate.querySelector('.aetlc-screen-feather-field');
+                const featherCount = this.getQualityCount(reducedMotion ? 10 : 16, reducedMotion ? 8 : 12);
+                for (let index = 0; index < featherCount; index++) {
+                    const feather = document.createElement('i');
+                    feather.textContent = index % 4 === 0 ? '✦' : '❈';
+                    feather.style.setProperty(
+                        '--aetlc-screen-feather-angle',
+                        `${index * (360 / featherCount)}deg`
+                    );
+                    feather.style.setProperty(
+                        '--aetlc-screen-feather-angle-back',
+                        `${-index * (360 / featherCount)}deg`
+                    );
+                    feather.style.setProperty(
+                        '--aetlc-screen-feather-distance',
+                        `${18 + (index % 5) * 4}vmin`
+                    );
+                    feather.style.setProperty(
+                        '--aetlc-screen-feather-delay',
+                        `${index * .06}s`
+                    );
+                    featherField?.appendChild(feather);
+                }
+
+                document.body.appendChild(ultimate);
+
+                requestAnimationFrame(() => {
+                    ultimate.classList.add('is-active');
+                });
+
+                window.setTimeout(() => {
+                    ultimate.classList.add('is-ending');
+                }, 3600);
+
+                window.setTimeout(() => {
+                    ultimate.remove();
+                    document.documentElement.classList.remove(
+                        'aetlc-screen-casting'
+                    );
+                    this.container?.classList.remove('aetlc-casting');
+                }, 4450);
+
+                window.setTimeout(() => {
+                    aetherLittleClickLocked = false;
+                }, 4550);
+            });
+        }
+
+        // =========================================================
+        // NYX · TIỂU DẠ TINH LINH
+        // CLICK ULTIMATE — DẠ TINH GIỚI
+        // =========================================================
+
+        if (
+            petData.petEffect ===
+            'nyx-little-night-spirit-magic'
+        ) {
+
+            let littleNyxLocked = false;
+
+
+            petElement.addEventListener(
+
+                'click',
+
+                event => {
+
+                    if (littleNyxLocked) {
+                        return;
+                    }
+
+
+                    if (
+                        typeof PetInteractionManager !==
+                        'undefined' &&
+
+                        PetInteractionManager
+                            .isPetDragging
+                    ) {
+                        return;
+                    }
+
+
+                    event.preventDefault();
+                    event.stopPropagation();
+
+
+                    littleNyxLocked = true;
+
+
+                    document
+                        .querySelectorAll(
+                            '.nyx-little-night-ultimate'
+                        )
+                        .forEach(
+                            node => node.remove()
+                        );
+
+
+                    const rect =
+                        petElement
+                            .getBoundingClientRect();
+
+
+                    const x =
+                        event.clientX > 0
+                            ? event.clientX
+                            : rect.left +
+                            rect.width / 2;
+
+
+                    const y =
+                        event.clientY > 0
+                            ? event.clientY
+                            : rect.top +
+                            rect.height / 2;
+
+
+                    const ultimate =
+                        document.createElement(
+                            'div'
+                        );
+
+
+                    ultimate.className =
+                        'nyx-little-night-ultimate';
+
+
+                    ultimate.style.setProperty(
+                        '--nyx-little-origin-x',
+                        `${x}px`
+                    );
+
+
+                    ultimate.style.setProperty(
+                        '--nyx-little-origin-y',
+                        `${y}px`
+                    );
+
+
+                    ultimate.innerHTML = `
+
+                <div
+                    class="nyx-little-screen-veil"
+                ></div>
+
+
+                <div
+                    class="nyx-little-origin-burst"
+                ></div>
+
+
+                <div
+                    class="nyx-little-grand-moon"
+                >
+
+                    <span
+                        class="nyx-little-moon-core"
+                    ></span>
+
+                    <span
+                        class="
+                            nyx-little-moon-ring
+                            ring-one
+                        "
+                    ></span>
+
+                    <span
+                        class="
+                            nyx-little-moon-ring
+                            ring-two
+                        "
+                    ></span>
+
+                    <span
+                        class="
+                            nyx-little-moon-ring
+                            ring-three
+                        "
+                    ></span>
+
+                </div>
+
+
+                <div
+                    class="nyx-little-rune-circle"
+                >
+
+                    <span>Ν</span>
+                    <span>Υ</span>
+                    <span>Ξ</span>
+                    <span>☾</span>
+
+                    <span>✦</span>
+                    <span>☽</span>
+                    <span>⋆</span>
+                    <span>◈</span>
+
+                </div>
+
+
+                <div
+                    class="nyx-little-screen-stars"
+                ></div>
+
+
+                <div
+                    class="nyx-little-screen-comets"
+                ></div>
+
+
+                <span
+                    class="nyx-little-horizon"
+                ></span>
+
+
+                <div
+                    class="nyx-little-ultimate-title"
+                >
+
+                    <small>
+                        NYX · TIỂU DẠ TINH LINH
+                    </small>
+
+                    <strong>
+                        DẠ TINH GIỚI
+                    </strong>
+
+                    <em>
+                        TINH TÚ THỨC GIẤC
+                        GIỮA MÀN ĐÊM
+                    </em>
+
+                </div>
+            `;
+
+
+                    /* ==========================
+                       TINH TÚ TOÀN MÀN HÌNH
+                       ========================== */
+
+                    const starField =
+                        ultimate.querySelector(
+                            '.nyx-little-screen-stars'
+                        );
+
+
+                    for (
+                        let i = 0;
+                        i < 52;
+                        i++
+                    ) {
+
+                        const star =
+                            document.createElement(
+                                'span'
+                            );
+
+
+                        star.textContent =
+                            i % 5 === 0
+                                ? '✦'
+                                : '·';
+
+
+                        star.style.setProperty(
+                            '--star-x',
+                            `${(i * 37 + 7) % 100}%`
+                        );
+
+
+                        star.style.setProperty(
+                            '--star-y',
+                            `${(i * 59 + 11) % 100}%`
+                        );
+
+
+                        star.style.setProperty(
+                            '--star-size',
+                            `${5 + i % 11}px`
+                        );
+
+
+                        star.style.setProperty(
+                            '--star-delay',
+                            `${(i % 12) * .06}s`
+                        );
+
+
+                        starField?.appendChild(
+                            star
+                        );
+                    }
+
+
+                    /* ==========================
+                       SAO BĂNG
+                       ========================== */
+
+                    const cometField =
+                        ultimate.querySelector(
+                            '.nyx-little-screen-comets'
+                        );
+
+
+                    for (
+                        let i = 0;
+                        i < 10;
+                        i++
+                    ) {
+
+                        const comet =
+                            document.createElement(
+                                'i'
+                            );
+
+
+                        comet.style.setProperty(
+                            '--comet-y',
+                            `${7 + i * 9}%`
+                        );
+
+
+                        comet.style.setProperty(
+                            '--comet-delay',
+                            `${.35 + i * .16}s`
+                        );
+
+
+                        cometField?.appendChild(
+                            comet
+                        );
+                    }
+
+
+                    document.body.appendChild(
+                        ultimate
+                    );
+
+
+                    this.container.classList.add(
+                        'nyx-little-night-casting'
+                    );
+
+
+                    requestAnimationFrame(
+                        () => {
+                            ultimate.classList.add(
+                                'is-active'
+                            );
+                        }
+                    );
+
+
+                    window.setTimeout(
+                        () => {
+
+                            ultimate.classList.add(
+                                'is-ending'
+                            );
+
+                        },
+                        4500
+                    );
+
+
+                    window.setTimeout(
+                        () => {
+
+                            ultimate.remove();
+
+                            this.container
+                                ?.classList.remove(
+                                    'nyx-little-night-casting'
+                                );
+
+                            littleNyxLocked =
+                                false;
+
+                        },
+                        5400
+                    );
+                },
+
+                {
+                    signal:
+                        this
+                            .interactionAbortController
+                            .signal
+                }
+            );
+        }
+
+        // =========================================================
+        // NYX · KỸ NĂNG CLICK — "ĐÊM NGUYÊN SƠ V3"
+        // PetManager phụ trách local casting + ultimate canonical.
+        // Luxury runtime phụ trách screen burst / giao diện toàn web.
+        // Cờ trên Event bảo đảm ultimate chỉ tạo đúng 1 lần dù thứ tự listener thay đổi.
+        // =========================================================
+        if (
+            petData.petEffect ===
+            'mythic-nyx-night-magic'
+        ) {
+            let nyxSkillLocked = false;
+
+            petElement.addEventListener(
+                'click',
+                event => {
+                    if (nyxSkillLocked) return;
+
+                    if (
+                        typeof PetInteractionManager !== 'undefined' &&
+                        PetInteractionManager.isPetDragging
+                    ) {
+                        return;
+                    }
+
+                    event.preventDefault();
+                    event.stopPropagation();
+
+                    this.container.classList.remove(
+                        'nyx-mythic-casting'
+                    );
+                    void this.container.offsetWidth;
+                    this.container.classList.add(
+                        'nyx-mythic-casting'
+                    );
+
+                    const rect = petElement.getBoundingClientRect();
+                    const x =
+                        Number.isFinite(event.clientX) && event.clientX > 0
+                            ? event.clientX
+                            : rect.left + rect.width / 2;
+                    const y =
+                        Number.isFinite(event.clientY) && event.clientY > 0
+                            ? event.clientY
+                            : rect.top + rect.height / 2;
+
+                    if (!event.__nyxUltimateHandled) {
+                        event.__nyxUltimateHandled = true;
+                        this.createNyxPrimordialNightUltimate(x, y);
+                    }
+
+                    nyxSkillLocked = true;
+
+                    window.setTimeout(() => {
+                        this.container?.classList.remove(
+                            'nyx-mythic-casting'
+                        );
+                    }, 1750);
+
+                    window.setTimeout(() => {
+                        nyxSkillLocked = false;
+                    }, 5600);
+                },
+                {
+                    signal:
+                        this.interactionAbortController?.signal
+                }
+            );
+        }
+
+        // =========================================================
+        // QUỐC KHÁNH 2/9 — ULTIMATE NHẤN
+        // SAO VÀNG KHẢI HOÀN
+        //
+        // Cùng cấp độ trình diễn với Xuân Tửu Khai Yến,
+        // nhưng namespace / hình ảnh / animation hoàn toàn riêng.
+        // KHÔNG gọi EffectManager.
+        // KHÔNG dùng national-day-dong-son-magic cũ.
+        // =========================================================
+        if (
+            petData.petEffect ===
+            'national-day-chibi-star-magic'
+        ) {
+            let nd29UltimateLocked = false;
+
+            petElement.addEventListener(
+                'click',
+                event => {
+                    if (nd29UltimateLocked) return;
+
+                    if (
+                        typeof PetInteractionManager !== 'undefined' &&
+                        PetInteractionManager.isPetDragging
+                    ) {
+                        return;
+                    }
+
+                    event.preventDefault();
+                    event.stopPropagation();
+
+                    nd29UltimateLocked = true;
+
+                    // Không cho hai ultimate tồn tại cùng lúc
+                    document
+                        .querySelectorAll(
+                            '.nd29-victory-ultimate'
+                        )
+                        .forEach(node => node.remove());
+
+                    this.container.classList.remove(
+                        'nd29-casting'
+                    );
+
+                    void this.container.offsetWidth;
+
+                    this.container.classList.add(
+                        'nd29-casting'
+                    );
+
+                    const rect =
+                        petElement.getBoundingClientRect();
+
+                    const originX =
+                        rect.left + rect.width / 2;
+
+                    const originY =
+                        rect.top + rect.height / 2;
+
+                    const ultimate =
+                        document.createElement('div');
+
+                    ultimate.className =
+                        'nd29-victory-ultimate';
+
+                    ultimate.setAttribute(
+                        'aria-hidden',
+                        'true'
+                    );
+
+                    ultimate.style.setProperty(
+                        '--nd29-origin-x',
+                        `${originX}px`
+                    );
+
+                    ultimate.style.setProperty(
+                        '--nd29-origin-y',
+                        `${originY}px`
+                    );
+
+                    ultimate.innerHTML = `
+                <!-- màn đỏ điện ảnh -->
+                <div class="nd29-victory-backdrop"></div>
+
+                <!-- ánh vàng lóe từ vị trí pet -->
+                <div class="nd29-victory-origin-flare"></div>
+
+                <!-- 5 tia sáng tượng trưng 5 cánh sao -->
+                <div class="nd29-victory-rays">
+                    <span class="ray ray-1"></span>
+                    <span class="ray ray-2"></span>
+                    <span class="ray ray-3"></span>
+                    <span class="ray ray-4"></span>
+                    <span class="ray ray-5"></span>
+                </div>
+
+                <!-- đại huy hiệu -->
+                <div class="nd29-victory-emblem">
+                    <span class="nd29-victory-ring ring-a"></span>
+                    <span class="nd29-victory-ring ring-b"></span>
+                    <span class="nd29-victory-ring ring-c"></span>
+
+                    <span class="nd29-victory-number">
+                        02 · 09
+                    </span>
+
+                    <span class="nd29-victory-star">
+                        ★
+                    </span>
+
+                    <small>
+                        VIỆT NAM
+                    </small>
+                </div>
+
+                <!-- hai dải lụa -->
+                <div class="nd29-victory-ribbons"></div>
+
+                <!-- trường sao vàng -->
+                <div class="nd29-victory-star-field"></div>
+
+                <!-- các tia lửa -->
+                <div class="nd29-victory-spark-field"></div>
+
+                <!-- vòng chấn động -->
+                <div class="nd29-victory-impact"></div>
+
+                <!-- chữ ultimate -->
+                <div class="nd29-victory-title">
+                    <small>
+                        QUỐC KHÁNH · 02/09
+                    </small>
+
+                    <strong>
+                        SAO VÀNG KHẢI HOÀN
+                    </strong>
+
+                    <span>
+                        ĐỘC LẬP · TỰ DO · VIỆT NAM
+                    </span>
+                </div>
+            `;
+
+                    /* =============================================
+                       DẢI LỤA ĐỎ / VÀNG
+                       ============================================= */
+                    const ribbonField =
+                        ultimate.querySelector(
+                            '.nd29-victory-ribbons'
+                        );
+
+                    for (
+                        let index = 0;
+                        index < 10;
+                        index++
+                    ) {
+                        const ribbon =
+                            document.createElement('span');
+
+                        ribbon.className =
+                            index % 2 === 0
+                                ? 'nd29-victory-ribbon is-red'
+                                : 'nd29-victory-ribbon is-gold';
+
+                        ribbon.style.setProperty(
+                            '--nd29-ribbon-angle',
+                            `${-42 + index * 9.3}deg`
+                        );
+
+                        ribbon.style.setProperty(
+                            '--nd29-ribbon-delay',
+                            `${0.18 + index * 0.045}s`
+                        );
+
+                        ribbon.style.setProperty(
+                            '--nd29-ribbon-width',
+                            `${10 + (index % 4) * 5}px`
+                        );
+
+                        ribbonField?.appendChild(
+                            ribbon
+                        );
+                    }
+
+                    /* =============================================
+                       SAO VÀNG BAY
+                       ============================================= */
+                    const starField =
+                        ultimate.querySelector(
+                            '.nd29-victory-star-field'
+                        );
+
+                    const starCount =
+                        this.getQualityCount(window.matchMedia?.(
+                            '(max-width: 768px), ' +
+                            '(pointer: coarse), ' +
+                            '(prefers-reduced-motion: reduce)'
+                        ).matches
+                            ? 18
+                            : 36);
+
+                    for (
+                        let index = 0;
+                        index < starCount;
+                        index++
+                    ) {
+                        const star =
+                            document.createElement('span');
+
+                        star.className =
+                            'nd29-victory-particle-star';
+
+                        star.textContent = '★';
+
+                        star.style.setProperty(
+                            '--nd29-star-x',
+                            `${(index * 47 + 7) % 100}%`
+                        );
+
+                        star.style.setProperty(
+                            '--nd29-star-y',
+                            `${(index * 71 + 11) % 100}%`
+                        );
+
+                        star.style.setProperty(
+                            '--nd29-star-delay',
+                            `${(index % 12) * 0.055}s`
+                        );
+
+                        star.style.setProperty(
+                            '--nd29-star-size',
+                            `${7 + index % 5 * 3}px`
+                        );
+
+                        star.style.setProperty(
+                            '--nd29-star-spin',
+                            `${index % 2 === 0
+                                ? 160
+                                : -160}deg`
+                        );
+
+                        starField?.appendChild(star);
+                    }
+
+                    /* =============================================
+                       TIA LỬA VÀNG
+                       ============================================= */
+                    const sparkField =
+                        ultimate.querySelector(
+                            '.nd29-victory-spark-field'
+                        );
+
+                    const sparkCount =
+                        this.getQualityCount(starCount < 30
+                            ? 28
+                            : 58);
+
+                    for (
+                        let index = 0;
+                        index < sparkCount;
+                        index++
+                    ) {
+                        const spark =
+                            document.createElement('span');
+
+                        spark.className =
+                            index % 7 === 0
+                                ? 'nd29-victory-spark is-bright'
+                                : 'nd29-victory-spark';
+
+                        spark.style.setProperty(
+                            '--nd29-spark-x',
+                            `${(index * 37 + 5) % 100}%`
+                        );
+
+                        spark.style.setProperty(
+                            '--nd29-spark-y',
+                            `${(index * 61 + 9) % 100}%`
+                        );
+
+                        spark.style.setProperty(
+                            '--nd29-spark-delay',
+                            `${(index % 16) * 0.045}s`
+                        );
+
+                        spark.style.setProperty(
+                            '--nd29-spark-size',
+                            `${2 + index % 5}px`
+                        );
+
+                        sparkField?.appendChild(
+                            spark
+                        );
+                    }
+
+                    document.body.appendChild(
+                        ultimate
+                    );
+
+                    requestAnimationFrame(() => {
+                        ultimate.classList.add(
+                            'is-active'
+                        );
+                    });
+
+                    /* =============================================
+                       LỜI THOẠI CỦA PET
+                       ============================================= */
+                    const dialogue =
+                        document.createElement('div');
+
+                    dialogue.className =
+                        'nd29-victory-dialogue';
+
+                    dialogue.textContent =
+                        '⭐ “Một ngôi sao — triệu trái tim Việt Nam.”';
+
+                    this.container.appendChild(
+                        dialogue
+                    );
+
+                    // Ultimate tồn tại 5.7 giây
+                    window.setTimeout(() => {
+                        ultimate.classList.add(
+                            'is-leaving'
+                        );
+                    }, 5000);
+
+                    window.setTimeout(() => {
+                        ultimate.remove();
+                        dialogue.remove();
+
+                        this.container
+                            ?.classList.remove(
+                                'nd29-casting'
+                            );
+                    }, 5700);
+
+                    // Cooldown 6 giây
+                    window.setTimeout(() => {
+                        nd29UltimateLocked = false;
+                    }, 6000);
+                }
+            );
+        }
+
+        // =========================================================
+        // QUỐC KHÁNH — AMBIENT + KỸ NĂNG NHẤN
+        // =========================================================
+        if (
+            petData.petEffect ===
+            'national-day-dong-son-magic'
+        ) {
+            requestAnimationFrame(() => {
+                this.container.classList.add(
+                    'national-day-awakening'
+                );
+
+                const realm =
+                    this.createNationalDayRealm();
+
+                window.setTimeout(() => {
+                    this.container?.classList.remove(
+                        'national-day-awakening'
+                    );
+                }, 1300);
+
+                let skillLocked = false;
+
+                petElement.addEventListener(
+                    'click',
+                    event => {
+                        if (skillLocked) return;
+
+                        if (
+                            typeof PetInteractionManager !==
+                            'undefined' &&
+                            PetInteractionManager.isPetDragging
+                        ) {
+                            return;
+                        }
+
+                        event.preventDefault();
+                        event.stopPropagation();
+
+                        skillLocked = true;
+
+                        this.container.classList.remove(
+                            'national-day-casting'
+                        );
+
+                        realm?.classList.remove(
+                            'is-casting'
+                        );
+
+                        void this.container.offsetWidth;
+
+                        if (realm) {
+                            void realm.offsetWidth;
+                        }
+
+                        this.container.classList.add(
+                            'national-day-casting'
+                        );
+
+                        realm?.classList.add(
+                            'is-casting'
+                        );
+
+                        const rect =
+                            petElement.getBoundingClientRect();
+
+                        const burst =
+                            document.createElement('div');
+
+                        burst.className =
+                            'national-day-independence-burst';
+
+                        burst.style.setProperty(
+                            '--nd-burst-x',
+                            `${rect.left +
+                            rect.width / 2}px`
+                        );
+
+                        burst.style.setProperty(
+                            '--nd-burst-y',
+                            `${rect.top +
+                            rect.height / 2}px`
+                        );
+
+                        burst.innerHTML = `
+                    <span class="nd-burst-medallion">
+                        <b>★</b>
+                        <small>02 · 09</small>
+                    </span>
+                    <span class="nd-burst-ring ring-a"></span>
+                    <span class="nd-burst-ring ring-b"></span>
+                    <span class="nd-burst-ring ring-c"></span>
+                    <div class="nd-burst-rays"></div>
+                    <div class="nd-burst-stars"></div>
+                `;
+
+                        const stars =
+                            burst.querySelector(
+                                '.nd-burst-stars'
+                            );
+
+                        for (
+                            let index = 0;
+                            index < 15;
+                            index++
+                        ) {
+                            const star =
+                                document.createElement(
+                                    'span'
+                                );
+
+                            star.textContent = '★';
+
+                            star.style.setProperty(
+                                '--nd-burst-angle',
+                                `${index * 24}deg`
+                            );
+
+                            star.style.setProperty(
+                                '--nd-burst-distance',
+                                `${92 +
+                                (index % 5) *
+                                19}px`
+                            );
+
+                            star.style.setProperty(
+                                '--nd-burst-delay',
+                                `${(index % 4) *
+                                0.035}s`
+                            );
+
+                            stars?.appendChild(star);
+                        }
+
+                        document.body.appendChild(
+                            burst
+                        );
+
+                        const dialogue =
+                            document.createElement(
+                                'div'
+                            );
+
+                        dialogue.className =
+                            'national-day-dialogue-box';
+
+                        dialogue.textContent =
+                            '★ Hào khí non sông — Độc lập, Tự do!';
+
+                        this.container.appendChild(
+                            dialogue
+                        );
+
+                        window.setTimeout(() => {
+                            burst.remove();
+                            dialogue.remove();
+
+                            this.container?.classList.remove(
+                                'national-day-casting'
+                            );
+
+                            realm?.classList.remove(
+                                'is-casting'
+                            );
+                        }, 3000);
+
+                        window.setTimeout(() => {
+                            skillLocked = false;
+                        }, 5200);
+                    }
+                );
+            });
+        }
+
+        // =========================================================
+        // PREMIUM MÙA XUÂN — KÍCH HOẠT CẢ THEME + EFFECT
+        // Chạy sau vòng render để luôn đè lên theme/effect thường
+        // trong lúc pet Premium đang được trang bị.
+        // =========================================================
+        if (
+            petData.petEffect ===
+            'spring-vintage-goddess-magic'
+        ) {
+            requestAnimationFrame(() => {
+                this.container.classList.add(
+                    'spring-vintage-awakening'
+                );
+
+                // PET MÙA XUÂN CHỈ CHẠY HIỆU ỨNG RIÊNG CỦA PET.
+                // Không can thiệp EffectManager.
+                // Không tự bật Xuân Tửu Hoa Viên.
+                // Không xóa effect mà người dùng đang trang bị.
+
+                this.installPremiumSpringObserver();
+
+                window.setTimeout(() => {
+                    this.container?.classList.remove(
+                        'spring-vintage-awakening'
+                    );
+                }, 1450);
+            });
+        }
+
+        // =========================================================
+        // KỸ NĂNG TOÀN MÀN HÌNH — MỘNG GIỚI TRÌ HOÃN
+        // =========================================================
+        if (petData.petEffect === 'seven-sins-sloth-magic') {
+            // Tạo lớp hiệu ứng toàn màn hình khi trang bị
+            this.createSlothDreamRealm();
+
+            const slothPetImage =
+                document.getElementById('virtual-pet-img');
+
+            let slothSkillLocked = false;
+
+            if (slothPetImage) {
+                slothPetImage.addEventListener(
+                    'click',
+                    (event) => {
+                        event.preventDefault();
+                        event.stopPropagation();
+
+                        if (slothSkillLocked) return;
+
+                        slothSkillLocked = true;
+
+                        const realm =
+                            document.getElementById(
+                                'sloth-dream-realm'
+                            );
+
+                        this.container.classList.remove(
+                            'sloth-domain-casting'
+                        );
+
+                        realm?.classList.remove('is-casting');
+
+                        void this.container.offsetWidth;
+
+                        if (realm) {
+                            void realm.offsetWidth;
+                        }
+
+                        this.container.classList.add(
+                            'sloth-domain-casting'
+                        );
+
+                        realm?.classList.add('is-casting');
+
+                        window.setTimeout(() => {
+                            this.container.classList.remove(
+                                'sloth-domain-casting'
+                            );
+
+                            realm?.classList.remove(
+                                'is-casting'
+                            );
+
+                            slothSkillLocked = false;
+                        }, 5000);
+                    },
+                    {
+                        signal:
+                            this.interactionAbortController.signal
+                    }
+                );
+            }
+        }
+
+        /*
+         * Hệ Tương tác thú cưng:
+         * - Pet thường: giữ cơ chế cũ, chỉ gắn khi không disableClickEffect.
+         * - Premium có click riêng (Tiểu Hoa Mộng): vẫn gọi manager để dựng
+         *   UI Mộng Ấn, nhưng PetInteractionManager sẽ KHÔNG gắn sự kiện
+         *   pointer/click lên chính nhân vật.
+         */
+        if (
+            typeof PetInteractionManager !== 'undefined'
+        ) {
+            const usesExternalActivation =
+                typeof PetInteractionManager
+                    .usesExternalActivation ===
+                    'function' &&
+                PetInteractionManager
+                    .usesExternalActivation(
+                        petData.id
+                    );
+
+            if (
+                !petData.disableClickEffect ||
+                usesExternalActivation
+            ) {
+                const petImg =
+                    document.getElementById(
+                        'virtual-pet-img'
+                    );
+
+                if (petImg) {
+                    PetInteractionManager.attachEvents(
+                        petImg,
+                        petData
+                    );
+                }
+            }
+        }
+    }
+
+    static makePetDraggable() {
+        let isDragging = false;
+        let didDrag = false;
+
+        let startX = 0;
+        let startY = 0;
+        let initialX = 0;
+        let initialY = 0;
+
+        // Hủy listener của thú cưng trước đó
+        if (this.interactionAbortController) {
+            this.interactionAbortController.abort();
+        }
+
+        this.interactionAbortController = new AbortController();
+        const { signal } = this.interactionAbortController;
+
+        // Cần gỡ bỏ event mousedown cũ để không bị nhân bản sự kiện khi spawn thú mới
+
+        this.container.addEventListener('pointerdown', (e) => {
+            if (e.pointerType === 'mouse' && e.button !== 0) return;
+
+            if (
+                e.target instanceof Element &&
+                e.target.closest(
+                    '.pet-close-btn, #pet-hunger-bar, button, a, input'
+                )
+            ) {
+                return;
+            }
+
+            const rect = this.container.getBoundingClientRect();
+
+            isDragging = true;
+            didDrag = false;
+
+            this.container.dataset.petDragged = '0';
+            this.container.classList.remove('pet-idle');
+
+            startX = e.clientX;
+            startY = e.clientY;
+            initialX = rect.left;
+            initialY = rect.top;
+
+            this.container.style.left = `${rect.left}px`;
+            this.container.style.top = `${rect.top}px`;
+            this.container.style.right = 'auto';
+            this.container.style.bottom = 'auto';
+            this.container.style.transition = 'none';
+
+            if (typeof PetInteractionManager !== 'undefined') {
+                PetInteractionManager.isPetDragging = false;
+                PetInteractionManager.resetIdle?.();
+            }
+        }, { signal });
+
+        document.addEventListener('mousemove', (e) => {
+            if (!isDragging) return;
+            const dx = e.clientX - startX;
+            const dy = e.clientY - startY;
+            if (Math.abs(dx) + Math.abs(dy) > 6) {
+                didDrag = true;
+            }
+            const containerWidth =
+                this.container.offsetWidth || 188;
+
+            const containerHeight =
+                this.container.offsetHeight || 198;
+
+            /*
+ * Bé Rắn có vòng, bệ và nhãn tràn ra ngoài container,
+ * vì vậy cần chừa khoảng an toàn lớn hơn.
+ */
+            const isBirthdayPet =
+                this.container.classList.contains(
+                    'pet-birthday-serpent-2026-stage'
+                );
+
+            const isPremiumSpringPet =
+                this.container.classList.contains(
+                    'pet-spring-vintage-stage'
+                );
+
+            const safeRightGap =
+                isBirthdayPet
+                    ? 34
+                    : isPremiumSpringPet
+                        ? 46
+                        : 8;
+
+            const safeBottomGap =
+                isBirthdayPet
+                    ? 58
+                    : isPremiumSpringPet
+                        ? 56
+                        : 8;
+
+            const safeLeft = Math.min(
+                Math.max(8, initialX + dx),
+                Math.max(
+                    8,
+                    window.innerWidth -
+                    containerWidth -
+                    safeRightGap
+                )
+            );
+
+            const safeTop = Math.min(
+                Math.max(8, initialY + dy),
+                Math.max(
+                    8,
+                    window.innerHeight -
+                    containerHeight -
+                    safeBottomGap
+                )
+            );
+
+            this.container.style.left = `${safeLeft}px`;
+            this.container.style.top = `${safeTop}px`;
+
+            this.container.style.bottom = 'auto';
+            this.container.style.right = 'auto';
+
+            // Vệt bong bóng khi kéo Kỳ Lân Biển
+            const narwhalPet = this.container.querySelector(
+                '.fairy-narwhal-bubble-magic'
+            );
+
+            if (narwhalPet && Math.random() < 0.45) {
+                for (let i = 0; i < 2; i++) {
+                    const bubble = document.createElement('span');
+
+                    bubble.className = 'fairy-narwhal-trail-bubble';
+
+                    const size = Math.random() * 10 + 7;
+
+                    bubble.style.left =
+                        `${e.clientX + (Math.random() * 34 - 17)}px`;
+
+                    bubble.style.top =
+                        `${e.clientY + (Math.random() * 26 - 6)}px`;
+
+                    bubble.style.setProperty(
+                        '--bubble-size',
+                        `${size}px`
+                    );
+
+                    bubble.style.setProperty(
+                        '--bubble-drift',
+                        `${Math.random() * 44 - 22}px`
+                    );
+
+                    bubble.style.animationDelay = `${i * 0.05}s`;
+
+                    document.body.appendChild(bubble);
+
+                    setTimeout(() => {
+                        bubble.remove();
+                    }, 1350);
+                }
+            }
+
+            // CỘNG HƯỞNG DẢI PHÉP THUẬT KHI DI CHUYỂN
+            // ============================================
+            // VỆT NHẬT THỰC KHI KÉO NYX
+            // ============================================
+            const nyxPet = this.container.querySelector(
+                '.nyx-night-goddess-magic'
+            );
+
+            if (nyxPet && Math.random() < 0.56) {
+                // Cường hóa khi đang có Kỷ Nguyên hoặc kỹ năng Nhật Thực
+                const hasNightDomain = Boolean(
+                    document.querySelector(
+                        '.nyx-domain-ambient, .nyx-dark-world'
+                    )
+                );
+
+                const particleCount = this.getQualityCount(hasNightDomain ? 3 : 1);
+
+                for (let i = 0; i < particleCount; i++) {
+                    const particle = document.createElement('span');
+
+                    particle.className = hasNightDomain
+                        ? 'nyx-trail-particle nyx-trail-enhanced'
+                        : 'nyx-trail-particle';
+
+                    particle.style.left =
+                        `${e.clientX + (Math.random() * 34 - 17)}px`;
+
+                    particle.style.top =
+                        `${e.clientY + (Math.random() * 24 - 12)}px`;
+
+                    particle.style.setProperty(
+                        '--nyx-particle-size',
+                        `${hasNightDomain
+                            ? Math.random() * 5 + 8
+                            : Math.random() * 3 + 5}px`
+                    );
+
+                    particle.style.setProperty(
+                        '--nyx-trail-drift',
+                        `${Math.random() * 56 - 28}px`
+                    );
+
+                    particle.style.setProperty(
+                        '--nyx-trail-fall',
+                        `${Math.random() * 45 + 25}px`
+                    );
+
+                    particle.style.setProperty(
+                        '--nyx-trail-angle',
+                        `${Math.random() * 50 - 35}deg`
+                    );
+
+                    particle.style.animationDelay = `${i * 0.035}s`;
+
+                    document.body.appendChild(particle);
+
+                    setTimeout(() => {
+                        particle.remove();
+                    }, 1450);
+                }
+            }
+
+            // VỆT “GIÂY BỊ ĐÁNH CẮP” KHI KÉO AMON
+            const amonPet = this.container.querySelector('.amon-time-magic');
+
+            if (amonPet && Math.random() < 0.72) {
+                const trailCount =
+                    this.getQualityCount(document.body.classList.contains('theme-lotm-mysteries')
+                        ? 3
+                        : 2);
+
+                for (let i = 0; i < trailCount; i++) {
+                    const stolenSecond = document.createElement('span');
+
+                    stolenSecond.className = 'amon-stolen-second-trail';
+
+                    stolenSecond.textContent =
+                        Math.random() > 0.5
+                            ? '⌁'
+                            : 'Ⅻ';
+
+                    stolenSecond.style.left =
+                        `${e.clientX + (Math.random() * 42 - 21)}px`;
+
+                    stolenSecond.style.top =
+                        `${e.clientY + (Math.random() * 34 - 17)}px`;
+
+                    stolenSecond.style.setProperty(
+                        '--trail-drift-x',
+                        `${Math.random() * 90 - 45}px`
+                    );
+
+                    stolenSecond.style.setProperty(
+                        '--trail-drift-y',
+                        `${Math.random() * 70 + 35}px`
+                    );
+
+                    stolenSecond.style.setProperty(
+                        '--trail-spin',
+                        `${Math.random() * 260 - 130}deg`
+                    );
+
+                    stolenSecond.style.animationDelay =
+                        `${i * 0.035}s`;
+
+                    document.body.appendChild(stolenSecond);
+
+                    setTimeout(() => {
+                        stolenSecond.remove();
+                    }, 1650);
+                }
+            }
+
+            // VỆT XUÂN TỬU KHI KÉO NỮ THẦN MÙA XUÂN
+            // Hạt nho + giọt hồng ngọc, hoàn toàn riêng với trail cũ.
+            const springVintagePet = this.container.querySelector(
+                '.spring-vintage-goddess-magic'
+            );
+
+            if (springVintagePet && Math.random() < 0.58) {
+                const trailCount = this.getQualityCount(Math.random() < 0.35 ? 2 : 1);
+
+                for (let i = 0; i < trailCount; i++) {
+                    const trail = document.createElement('span');
+                    trail.className = Math.random() < 0.34
+                        ? 'spring-vintage-trail is-grape'
+                        : 'spring-vintage-trail is-nectar';
+
+                    trail.style.left =
+                        `${e.clientX + (Math.random() * 34 - 17)}px`;
+                    trail.style.top =
+                        `${e.clientY + (Math.random() * 28 - 14)}px`;
+                    trail.style.setProperty(
+                        '--sv-trail-drift-x',
+                        `${Math.random() * 52 - 26}px`
+                    );
+                    trail.style.setProperty(
+                        '--sv-trail-drift-y',
+                        `${24 + Math.random() * 44}px`
+                    );
+                    trail.style.setProperty(
+                        '--sv-trail-spin',
+                        `${Math.random() * 220 - 110}deg`
+                    );
+                    trail.style.setProperty(
+                        '--sv-trail-size',
+                        `${6 + Math.random() * 7}px`
+                    );
+
+                    document.body.appendChild(trail);
+
+                    window.setTimeout(() => {
+                        trail.remove();
+                    }, 1300);
+                }
+            }
+
+
+        }, { signal });
+
+        document.addEventListener('mouseup', () => {
+            if (!isDragging) return;
+
+            isDragging = false;
+            this.container.classList.add('pet-idle');
+        }, { signal });
+
+        // =========================================================
+        // KLEIN CHIBI EVENT — CHUỘT PHẢI: NGHI THỨC SƯƠNG XÁM
+        // Chỉ bắt contextmenu trên đúng pet này; không ảnh hưởng phần tử khác.
+        // =========================================================
+        document.addEventListener('contextmenu', (e) => {
+            const target = e.target;
+
+            if (
+                !(target instanceof Element) ||
+                target.id !== 'virtual-pet-img' ||
+                !target.classList.contains(
+                    'lotm-event-klein-chibi-magic'
+                )
+            ) {
+                return;
+            }
+
+            e.preventDefault();
+            e.stopPropagation();
+
+            if (didDrag) {
+                didDrag = false;
+                return;
+            }
+
+            const container =
+                document.getElementById(
+                    'virtual-pet-container'
+                );
+
+            if (
+                !container ||
+                container.dataset.lotmeKleinRightLocked === '1'
+            ) {
+                return;
+            }
+
+            container.dataset.lotmeKleinRightLocked = '1';
+            container.classList.remove(
+                'lotme-klein-right-casting'
+            );
+
+            void container.offsetWidth;
+
+            container.classList.add(
+                'lotme-klein-right-casting'
+            );
+
+            document
+                .querySelectorAll(
+                    '.lotme-klein-right-ritual'
+                )
+                .forEach(node => node.remove());
+
+            const rect =
+                target.getBoundingClientRect();
+
+            const ritual =
+                document.createElement('div');
+
+            ritual.className =
+                'lotme-klein-right-ritual';
+
+            ritual.setAttribute(
+                'aria-hidden',
+                'true'
+            );
+
+            ritual.style.setProperty(
+                '--lotme-origin-x',
+                `${rect.left + rect.width / 2}px`
+            );
+
+            ritual.style.setProperty(
+                '--lotme-origin-y',
+                `${rect.top + rect.height / 2}px`
+            );
+
+            ritual.innerHTML = `
+                <span class="lotme-ritual-vignette"></span>
+                <span class="lotme-ritual-ring ring-a"></span>
+                <span class="lotme-ritual-ring ring-b"></span>
+                <span class="lotme-ritual-ring ring-c"></span>
+                <span class="lotme-ritual-eye"></span>
+                <span class="lotme-ritual-title">
+                    <small>ABOVE THE GRAY FOG</small>
+                    <strong>THE FOOL</strong>
+                </span>
+                <span class="lotme-ritual-symbols"></span>
+            `;
+
+            const symbolField =
+                ritual.querySelector(
+                    '.lotme-ritual-symbols'
+                );
+
+            const symbolCount =
+                PetManager.getQualityCount(24, 8);
+
+            const symbols = [
+                '✦',
+                '◇',
+                '0',
+                'I',
+                'VII',
+                'XXI'
+            ];
+
+            for (
+                let index = 0;
+                index < symbolCount;
+                index++
+            ) {
+                const symbol =
+                    document.createElement('i');
+
+                symbol.textContent =
+                    symbols[index % symbols.length];
+
+                const symbolAngle =
+                    index * (360 / symbolCount);
+
+                symbol.style.setProperty(
+                    '--lotme-symbol-angle',
+                    `${symbolAngle}deg`
+                );
+
+                symbol.style.setProperty(
+                    '--lotme-symbol-angle-inverse',
+                    `${-symbolAngle}deg`
+                );
+
+                symbol.style.setProperty(
+                    '--lotme-symbol-radius',
+                    `${105 + (index % 4) * 24}px`
+                );
+
+                symbol.style.setProperty(
+                    '--lotme-symbol-delay',
+                    `${(index % 8) * 0.035}s`
+                );
+
+                symbolField?.appendChild(symbol);
+            }
+
+            document.body.appendChild(ritual);
+
+            window.setTimeout(() => {
+                ritual.classList.add('is-ending');
+            }, 1450);
+
+            window.setTimeout(() => {
+                ritual.remove();
+
+                container.classList.remove(
+                    'lotme-klein-right-casting'
+                );
+
+                delete container.dataset
+                    .lotmeKleinRightLocked;
+            }, 2250);
+        }, { signal });
+
+        // Lắng nghe sự kiện click trên toàn trang
+        document.addEventListener('click', (e) => {
+            // Sau khi kéo thì không vô tình kích hoạt kỹ năng
+            if (didDrag) {
+                didDrag = false;
+                return;
+            }
+
+
+            // =========================================================
+            // KLEIN CHIBI EVENT — CLICK V2: "ABOVE THE GRAY FOG"
+            // Mỗi lần nhấn trực tiếp vào pet ở góc màn hình sẽ tạo
+            // một ultimate TOÀN MÀN HÌNH độc lập với Luxury Klein.
+            // =========================================================
+            if (
+                e.target &&
+                e.target.id === 'virtual-pet-img' &&
+                e.target.classList.contains(
+                    'lotm-event-klein-chibi-magic'
+                )
+            ) {
+                const petImg = e.target;
+
+                const container =
+                    document.getElementById(
+                        'virtual-pet-container'
+                    );
+
+                if (
+                    !container ||
+                    container.dataset.lotmeKleinClickLocked === '1'
+                ) {
+                    return;
+                }
+
+                if (
+                    typeof PetInteractionManager !== 'undefined' &&
+                    PetInteractionManager.isPetDragging
+                ) {
+                    return;
+                }
+
+                e.preventDefault();
+                e.stopPropagation();
+
+                container.dataset.lotmeKleinClickLocked = '1';
+
+                container.classList.remove(
+                    'lotme-klein-click-casting'
+                );
+
+                void container.offsetWidth;
+
+                container.classList.add(
+                    'lotme-klein-click-casting'
+                );
+
+                const rect = petImg.getBoundingClientRect();
+
+                const originX =
+                    Number.isFinite(e.clientX) && e.clientX > 0
+                        ? e.clientX
+                        : rect.left + rect.width / 2;
+
+                const originY =
+                    Number.isFinite(e.clientY) && e.clientY > 0
+                        ? e.clientY
+                        : rect.top + rect.height / 2;
+
+                document
+                    .querySelectorAll(
+                        '.lotme-klein-screen-ultimate, ' +
+                        '.lotme-klein-click-burst'
+                    )
+                    .forEach(node => node.remove());
+
+                const ultimate = document.createElement('div');
+                ultimate.className = 'lotme-klein-screen-ultimate';
+                ultimate.setAttribute('aria-hidden', 'true');
+
+                ultimate.style.setProperty(
+                    '--lotme-origin-x',
+                    `${originX}px`
+                );
+
+                ultimate.style.setProperty(
+                    '--lotme-origin-y',
+                    `${originY}px`
+                );
+
+                ultimate.innerHTML = `
+                    <span class="lotme-screen-blackout"></span>
+                    <span class="lotme-screen-vignette"></span>
+                    <span class="lotme-screen-fog-layer"></span>
+                    <span class="lotme-screen-flash"></span>
+
+                    <span class="lotme-screen-origin-flare"></span>
+                    <span class="lotme-screen-beams"></span>
+
+                    <span class="lotme-screen-sigil">
+                        <i class="lotme-screen-ring ring-a"></i>
+                        <i class="lotme-screen-ring ring-b"></i>
+                        <i class="lotme-screen-ring ring-c"></i>
+                        <i class="lotme-screen-eye"></i>
+                        <span class="lotme-screen-tarot"></span>
+                    </span>
+
+                    <span class="lotme-screen-runes"></span>
+                    <span class="lotme-screen-stars"></span>
+                    <span class="lotme-screen-shards"></span>
+
+                    <span class="lotme-screen-title">
+                        <small>ABOVE THE GRAY FOG</small>
+                        <strong>THE FOOL</strong>
+                        <em>KLEIN MORETTI · LORD OF THE MYSTERIES</em>
+                    </span>
+                `;
+
+                const beamField =
+                    ultimate.querySelector('.lotme-screen-beams');
+
+                for (let index = 0; index < 7; index++) {
+                    const beam = document.createElement('i');
+                    beam.className = 'lotme-screen-beam';
+                    beam.style.setProperty(
+                        '--lotme-beam-angle',
+                        `${-152 + index * 16}deg`
+                    );
+                    beam.style.setProperty(
+                        '--lotme-beam-delay',
+                        `${0.04 + index * 0.045}s`
+                    );
+                    beamField?.appendChild(beam);
+                }
+
+                const tarotField =
+                    ultimate.querySelector('.lotme-screen-tarot');
+
+                const tarotLabels = [
+                    '0', 'Ⅰ', 'Ⅱ', 'Ⅲ', 'Ⅶ', 'Ⅹ', 'ⅩⅢ', 'ⅩⅩⅠ'
+                ];
+
+                tarotLabels.forEach((label, index) => {
+                    const card = document.createElement('i');
+                    const angle = -110 + index * (220 / (tarotLabels.length - 1));
+
+                    card.textContent = label;
+                    card.style.setProperty(
+                        '--lotme-card-angle',
+                        `${angle}deg`
+                    );
+                    card.style.setProperty(
+                        '--lotme-card-angle-inverse',
+                        `${-angle}deg`
+                    );
+                    card.style.setProperty(
+                        '--lotme-card-radius',
+                        `${26 + (index % 2) * 4}vmin`
+                    );
+                    card.style.setProperty(
+                        '--lotme-card-delay',
+                        `${index * 0.045}s`
+                    );
+
+                    tarotField?.appendChild(card);
+                });
+
+                const runeField =
+                    ultimate.querySelector('.lotme-screen-runes');
+
+                const runes = [
+                    '✦', '◇', '0', 'Ⅰ', 'Ⅲ', 'Ⅶ', 'Ⅹ', 'ⅩⅢ',
+                    'ⅩⅩⅠ', '☽', '✧', '⌛'
+                ];
+
+                const runeCount =
+                    PetManager.getQualityCount(42, 18);
+
+                for (let index = 0; index < runeCount; index++) {
+                    const rune = document.createElement('i');
+                    const angle = index * (360 / runeCount);
+
+                    rune.textContent = runes[index % runes.length];
+                    rune.style.setProperty(
+                        '--lotme-screen-rune-angle',
+                        `${angle}deg`
+                    );
+                    rune.style.setProperty(
+                        '--lotme-screen-rune-angle-inverse',
+                        `${-angle}deg`
+                    );
+                    rune.style.setProperty(
+                        '--lotme-screen-rune-radius',
+                        `${30 + (index % 5) * 4.5}vmin`
+                    );
+                    rune.style.setProperty(
+                        '--lotme-screen-rune-delay',
+                        `${0.46 + (index % 12) * 0.035}s`
+                    );
+
+                    runeField?.appendChild(rune);
+                }
+
+                const starField =
+                    ultimate.querySelector('.lotme-screen-stars');
+
+                const starCount =
+                    PetManager.getQualityCount(58, 24);
+
+                for (let index = 0; index < starCount; index++) {
+                    const star = document.createElement('i');
+
+                    star.style.setProperty(
+                        '--lotme-star-x',
+                        `${3 + ((index * 37) % 94)}%`
+                    );
+                    star.style.setProperty(
+                        '--lotme-star-y',
+                        `${4 + ((index * 61) % 90)}%`
+                    );
+                    star.style.setProperty(
+                        '--lotme-star-size',
+                        `${2 + (index % 4)}px`
+                    );
+                    star.style.setProperty(
+                        '--lotme-star-delay',
+                        `${0.18 + (index % 14) * 0.045}s`
+                    );
+
+                    starField?.appendChild(star);
+                }
+
+                const shardField =
+                    ultimate.querySelector('.lotme-screen-shards');
+
+                const shardCount =
+                    PetManager.getQualityCount(28, 12);
+
+                for (let index = 0; index < shardCount; index++) {
+                    const shard = document.createElement('i');
+                    shard.style.setProperty(
+                        '--lotme-screen-shard-angle',
+                        `${index * (360 / shardCount)}deg`
+                    );
+                    shard.style.setProperty(
+                        '--lotme-shard-length',
+                        `${20 + (index % 5) * 9}px`
+                    );
+                    shard.style.setProperty(
+                        '--lotme-screen-shard-delay',
+                        `${0.55 + (index % 9) * 0.035}s`
+                    );
+                    shardField?.appendChild(shard);
+                }
+
+                document.body.appendChild(ultimate);
+
+                window.setTimeout(() => {
+                    ultimate.classList.add('is-ending');
+                }, 4050);
+
+                window.setTimeout(() => {
+                    ultimate.remove();
+
+                    container.classList.remove(
+                        'lotme-klein-click-casting'
+                    );
+
+                    delete container.dataset
+                        .lotmeKleinClickLocked;
+                }, 4680);
+
+                return;
+            }
+
+
+            // =================================================
+            // LẠC THANH HUYỀN · TIỂU MỘNG
+            // "NHẤT HUYỀN NHẬP MỘNG"
+            // CLICK PET = local cast + ULTIMATE TOÀN MÀN HÌNH.
+            // Namespace hoàn toàn riêng: cmc2-*.
+            // =================================================
+            if (
+                e.target &&
+                e.target.id === 'virtual-pet-img' &&
+                e.target.classList.contains(
+                    'cam-mong-chibi-qin-spirit-magic'
+                )
+            ) {
+                const petImg = e.target;
+
+                const container =
+                    document.getElementById(
+                        'virtual-pet-container'
+                    );
+
+                if (
+                    !container ||
+                    container.dataset.camMongChibiClickLocked === '1'
+                ) {
+                    return;
+                }
+
+                const rect =
+                    petImg.getBoundingClientRect();
+
+                const originX =
+                    Number.isFinite(e.clientX) &&
+                    e.clientX > 0
+                        ? e.clientX
+                        : rect.left + rect.width / 2;
+
+                const originY =
+                    Number.isFinite(e.clientY) &&
+                    e.clientY > 0
+                        ? e.clientY
+                        : rect.top + rect.height / 2;
+
+                container.dataset.camMongChibiClickLocked = '1';
+
+                container.classList.remove(
+                    'cam-mong-chibi-casting'
+                );
+
+                void container.offsetWidth;
+
+                container.classList.add(
+                    'cam-mong-chibi-casting'
+                );
+
+                // Dọn ultimate cũ nếu người dùng nhấn lại đúng lúc.
+                document
+                    .querySelectorAll(
+                        '.cam-mong-chibi-screen-ultimate-v2'
+                    )
+                    .forEach(node => node.remove());
+
+                const ultimate =
+                    document.createElement('div');
+
+                ultimate.className =
+                    'cam-mong-chibi-screen-ultimate-v2';
+
+                ultimate.setAttribute(
+                    'aria-hidden',
+                    'true'
+                );
+
+                ultimate.style.setProperty(
+                    '--cmc2-origin-x',
+                    `${originX}px`
+                );
+
+                ultimate.style.setProperty(
+                    '--cmc2-origin-y',
+                    `${originY}px`
+                );
+
+                ultimate.innerHTML = `
+                    <div class="cmc2-screen-wash"></div>
+                    <div class="cmc2-screen-flash"></div>
+
+                    <div class="cmc2-screen-mountain mountain-a"></div>
+                    <div class="cmc2-screen-mountain mountain-b"></div>
+
+                    <div class="cmc2-screen-moon">
+                        <i>琴</i>
+                        <b>梦</b>
+                    </div>
+
+                    <div class="cmc2-screen-cloud cloud-a"></div>
+                    <div class="cmc2-screen-cloud cloud-b"></div>
+                    <div class="cmc2-screen-cloud cloud-c"></div>
+
+                    <div class="cmc2-screen-ribbon ribbon-a"></div>
+                    <div class="cmc2-screen-ribbon ribbon-b"></div>
+                    <div class="cmc2-screen-ribbon ribbon-c"></div>
+
+                    <div class="cmc2-screen-qin"></div>
+                    <div class="cmc2-screen-petals"></div>
+                    <div class="cmc2-screen-stars"></div>
+                    <div class="cmc2-screen-seals"></div>
+
+                    <span class="cmc2-screen-wave wave-a"></span>
+                    <span class="cmc2-screen-wave wave-b"></span>
+                    <span class="cmc2-screen-wave wave-c"></span>
+                    <span class="cmc2-screen-wave wave-d"></span>
+
+                    <div class="cmc2-screen-title">
+                        <small>琴 梦 · TIÊN ÂM NHẬP CẢNH</small>
+                        <strong>NHẤT HUYỀN NHẬP MỘNG</strong>
+                        <span>LẠC THANH HUYỀN · TIỂU MỘNG</span>
+                    </div>
+                `;
+
+                const qin =
+                    ultimate.querySelector(
+                        '.cmc2-screen-qin'
+                    );
+
+                for (let index = 0; index < 17; index++) {
+                    const string =
+                        document.createElement('i');
+
+                    string.style.setProperty(
+                        '--cmc2-qindex',
+                        index
+                    );
+
+                    string.style.setProperty(
+                        '--cmc2-qdelay',
+                        `${index * .025}s`
+                    );
+
+                    qin?.appendChild(string);
+                }
+
+                const petals =
+                    ultimate.querySelector(
+                        '.cmc2-screen-petals'
+                    );
+
+                const reduced =
+                    window.matchMedia?.(
+                        '(max-width: 768px), (pointer: coarse), (prefers-reduced-motion: reduce)'
+                    ).matches;
+
+                const petalCount =
+                    this.getQualityCount(reduced ? 26 : 58);
+
+                for (
+                    let index = 0;
+                    index < petalCount;
+                    index++
+                ) {
+                    const petal =
+                        document.createElement('i');
+
+                    petal.style.setProperty(
+                        '--cmc2-upa',
+                        `${index * (360 / petalCount)}deg`
+                    );
+
+                    petal.style.setProperty(
+                        '--cmc2-upa-back',
+                        `${index * -(360 / petalCount)}deg`
+                    );
+
+                    petal.style.setProperty(
+                        '--cmc2-upr-neg',
+                        `${-(125 + (index % 11) * 30)}px`
+                    );
+
+                    petal.style.setProperty(
+                        '--cmc2-upd',
+                        `${(index % 13) * .026}s`
+                    );
+
+                    petals?.appendChild(petal);
+                }
+
+                const stars =
+                    ultimate.querySelector(
+                        '.cmc2-screen-stars'
+                    );
+
+                const starCount =
+                    this.getQualityCount(reduced ? 24 : 48);
+
+                for (
+                    let index = 0;
+                    index < starCount;
+                    index++
+                ) {
+                    const star =
+                        document.createElement('i');
+
+                    star.style.setProperty(
+                        '--cmc2-usx',
+                        `${3 + ((index * 47) % 94)}%`
+                    );
+
+                    star.style.setProperty(
+                        '--cmc2-usy',
+                        `${5 + ((index * 71) % 88)}%`
+                    );
+
+                    star.style.setProperty(
+                        '--cmc2-uss',
+                        `${2.2 + (index % 5) * 1.15}px`
+                    );
+
+                    star.style.setProperty(
+                        '--cmc2-usd',
+                        `${-(index % 12) * .14}s`
+                    );
+
+                    stars?.appendChild(star);
+                }
+
+                const seals =
+                    ultimate.querySelector(
+                        '.cmc2-screen-seals'
+                    );
+
+                const symbols = [
+                    '琴', '梦', '云', '月',
+                    '灵', '弦', '仙', '花',
+                    '音', '心', '玄', '境'
+                ];
+
+                symbols.forEach((symbol, index) => {
+                    const seal =
+                        document.createElement('i');
+
+                    seal.textContent = symbol;
+
+                    seal.style.setProperty(
+                        '--cmc2-usa',
+                        `${index * 30}deg`
+                    );
+
+                    seal.style.setProperty(
+                        '--cmc2-usa-back',
+                        `${index * -30}deg`
+                    );
+
+                    seal.style.setProperty(
+                        '--cmc2-usr-neg',
+                        `${-(150 + (index % 3) * 40)}px`
+                    );
+
+                    seal.style.setProperty(
+                        '--cmc2-used',
+                        `${index * .035}s`
+                    );
+
+                    seals?.appendChild(seal);
+                });
+
+                document.body.appendChild(ultimate);
+
+                requestAnimationFrame(() => {
+                    ultimate.classList.add(
+                        'is-active'
+                    );
+                });
+
+                window.setTimeout(() => {
+                    ultimate.classList.add(
+                        'is-climax'
+                    );
+                }, 560);
+
+                window.setTimeout(() => {
+                    ultimate.classList.add(
+                        'is-ending'
+                    );
+                }, 2650);
+
+                window.setTimeout(() => {
+                    ultimate.remove();
+
+                    container.classList.remove(
+                        'cam-mong-chibi-casting'
+                    );
+
+                    delete container.dataset
+                        .camMongChibiClickLocked;
+                }, 3400);
+
+                return;
+            }
+
+            // =================================================
+            // MÈO NHỎ NGÀY MƯA — “VŨ ĐIỆU MÁI Ô”
+            // Hiệu ứng nhấn hoàn toàn cục bộ trong container pet.
+            // =================================================
+            if (
+                e.target &&
+                e.target.id === 'virtual-pet-img' &&
+                e.target.classList.contains('rainy-day-cat-magic')
+            ) {
+                const petImg = e.target;
+                const container = document.getElementById(
+                    'virtual-pet-container'
+                );
+
+                if (!container || container.dataset.rainyClickLocked === '1') {
+                    return;
+                }
+
+                container.dataset.rainyClickLocked = '1';
+
+                const oldScene = container.querySelector(
+                    '.rainy-day-click-scene'
+                );
+
+                oldScene?.remove();
+
+                const clickScene = document.createElement('div');
+                clickScene.className = 'rainy-day-click-scene';
+                clickScene.setAttribute('aria-hidden', 'true');
+
+                // Một màn mưa ngắn bung từ mép ô xuống vũng nước.
+                for (let index = 0; index < 18; index++) {
+                    const drop = document.createElement('span');
+                    drop.className = 'rainy-day-click-drop';
+
+                    drop.style.setProperty(
+                        '--rainy-click-x',
+                        `${3 + (index * 29) % 94}%`
+                    );
+
+                    drop.style.setProperty(
+                        '--rainy-click-delay',
+                        `${(index % 6) * 0.035}s`
+                    );
+
+                    drop.style.setProperty(
+                        '--rainy-click-fall',
+                        `${86 + (index % 5) * 10}px`
+                    );
+
+                    drop.style.setProperty(
+                        '--rainy-click-slant',
+                        `${-9 + (index % 4) * 6}deg`
+                    );
+
+                    clickScene.appendChild(drop);
+                }
+
+                // Ba gợn nước méo nhẹ, không dùng vòng tròn quỹ đạo cũ.
+                for (let index = 0; index < 3; index++) {
+                    const ripple = document.createElement('span');
+                    ripple.className = 'rainy-day-click-ripple';
+                    ripple.style.setProperty(
+                        '--rainy-ripple-delay',
+                        `${index * 0.12}s`
+                    );
+                    clickScene.appendChild(ripple);
+                }
+
+                // Các vệt nước bật khỏi vũng theo hình răng cưa thấp.
+                for (let index = 0; index < 7; index++) {
+                    const splash = document.createElement('span');
+                    splash.className = 'rainy-day-splash-tooth';
+                    splash.style.setProperty(
+                        '--rainy-splash-x',
+                        `${20 + index * 10}%`
+                    );
+                    splash.style.setProperty(
+                        '--rainy-splash-delay',
+                        `${0.08 + index * 0.025}s`
+                    );
+                    splash.style.setProperty(
+                        '--rainy-splash-lift',
+                        `${18 + (index % 3) * 8}px`
+                    );
+                    clickScene.appendChild(splash);
+                }
+
+                container.appendChild(clickScene);
+
+                petImg.classList.remove('rainy-day-umbrella-twirl');
+                container.classList.remove('rainy-day-click-active');
+
+                void petImg.offsetWidth;
+                void container.offsetWidth;
+
+                petImg.classList.add('rainy-day-umbrella-twirl');
+                container.classList.add('rainy-day-click-active');
+
+                window.setTimeout(() => {
+                    clickScene.remove();
+                    petImg.classList.remove('rainy-day-umbrella-twirl');
+                    container.classList.remove('rainy-day-click-active');
+                    delete container.dataset.rainyClickLocked;
+                }, 1250);
+
+                return;
+            }
+
+            // =================================================
+            // AMON — ĐẠI QUYỀN “ĐÁNH CẮP DÒNG THỜI GIAN”
+            // =================================================
+            if (
+                e.target &&
+                e.target.id === 'virtual-pet-img' &&
+                e.target.classList.contains('amon-time-magic')
+            ) {
+                const petImg = e.target;
+
+                const container = document.getElementById(
+                    'virtual-pet-container'
+                );
+
+                // Không cho đại kỹ năng bị kích hoạt chồng nhiều lần.
+                if (document.querySelector('.amon-grand-theft')) {
+                    return;
+                }
+
+                petImg.classList.add('amon-authority-release');
+
+                setTimeout(() => {
+                    petImg.classList.remove('amon-authority-release');
+                }, 1200);
+
+                const grandTheft = document.createElement('div');
+
+                grandTheft.className = 'amon-grand-theft';
+
+                grandTheft.innerHTML = `
+        <div class="amon-theft-blackout"></div>
+        <div class="amon-theft-corridor"></div>
+
+        <div class="amon-theft-iris">
+            <span class="theft-iris-ring ring-a"></span>
+            <span class="theft-iris-ring ring-b"></span>
+            <span class="theft-iris-ring ring-c"></span>
+            <span class="theft-iris-core"></span>
+        </div>
+
+        <div class="amon-theft-verdict">
+            THE NEXT SECOND BELONGS TO AMON
+        </div>
+
+        <div class="amon-theft-collapse"></div>
+    `;
+
+                // Tạo bảy phân thân lịch sử.
+                if (
+                    petImg.tagName === 'IMG' &&
+                    petImg.src
+                ) {
+                    for (let i = 0; i < 7; i++) {
+                        const echo = document.createElement('img');
+
+                        echo.className = 'amon-history-echo';
+                        echo.src = petImg.src;
+                        echo.alt = '';
+
+                        echo.style.setProperty(
+                            '--echo-index',
+                            i
+                        );
+
+                        echo.style.setProperty(
+                            '--echo-angle',
+                            `${i * (360 / 7)}deg`
+                        );
+
+                        echo.style.setProperty(
+                            '--echo-angle-inverse',
+                            `${i * (-360 / 7)}deg`
+                        );
+
+                        echo.style.setProperty(
+                            '--echo-delay',
+                            `${0.35 + i * 0.08}s`
+                        );
+
+                        grandTheft.appendChild(echo);
+                    }
+                }
+
+                // Vòng 36 mảnh thời gian vỡ tung.
+                for (let i = 0; i < 36; i++) {
+                    const shard = document.createElement('span');
+
+                    shard.className = 'amon-time-theft-shard';
+
+                    shard.textContent =
+                        i % 3 === 0
+                            ? '⊘'
+                            : i % 3 === 1
+                                ? '⌁'
+                                : '∵';
+
+                    shard.style.setProperty(
+                        '--shard-angle',
+                        `${i * 10}deg`
+                    );
+
+                    const shardDistance =
+                        160 + Math.random() * 310;
+
+                    shard.style.setProperty(
+                        '--shard-distance',
+                        `${-shardDistance}px`
+                    );
+
+                    shard.style.setProperty(
+                        '--shard-distance-end',
+                        `${-(shardDistance + 120)}px`
+                    );
+
+                    shard.style.setProperty(
+                        '--shard-delay',
+                        `${0.25 + Math.random() * 0.9}s`
+                    );
+
+                    shard.style.setProperty(
+                        '--shard-size',
+                        `${10 + Math.random() * 17}px`
+                    );
+
+                    grandTheft.appendChild(shard);
+                }
+
+                document.body.appendChild(grandTheft);
+
+                if (container) {
+                    const dialogue = document.createElement('div');
+
+                    dialogue.className = 'amon-dialogue-box';
+
+                    dialogue.textContent =
+                        '“Ta không dừng thời gian. Ta chỉ lấy mất khoảnh khắc nó thuộc về ngươi.”';
+
+                    container.appendChild(dialogue);
+
+                    setTimeout(() => {
+                        dialogue.remove();
+                    }, 5200);
+                }
+
+                setTimeout(() => {
+                    grandTheft.remove();
+                }, 6000);
+
+                return;
+            }
+
+            // =================================================
+            // NYX — PHÁN QUYẾT NHẬT THỰC
+            // =================================================
+            if (
+                e.target &&
+                e.target.id === 'virtual-pet-img' &&
+                e.target.classList.contains('nyx-night-goddess-magic')
+            ) {
+                const petImg = e.target;
+
+                const container = document.getElementById(
+                    'virtual-pet-container'
+                );
+
+                // Không cho kích hoạt nhiều lần
+                if (document.querySelector('.nyx-dark-world')) {
+                    return;
+                }
+
+                petImg.classList.add('nyx-power-release');
+
+                setTimeout(() => {
+                    petImg.classList.remove('nyx-power-release');
+                }, 950);
+
+                // Tạo thế giới Vĩnh Dạ
+                const darkWorld = document.createElement('div');
+                darkWorld.className = 'nyx-dark-world';
+
+                // Nhật thực trung tâm
+                const eclipse = document.createElement('div');
+                eclipse.className = 'nyx-eclipse';
+                darkWorld.appendChild(eclipse);
+
+                // Ma pháp trận
+                const sigil = document.createElement('div');
+                sigil.className = 'nyx-eclipse-sigil';
+                darkWorld.appendChild(sigil);
+
+                // Sao nền
+                for (let i = 0; i < 72; i++) {
+                    const star = document.createElement('span');
+                    star.className = 'nyx-star';
+
+                    const size = Math.random() * 2.6 + 1;
+
+                    star.style.left = `${Math.random() * 100}%`;
+                    star.style.top = `${Math.random() * 100}%`;
+                    star.style.width = `${size}px`;
+                    star.style.height = `${size}px`;
+
+                    star.style.animationDuration =
+                        `${Math.random() * 2.2 + 1.1}s`;
+
+                    star.style.animationDelay =
+                        `${Math.random() * 2.4}s`;
+
+                    darkWorld.appendChild(star);
+                }
+
+                // Sao băng phán quyết
+                for (let i = 0; i < 5; i++) {
+                    const meteor = document.createElement('span');
+
+                    meteor.className = 'nyx-judgement-meteor';
+                    meteor.style.left = '-24vw';
+                    meteor.style.top =
+                        `${Math.random() * 42 - 8}vh`;
+
+                    meteor.style.setProperty(
+                        '--meteor-length',
+                        `${Math.random() * 120 + 170}px`
+                    );
+
+                    meteor.style.setProperty(
+                        '--meteor-speed',
+                        `${Math.random() * 0.65 + 1.35}s`
+                    );
+
+                    meteor.style.setProperty(
+                        '--meteor-delay',
+                        `${0.55 + i * 0.62 + Math.random() * 0.35}s`
+                    );
+
+                    darkWorld.appendChild(meteor);
+                }
+
+                document.body.appendChild(darkWorld);
+
+                // Lời thoại của Nyx
+                if (container) {
+                    const dialogue = document.createElement('div');
+
+                    dialogue.className = 'nyx-dialogue-box';
+
+                    dialogue.textContent =
+                        '\u263E "M\u1ECDi v\u00EC sao \u0111\u1EC1u c\u00FAi \u0111\u1EA7u tr\u01B0\u1EDBc V\u0129nh D\u1EA1."';
+
+                    container.appendChild(dialogue);
+
+                    setTimeout(() => {
+                        dialogue.remove();
+                    }, 6400);
+                }
+
+                setTimeout(() => {
+                    darkWorld.remove();
+                }, 6400);
+
+                return;
+            }
+
+            // Nhấn Kỳ Lân Biển để kích hoạt Điều Ước Hải Lam
+            if (
+                e.target &&
+                e.target.id === 'virtual-pet-img' &&
+                e.target.classList.contains('fairy-narwhal-bubble-magic')
+            ) {
+                const petImg = e.target;
+
+                const container = document.getElementById(
+                    'virtual-pet-container'
+                );
+
+                // Không cho spam hiệu ứng
+                if (document.querySelector('.fairy-narwhal-wish-wave')) {
+                    return;
+                }
+
+                petImg.classList.add('fairy-narwhal-wish-cast');
+
+                setTimeout(() => {
+                    petImg.classList.remove('fairy-narwhal-wish-cast');
+                }, 950);
+
+                const rect = petImg.getBoundingClientRect();
+
+                const wishWave = document.createElement('div');
+                wishWave.className = 'fairy-narwhal-wish-wave';
+
+                wishWave.style.left =
+                    `${rect.left + rect.width / 2}px`;
+
+                wishWave.style.top =
+                    `${rect.top + rect.height / 2}px`;
+
+                // Bong bóng bung ra
+                for (let i = 0; i < 18; i++) {
+                    const wishBubble = document.createElement('span');
+
+                    wishBubble.className =
+                        'fairy-narwhal-wish-bubble';
+
+                    wishBubble.style.setProperty(
+                        '--wish-angle',
+                        `${i * 20}deg`
+                    );
+
+                    wishBubble.style.setProperty(
+                        '--wish-distance',
+                        `${78 + Math.random() * 62}px`
+                    );
+
+                    wishBubble.style.setProperty(
+                        '--wish-size',
+                        `${7 + Math.random() * 13}px`
+                    );
+
+                    wishBubble.style.animationDelay =
+                        `${Math.random() * 0.18}s`;
+
+                    wishWave.appendChild(wishBubble);
+                }
+
+                // Tinh quang bung ra
+                for (let i = 0; i < 8; i++) {
+                    const sparkle = document.createElement('span');
+
+                    sparkle.className =
+                        'fairy-narwhal-wish-sparkle';
+
+                    sparkle.textContent = '✦';
+
+                    sparkle.style.setProperty(
+                        '--wish-angle',
+                        `${i * 45 + 12}deg`
+                    );
+
+                    sparkle.style.setProperty(
+                        '--wish-distance',
+                        `${95 + Math.random() * 55}px`
+                    );
+
+                    sparkle.style.animationDelay =
+                        `${0.08 + Math.random() * 0.2}s`;
+
+                    wishWave.appendChild(sparkle);
+                }
+
+                document.body.appendChild(wishWave);
+
+                // Khung thoại
+                if (container) {
+                    const dialogue = document.createElement('div');
+
+                    dialogue.className =
+                        'fairy-narwhal-dialogue';
+
+                    dialogue.textContent =
+                        '🌊 Điều ước Hải Lam đã thức tỉnh!';
+
+                    container.appendChild(dialogue);
+
+                    setTimeout(() => {
+                        dialogue.remove();
+                    }, 2100);
+                }
+
+                setTimeout(() => {
+                    wishWave.remove();
+                }, 2100);
+            }
+        }, { signal });
+    }
+}

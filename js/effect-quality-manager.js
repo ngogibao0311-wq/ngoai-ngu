@@ -1,0 +1,1959 @@
+/**
+ * EFFECT QUALITY MANAGER — Vật phẩm + Web Animations
+ * Phiên bản: 2.0.0
+ *
+ * Mục tiêu:
+ * - Chỉ giảm CHUYỂN ĐỘNG / HẠT / LỚP TRANG TRÍ của hiệu ứng vật phẩm, card cửa hàng và Web Animations.
+ * - KHÔNG thay đổi theme/giao diện, Firebase, điểm, game, cửa hàng, pet interaction hay logic khác.
+ * - Có 3 mức khi bật: high (đầy đủ), medium (giảm vừa), low (tối ưu mạnh).
+ * - Tự nhận diện runtime Premium/Luxury mới theo DOM/namespace; không cần danh sách ID cố định.
+ * - MutationObserver được gom theo frame để tránh quét lặp khi vật phẩm sinh nhiều hạt.
+ */
+(() => {
+    'use strict';
+
+    if (window.EffectQualityManager) return;
+
+    const VERSION = '2.2.0-luxury';
+    const STORAGE_PREFIX = 'effectQualityManager:v1';
+    const STYLE_ID = 'effect-quality-manager-style';
+    const SETTINGS_ROW_ID = 'effectQualitySettingsRow';
+    const TOGGLE_ID = 'toggleEffectQualityManager';
+    const LEVELS_ID = 'effectQualityLevelControls';
+    const STATUS_ID = 'effectQualityStatus';
+    const DETECTION_ID = 'effectQualityDetectionStatus';
+    const RESCAN_ID = 'effectQualityRescanBtn';
+
+    const LEVELS = Object.freeze({
+        high: Object.freeze({
+            label: 'Cao',
+            description: 'Đầy đủ hiệu ứng',
+            intervalMultiplier: 1
+        }),
+        medium: Object.freeze({
+            label: 'Trung bình',
+            description: 'Giảm hạt và lớp phụ',
+            intervalMultiplier: 1.9
+        }),
+        low: Object.freeze({
+            label: 'Thấp',
+            description: 'Ưu tiên ổn định máy',
+            intervalMultiplier: 3.8
+        })
+    });
+
+    const state = {
+        initialized: false,
+        enabled: false,
+        level: 'high',
+        observer: null,
+        cardVisibilityObserver: null,
+        observedCards: new Set(),
+        effectManagerPatched: false,
+        timerPatchDepth: 0,
+        forcedWebAnimationPause: false,
+        webAnimationWasEnabled: true,
+        restartTimer: null,
+        rootCounters: new WeakMap(),
+        storeCardCounters: new WeakMap(),
+        pendingNodes: new Set(),
+        observerFlushHandle: null,
+        lastScanAt: 0,
+
+        // EFFECT BUDGET v2
+        // Một scheduler duy nhất cho các emitter của EffectManager.
+        emitters: new Map(),
+        nextEmitterId: 1,
+        schedulerHandle: null,
+        schedulerWakeHandle: null,
+        lastDetectionUIAt: -Infinity,
+        schedulerRunning: false,
+        visibilityPaused: document.visibilityState === 'hidden',
+        liveParticles: new Set(),
+        reservedParticlesThisFrame: 0,
+        lastParticleSweepAt: 0,
+        effectManagerStopPatched: false
+    };
+
+    const ROOT_SELECTOR = [
+        '#global-effect-container',
+        '#virtual-pet-container',
+        '#wfx-web-animation-layer',
+        '[data-effect-quality-root="1"]',
+        '[data-fxq-root="1"]'
+    ].join(',');
+
+    // Card vật phẩm chỉ được quản lý phần chuyển động/trang trí bên trong.
+    // Không coi card là effect root để tránh đụng layout, nút, giá, tag và logic cửa hàng.
+    const STORE_CARD_SELECTOR = [
+        '#storeItemsContainer > .store-item-card',
+        '#storeItemsContainer > [data-item-id]',
+        '#storeItemsContainer > *[class*="card"]',
+        '#luxuryStoreGrid > [data-item-id]',
+        '#luxuryStoreGrid > article',
+        '#luxuryStoreGrid > *[class*="card"]',
+        '.luxury-store-grid > [data-item-id]',
+        '.luxury-store-grid > article',
+        '.luxury-store-grid > *[class*="card"]'
+    ].join(',');
+
+    const UI_EXCLUSION_SELECTOR = [
+        '.store-item-card',
+        '.luxury-product-card',
+        '.modal-overlay',
+        '.student-modal-overlay',
+        '.modal-content',
+        '.sidebar',
+        '.toolbar',
+        '.form-container',
+        '.card',
+        '.accordion-card',
+        '#tab-settings',
+        '#leaderboardModal',
+        '#royalBallModal',
+        '#hoihoaStudentModal',
+        '#hhConfirmModal',
+        '#artworkPreviewModal',
+        '.ui-theme-immune'
+    ].join(',');
+
+    // Root runtime mới thường được append thẳng vào <body> và không đi qua EffectManager.
+    // Nhận diện theo vai trò + namespace, KHÔNG theo danh sách ID vật phẩm cố định.
+    const BODY_EFFECT_ROOT_RE = /(realm|ultimate|domain|sanctuary|heritage|world(?:-effect)?|fullscreen(?:-effect|-ultimate)?|ambient(?:-layer)?|effect(?:-layer)?|magic(?:-realm)?|portal|stage|screen-burst|page-click|click-burst|pet-realm|visual-layer)/i;
+    const KNOWN_RUNTIME_NAMESPACE_RE = /(cam-co|cam-mong|tamon|bside|premium|spring-vintage|spring-crown|spring-goddess|summer-solstice|national-day|quoc-khanh|nyx|mythic|lotm|birthday|sinh-nhat|gaia|cassini|saturn|doraemon|acedia|seven-sins|truyenthuyet|legend|heritage|dong-son)/i;
+    const RUNTIME_VISUAL_HINT_RE = /(world|realm|ultimate|domain|sanctuary|heritage|fullscreen|ambient|effect|magic|portal|stage|screen|click|burst|field|layer|backdrop|pet-realm|particles?)/i;
+    const SECONDARY_RE = /(particle|spark|shard|confetti|dust|star|firefly|leaf|snow|flake|tendril|glyph|rune|seal|corridor|meteor|debris|fragment|petal|bubble|drop|crystal|ember|feather|mote|speck|ray-particle|rain-particle|orbit-dot|eq-bar|bokeh|lantern|lotus|talisman|note|ribbon)/i;
+    const AMBIENT_RE = /(aura|aurora|glow|fog|vignette|grid|trail|beam|ring|orbit|halo|wave|ripple|mist|ray|smoke|cloud|flare|field|horizon|void|backdrop|background|overlay|crest|light|shine|pulse|wash|haze|curtain|ink|moon|mountain|gate)/i;
+    const STRUCTURAL_RE = /(button|input|select|textarea|label|menu|sidebar|toolbar|panel|form|table|card|content|interface|control|status|progress|title|copy|text|modal|dialog)/i;
+
+    const STORE_CARD_PRIMARY_RE = /(item-icon\b|product-image|character|avatar|portrait|pet-image|pet-art|main-image|hero-image)/i;
+    const STORE_CARD_STRUCTURAL_RE = /(item-info|item-actions|item-name|item-type|price|description|details|source|button|action|label|tag|badge|lock|teacher|title|copy|text|info|content|control)/i;
+    const STORE_CARD_SECONDARY_RE = /(particle|spark|sparkle|shard|confetti|dust|star|meteor|fragment|petal|bubble|crystal|ember|feather|mote|speck|glyph|rune|seal|tendril|eq-bar|eq\b|glint|shine-dot|debris)/i;
+    const STORE_CARD_AMBIENT_RE = /(aura|aurora|glow|fog|vignette|trail|beam|ring|orbit|halo|wave|ripple|mist|ray|smoke|flare|field|horizon|void|backdrop|background|shine|shimmer|spectrum|tape|vinyl|light|pulse|shape)/i;
+
+    function resolveRole() {
+        const title = String(document.title || '').toLowerCase();
+
+        if (
+            title.includes('giáo viên') ||
+            document.querySelector('#tab-manage-students')
+        ) {
+            return 'teacher';
+        }
+
+        if (
+            title.includes('học sinh') ||
+            document.querySelector('#studentName')
+        ) {
+            return 'student';
+        }
+
+        return 'default';
+    }
+
+    function getCurrentUsername() {
+        try {
+            const user = JSON.parse(localStorage.getItem('currentUser') || 'null');
+            return String(user?.username || '').trim() || 'anonymous';
+        } catch (_) {
+            return 'anonymous';
+        }
+    }
+
+    function getStorageKey() {
+        return `${STORAGE_PREFIX}:${resolveRole()}:${getCurrentUsername()}`;
+    }
+
+    function normalizeLevel(value) {
+        return Object.prototype.hasOwnProperty.call(LEVELS, value)
+            ? value
+            : 'high';
+    }
+
+    function loadStoredState() {
+        try {
+            const raw = localStorage.getItem(getStorageKey());
+            if (!raw) {
+                return { enabled: false, level: 'high' };
+            }
+
+            const parsed = JSON.parse(raw);
+            return {
+                enabled: parsed?.enabled === true,
+                level: normalizeLevel(parsed?.level)
+            };
+        } catch (_) {
+            return { enabled: false, level: 'high' };
+        }
+    }
+
+    function saveStoredState() {
+        try {
+            localStorage.setItem(
+                getStorageKey(),
+                JSON.stringify({
+                    enabled: state.enabled,
+                    level: state.level,
+                    version: VERSION
+                })
+            );
+        } catch (_) {}
+    }
+
+
+    // Only layers explicitly owned by luxury-store opt into this policy.
+    const LUXURY_SELECTOR13='[data-luxury-quality-layer],[data-scene10],[data-five-realm],[data-autumn3-runtime],[data-hacmong2-runtime],[data-gesture10]';
+    function getLuxuryPolicy() {
+        const level=resolveRole()==='student'?getEffectiveLevel():'high';
+        return {level, pointerEnabled:level!=='low', countScale:level==='low'?.12:level==='medium'?.5:1,
+            trailInterval:level==='medium'?160:70, trailLimit:level==='medium'?4:10, tapCount:level==='medium'?4:7};
+    }
+    function processLuxuryLayers13(scope) {
+        if(!(scope instanceof Element)&&scope!==document)return;
+        const roots=[];if(scope.matches?.(LUXURY_SELECTOR13))roots.push(scope);
+        scope.querySelectorAll(LUXURY_SELECTOR13).forEach(n=>roots.push(n));
+        const level=getLuxuryPolicy().level;
+        for(const root of roots){
+            if(root.closest(STORE_CARD_SELECTOR)||root.id==='virtual-pet-container'||root.id==='virtual-pet-img')continue;
+            root.dataset.luxuryQualityLayer='1';
+            if(root.hasAttribute('data-gesture10')){if(level==='low')root.remove();continue;}
+            // Limit SVG primitives, not the main pet, labels, controls or UI layout.
+            root.querySelectorAll('svg').forEach(svg=>{
+                svg.querySelectorAll('path,rect,circle,ellipse,line,polyline,polygon,use').forEach((n,i)=>{
+                    if(n.closest('defs,clipPath,mask,pattern,marker'))return;
+                    n.dataset.luxuryDetail13=i%2?'medium':i%8?'low':'base';
+                });
+            });
+        }
+    }
+
+    function injectStyles() {
+        if (document.getElementById(STYLE_ID)) return;
+
+        const style = document.createElement('style');
+        style.id = STYLE_ID;
+        style.textContent = `
+/* Student luxury-only policy; normal store rules below are unchanged. */
+html.fxq-luxury-medium [data-luxury-detail13="medium"]{display:none!important}
+html.fxq-luxury-medium [data-luxury-quality-layer] *{filter:none!important;text-shadow:none!important}
+html.fxq-luxury-medium [data-luxury-quality-layer] svg>g:nth-child(even){animation-play-state:paused!important}
+html.fxq-luxury-low [data-gesture10]{display:none!important}
+html.fxq-luxury-low [data-luxury-quality-layer][class*="click"],html.fxq-luxury-low [data-luxury-quality-layer][class*="trail"]{display:none!important}
+html.fxq-luxury-low [data-luxury-detail13="medium"],html.fxq-luxury-low [data-luxury-detail13="low"]{display:none!important}
+html.fxq-luxury-low [data-luxury-quality-layer],html.fxq-luxury-low [data-luxury-quality-layer] *,html.fxq-luxury-low [data-luxury-quality-layer]::before,html.fxq-luxury-low [data-luxury-quality-layer]::after{animation:none!important;transition:none!important;filter:none!important;box-shadow:none!important;text-shadow:none!important}
+html.fxq-luxury-low [data-luxury-quality-layer] svg>g:nth-child(n+3){display:none!important}
+html.fxq-luxury-low [data-luxury-quality-layer] [data-fxq-weight="secondary"]{display:none!important}
+
+[data-fxq-card-visible="0"],
+[data-fxq-card-visible="0"]::before,
+[data-fxq-card-visible="0"]::after,
+[data-fxq-card-visible="0"] *,
+[data-fxq-card-visible="0"] *::before,
+[data-fxq-card-visible="0"] *::after {
+    animation-play-state: paused !important;
+}
+
+/* =========================================================
+   EFFECT QUALITY MANAGER
+   Chỉ đụng lớp hiệu ứng. Không selector theme/sidebar/card UI.
+   ========================================================= */
+#${SETTINGS_ROW_ID} {
+    margin-bottom: 20px;
+    padding: 15px;
+    border: 1px solid rgba(0,0,0,.05);
+    border-radius: 12px;
+    background: rgba(255,255,255,.5);
+}
+
+#${SETTINGS_ROW_ID} .fxq-setting-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 15px;
+}
+
+#${SETTINGS_ROW_ID} .fxq-setting-copy {
+    min-width: 0;
+    flex: 1;
+}
+
+#${SETTINGS_ROW_ID} .fxq-setting-copy strong {
+    color: #2c3e50;
+}
+
+#${SETTINGS_ROW_ID} .fxq-setting-copy p {
+    margin: 4px 0 0;
+    color: #666;
+    font-size: .85em;
+    line-height: 1.45;
+}
+
+#${STATUS_ID} {
+    display: inline-block;
+    margin-top: 6px;
+    color: #64748b;
+    font-size: .78em;
+    font-weight: 800;
+}
+
+#${DETECTION_ID} {
+    display: block;
+    margin-top: 4px;
+    color: #77839a;
+    font-size: .72em;
+    line-height: 1.35;
+}
+
+#${RESCAN_ID} {
+    width: auto !important;
+    margin: 7px 0 0 !important;
+    padding: 5px 9px !important;
+    border: 1px solid rgba(100,116,139,.22) !important;
+    border-radius: 8px !important;
+    background: rgba(248,250,252,.82) !important;
+    color: #475569 !important;
+    box-shadow: none !important;
+    font-size: .72rem !important;
+    font-weight: 800 !important;
+    cursor: pointer;
+}
+
+#${LEVELS_ID} {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+    margin-top: 13px;
+    padding-top: 12px;
+    border-top: 1px dashed rgba(100,116,139,.22);
+}
+
+#${LEVELS_ID}[hidden] {
+    display: none !important;
+}
+
+#${LEVELS_ID} .fxq-level-btn {
+    width: 100% !important;
+    min-height: 42px;
+    margin: 0 !important;
+    padding: 8px 9px !important;
+    border: 1px solid rgba(102,126,234,.20) !important;
+    border-radius: 10px !important;
+    background: rgba(255,255,255,.72) !important;
+    color: #475569 !important;
+    box-shadow: none !important;
+    font: inherit;
+    cursor: pointer;
+}
+
+#${LEVELS_ID} .fxq-level-btn strong {
+    display: block;
+    color: inherit;
+    font-size: .88rem;
+}
+
+#${LEVELS_ID} .fxq-level-btn small {
+    display: block;
+    margin-top: 2px;
+    color: #64748b;
+    font-size: .70rem;
+    line-height: 1.25;
+}
+
+#${LEVELS_ID} .fxq-level-btn.is-active {
+    border-color: rgba(79,70,229,.48) !important;
+    background: linear-gradient(135deg, rgba(99,102,241,.13), rgba(139,92,246,.12)) !important;
+    color: #4f46e5 !important;
+}
+
+/* ---------- WEB ANIMATIONS: MEDIUM ---------- */
+html.fxq-enabled.fxq-medium #wfx-web-animation-layer {
+    --wfx-particle-opacity: .48;
+    --wfx-scene-opacity: .82;
+}
+
+html.fxq-enabled.fxq-medium #wfx-web-animation-layer .wfx-particle:nth-child(n + 13) {
+    display: none !important;
+}
+
+html.fxq-enabled.fxq-medium #wfx-web-animation-layer .wfx-aurora-c,
+html.fxq-enabled.fxq-medium #wfx-web-animation-layer .wfx-grid {
+    opacity: .28 !important;
+}
+
+/* ---------- Hiệu ứng vật phẩm / pet: MEDIUM ---------- */
+html.fxq-enabled.fxq-medium [data-fxq-skip-medium="1"] {
+    display: none !important;
+}
+
+/* ---------- LOW: giữ pet chính, giảm tối đa phần trang trí ---------- */
+html.fxq-enabled.fxq-low #global-effect-container [data-fxq-weight="secondary"],
+html.fxq-enabled.fxq-low #virtual-pet-container [data-fxq-weight="secondary"],
+html.fxq-enabled.fxq-low [data-fxq-root="1"] [data-fxq-weight="secondary"] {
+    display: none !important;
+}
+
+html.fxq-enabled.fxq-low #global-effect-container [data-fxq-weight="ambient"],
+html.fxq-enabled.fxq-low #virtual-pet-container [data-fxq-weight="ambient"],
+html.fxq-enabled.fxq-low [data-fxq-root="1"] [data-fxq-weight="ambient"] {
+    animation: none !important;
+    transition: none !important;
+    filter: none !important;
+    box-shadow: none !important;
+    opacity: .35 !important;
+}
+
+
+/* Runtime Premium/Luxury mới có nhiều trang trí nằm ở pseudo-element của root. */
+html.fxq-enabled.fxq-medium [data-fxq-root="1"]::after {
+    animation-play-state: paused !important;
+    opacity: .60 !important;
+}
+
+html.fxq-enabled.fxq-low [data-fxq-root="1"]::before,
+html.fxq-enabled.fxq-low [data-fxq-root="1"]::after {
+    animation: none !important;
+    transition: none !important;
+    filter: none !important;
+    box-shadow: none !important;
+}
+
+
+/* =========================================================
+   CARD CỬA HÀNG THƯỜNG + SANG TRỌNG
+   SAFE MODE:
+   - chỉ giảm chuyển động
+   - KHÔNG thay opacity
+   - KHÔNG ẩn thành phần card
+   - KHÔNG xóa filter / shadow thiết kế
+   ========================================================= */
+
+/* MEDIUM */
+html.fxq-enabled.fxq-medium
+[data-fxq-store-card="1"]
+[data-fxq-card-weight="secondary"],
+
+html.fxq-enabled.fxq-medium
+[data-fxq-store-card="1"]
+[data-fxq-card-weight="ambient"] {
+    animation-play-state: paused !important;
+}
+
+/* Pseudo-element của card chỉ dừng animation */
+html.fxq-enabled.fxq-medium [data-fxq-store-card="1"]::before,
+html.fxq-enabled.fxq-medium [data-fxq-store-card="1"]::after,
+html.fxq-enabled.fxq-medium [data-fxq-store-card="1"] .item-icon-wrapper::before,
+html.fxq-enabled.fxq-medium [data-fxq-store-card="1"] .item-icon-wrapper::after,
+html.fxq-enabled.fxq-medium [data-fxq-store-card="1"] [class*="visual"]::before,
+html.fxq-enabled.fxq-medium [data-fxq-store-card="1"] [class*="visual"]::after,
+html.fxq-enabled.fxq-medium [data-fxq-store-card="1"] [class*="shape"]::before,
+html.fxq-enabled.fxq-medium [data-fxq-store-card="1"] [class*="shape"]::after {
+    animation-play-state: paused !important;
+}
+
+/* LOW */
+html.fxq-enabled.fxq-low
+[data-fxq-store-card="1"]
+[data-fxq-card-weight="secondary"],
+
+html.fxq-enabled.fxq-low
+[data-fxq-store-card="1"]
+[data-fxq-card-weight="ambient"] {
+    animation: none !important;
+    transition: none !important;
+}
+
+/* Ảnh/nhân vật chính giữ nguyên hình ảnh */
+html.fxq-enabled.fxq-low
+[data-fxq-store-card="1"]
+[data-fxq-card-primary="1"] {
+    animation: none !important;
+    transition: none !important;
+}
+
+/* Pseudo-element giữ nguyên giao diện, chỉ ngừng chuyển động */
+html.fxq-enabled.fxq-low [data-fxq-store-card="1"]::before,
+html.fxq-enabled.fxq-low [data-fxq-store-card="1"]::after,
+html.fxq-enabled.fxq-low [data-fxq-store-card="1"] .item-icon-wrapper::before,
+html.fxq-enabled.fxq-low [data-fxq-store-card="1"] .item-icon-wrapper::after,
+html.fxq-enabled.fxq-low [data-fxq-store-card="1"] [class*="visual"]::before,
+html.fxq-enabled.fxq-low [data-fxq-store-card="1"] [class*="visual"]::after,
+html.fxq-enabled.fxq-low [data-fxq-store-card="1"] [class*="shape"]::before,
+html.fxq-enabled.fxq-low [data-fxq-store-card="1"] [class*="shape"]::after {
+    animation: none !important;
+    transition: none !important;
+}
+
+@media (max-width: 640px) {
+    #${LEVELS_ID} {
+        grid-template-columns: 1fr;
+    }
+}
+`;
+
+        (document.head || document.documentElement).appendChild(style);
+    }
+
+    function getTokenText(element) {
+        if (!(element instanceof Element)) return '';
+
+        return [
+            element.id || '',
+            typeof element.className === 'string' ? element.className : '',
+            element.getAttribute('data-effect') || '',
+            element.getAttribute('data-effect-id') || '',
+            element.getAttribute('data-effect-layer') || '',
+            element.getAttribute('data-premium-suite') || '',
+            element.getAttribute('data-special-card') || '',
+            element.getAttribute('data-special-group') || ''
+        ].join(' ');
+    }
+
+    function isKnownRoot(element) {
+        if (!(element instanceof Element)) return false;
+
+        return Boolean(
+            element.matches?.('#global-effect-container, #virtual-pet-container, #wfx-web-animation-layer') ||
+            element.dataset?.effectQualityRoot === '1' ||
+            element.dataset?.fxqRoot === '1'
+        );
+    }
+
+    function isBodyEffectRootCandidate(element) {
+        if (!(element instanceof Element)) return false;
+        if (element.parentElement !== document.body) return false;
+
+        const token = getTokenText(element);
+        const hasRootHint = BODY_EFFECT_ROOT_RE.test(token);
+        const hasKnownRuntimeSignature =
+            KNOWN_RUNTIME_NAMESPACE_RE.test(token) &&
+            RUNTIME_VISUAL_HINT_RE.test(token);
+
+        // ui-theme-immune được một số Premium dùng cho chính WORLD/ULTIMATE layer.
+        // Chỉ loại UI bình thường khi phần tử không mang chữ ký runtime hình ảnh.
+        if (
+            element.matches?.(UI_EXCLUSION_SELECTOR) &&
+            !hasKnownRuntimeSignature &&
+            !hasRootHint
+        ) {
+            return false;
+        }
+
+        if (!hasRootHint && !hasKnownRuntimeSignature) return false;
+
+        if (element.getAttribute('aria-hidden') === 'true') return true;
+        if (element.dataset?.effectQualityRoot === '1') return true;
+        if (element.dataset?.fxqRoot === '1') return true;
+
+        try {
+            const style = getComputedStyle(element);
+            const floating =
+                style.position === 'fixed' ||
+                style.position === 'absolute';
+
+            // Lớp trang trí toàn web thường không nhận chuột.
+            if (floating && style.pointerEvents === 'none') return true;
+
+            // Một số ultimate/click overlay cần nhận chuột hoặc tự xử lý tương tác,
+            // nhưng namespace + vị trí nổi vẫn đủ chắc chắn để coi là runtime hình ảnh.
+            if (floating && hasKnownRuntimeSignature) return true;
+        } catch (_) {}
+
+        return false;
+    }
+
+    function markRoot(element) {
+        if (!(element instanceof Element)) return;
+        if (element.id === 'wfx-web-animation-layer') return;
+
+        if (!element.matches?.('#global-effect-container, #virtual-pet-container')) {
+            element.dataset.fxqRoot = '1';
+        }
+
+        const token = getTokenText(element);
+        if (KNOWN_RUNTIME_NAMESPACE_RE.test(token)) {
+            element.dataset.fxqRuntime = 'known';
+        }
+    }
+
+    function shouldIgnoreDecorativeElement(element, root) {
+        if (!(element instanceof Element)) return true;
+        if (element === root) return true;
+        if (element.id === 'virtual-pet-img') return true;
+        if (element.matches?.('img#virtual-pet-img, button, input, select, textarea, label, a')) return true;
+
+        if (!isKnownRoot(root) && element.closest?.(UI_EXCLUSION_SELECTOR)) {
+            return true;
+        }
+
+        const token = getTokenText(element);
+        if (STRUCTURAL_RE.test(token)) return true;
+
+        return false;
+    }
+
+    function getRootCounter(root) {
+        let counter = state.rootCounters.get(root);
+        if (!counter) {
+            counter = { secondary: 0, ambient: 0 };
+            state.rootCounters.set(root, counter);
+        }
+        return counter;
+    }
+
+    function classifyDecorativeElement(element, root) {
+        if (shouldIgnoreDecorativeElement(element, root)) return;
+
+        if (element.dataset?.fxqWeight) {
+            state.liveParticles.add(element);
+            return;
+        }
+
+        const token = getTokenText(element);
+        let weight = '';
+
+        if (SECONDARY_RE.test(token)) {
+            weight = 'secondary';
+        } else if (AMBIENT_RE.test(token)) {
+            weight = 'ambient';
+        } else if (root.id === 'global-effect-container') {
+            // Phần tử không có tên chuẩn nhưng nằm trong container hiệu ứng toàn màn hình.
+            weight = 'ambient';
+        }
+
+        if (!weight) return;
+
+        element.dataset.fxqWeight = weight;
+        state.liveParticles.add(element);
+
+        const counter = getRootCounter(root);
+        const index = counter[weight]++;
+        element.dataset.fxqIndex = String(index);
+
+        if (weight === 'secondary' && index % 2 === 1) {
+            element.dataset.fxqSkipMedium = '1';
+        }
+    }
+
+    function processRoot(root) {
+        if (!(root instanceof Element)) return;
+        if (root.id === 'wfx-web-animation-layer') return;
+
+        markRoot(root);
+        root.querySelectorAll('*').forEach(node => {
+            classifyDecorativeElement(node, root);
+        });
+    }
+
+    function findManagedRootForNode(node) {
+        if (!(node instanceof Element)) return null;
+
+        if (node.matches?.('#global-effect-container, #virtual-pet-container')) {
+            return node;
+        }
+
+        return node.closest?.(ROOT_SELECTOR) || null;
+    }
+
+    function isStoreCard(element) {
+        return Boolean(
+            element instanceof Element &&
+            element.matches?.(STORE_CARD_SELECTOR)
+        );
+    }
+
+    function findStoreCardForNode(node) {
+        if (!(node instanceof Element)) return null;
+        if (isStoreCard(node)) return node;
+        return node.closest?.('[data-fxq-store-card="1"]') ||
+            node.closest?.(STORE_CARD_SELECTOR) ||
+            null;
+    }
+
+    function getStoreCardCounter(card) {
+        let counter = state.storeCardCounters.get(card);
+        if (!counter) {
+            counter = { secondary: 0, ambient: 0 };
+            state.storeCardCounters.set(card, counter);
+        }
+        return counter;
+    }
+
+    function classifyStoreCardElement(element, card) {
+        if (!(element instanceof Element) || !(card instanceof Element)) return;
+        if (element === card) return;
+        if (element.dataset?.fxqCardWeight || element.dataset?.fxqCardPrimary === '1') return;
+
+        const tagName = String(element.tagName || '').toLowerCase();
+        const token = getTokenText(element);
+
+        // Thành phần thao tác/nội dung phải giữ nguyên hoàn toàn.
+        if (
+            ['button', 'input', 'select', 'textarea', 'label', 'a'].includes(tagName) ||
+            STORE_CARD_STRUCTURAL_RE.test(token)
+        ) {
+            return;
+        }
+
+        // Ảnh/icon/nhân vật chính không bao giờ bị ẩn; mức Thấp chỉ dừng animation liên tục.
+        if (
+            STORE_CARD_PRIMARY_RE.test(token) ||
+            (tagName === 'img' && !/(tag|badge|label|lock)/i.test(token))
+        ) {
+            element.dataset.fxqCardPrimary = '1';
+            return;
+        }
+
+        let weight = '';
+
+        if (STORE_CARD_SECONDARY_RE.test(token) || SECONDARY_RE.test(token)) {
+            weight = 'secondary';
+        } else if (STORE_CARD_AMBIENT_RE.test(token) || AMBIENT_RE.test(token)) {
+            weight = 'ambient';
+        } else {
+            // Fallback cho hiệu ứng tương lai: lớp tuyệt đối, không nhận chuột thường là trang trí.
+            try {
+                const style = getComputedStyle(element);
+                if (
+                    style.pointerEvents === 'none' &&
+                    (style.position === 'absolute' || style.position === 'fixed')
+                ) {
+                    weight = 'ambient';
+                }
+            } catch (_) {}
+        }
+
+        if (!weight) return;
+
+        element.dataset.fxqCardWeight = weight;
+        const counter = getStoreCardCounter(card);
+        const index = counter[weight]++;
+        element.dataset.fxqCardIndex = String(index);
+
+        if (weight === 'secondary' && index % 2 === 1) {
+            element.dataset.fxqCardSkipMedium = '1';
+        }
+    }
+
+    function observeStoreCardVisibility(card) {
+        if (typeof window.IntersectionObserver !== 'function' || state.observedCards.has(card)) return;
+        if (!state.cardVisibilityObserver) {
+            state.cardVisibilityObserver = new window.IntersectionObserver(entries => {
+                entries.forEach(entry => {
+                    if (!entry.target.isConnected) {
+                        state.cardVisibilityObserver.unobserve(entry.target);
+                        state.observedCards.delete(entry.target);
+                        return;
+                    }
+                    entry.target.dataset.fxqCardVisible = entry.isIntersecting ? '1' : '0';
+                });
+            }, { rootMargin: '100px' });
+        }
+        state.observedCards.add(card);
+        state.cardVisibilityObserver.observe(card);
+    }
+
+    function releaseRemovedStoreCards(node) {
+        const release = card => {
+            // Moving a card within the document is not destruction.
+            if (card.isConnected || !state.observedCards.delete(card)) return;
+            state.cardVisibilityObserver?.unobserve(card);
+        };
+        release(node);
+        node.querySelectorAll?.('[data-fxq-store-card="1"]').forEach(release);
+    }
+
+    function processStoreCard(card) {
+        if (!(card instanceof Element)) return;
+        card.dataset.fxqStoreCard = '1';
+        observeStoreCardVisibility(card);
+
+        const itemId = String(card.getAttribute('data-item-id') || '').trim();
+        if (itemId) card.dataset.fxqItemId = itemId;
+
+        card.querySelectorAll('*').forEach(element => {
+            classifyStoreCardElement(element, card);
+        });
+    }
+
+    function scanStoreCards(root = document) {
+        root.querySelectorAll?.(STORE_CARD_SELECTOR).forEach(processStoreCard);
+    }
+
+    function getDetectionStats() {
+        const managedRoots = new Set();
+
+        document.querySelectorAll(
+            '#global-effect-container, #virtual-pet-container, [data-fxq-root="1"], [data-effect-quality-root="1"]'
+        ).forEach(node => managedRoots.add(node));
+
+        return {
+            roots: managedRoots.size,
+            customRuntimes: document.querySelectorAll('[data-fxq-runtime="known"]').length,
+            storeCards: document.querySelectorAll('[data-fxq-store-card="1"]').length,
+            decorations: document.querySelectorAll('[data-fxq-weight], [data-fxq-card-weight]').length
+        };
+    }
+
+    function updateDetectionUI() {
+        const el = document.getElementById(DETECTION_ID);
+        if (!el) return;
+
+        // Stats are informational; do not query the whole page every particle frame.
+        const now = Date.now();
+        if (now - state.lastDetectionUIAt < 1000) return;
+        state.lastDetectionUIAt = now;
+        const stats = getDetectionStats();
+        el.textContent =
+            `Tự nhận diện: ${stats.customRuntimes} runtime vật phẩm mới • ` +
+            `${stats.storeCards} card • ${stats.decorations} lớp trang trí.`;
+    }
+
+    function processAddedNode(node, processedCards = new Set()) {
+        processLuxuryLayers13(node);
+        if (!(node instanceof Element)) return;
+
+        // Card cửa hàng được render động bằng innerHTML; quét ngay khi xuất hiện.
+        const storeCard = findStoreCardForNode(node);
+        if (storeCard && !processedCards.has(storeCard)) {
+            processedCards.add(storeCard);
+            processStoreCard(storeCard);
+        }
+        scanStoreCards(node);
+
+        if (isKnownRoot(node) || isBodyEffectRootCandidate(node)) {
+            markRoot(node);
+            processRoot(node);
+        } else {
+            const root = findManagedRootForNode(node);
+            if (root && root.id !== 'wfx-web-animation-layer') {
+                classifyDecorativeElement(node, root);
+                node.querySelectorAll?.('*').forEach(child => {
+                    classifyDecorativeElement(child, root);
+                });
+            }
+        }
+
+        node.querySelectorAll?.('#global-effect-container, #virtual-pet-container, [data-effect-quality-root="1"], [data-fxq-root="1"]').forEach(root => {
+            processRoot(root);
+        });
+
+        // Hiệu ứng fullscreen/pet realm mới trong tương lai thường được append thẳng vào body.
+        node.querySelectorAll?.('*').forEach(candidate => {
+            if (isBodyEffectRootCandidate(candidate)) {
+                markRoot(candidate);
+                processRoot(candidate);
+            }
+        });
+    }
+
+    function scanExistingEffects() {
+        processLuxuryLayers13(document);
+        document.querySelectorAll('#global-effect-container, #virtual-pet-container, [data-effect-quality-root="1"], [data-fxq-root="1"]').forEach(processRoot);
+        scanStoreCards(document);
+
+        [...document.body?.children || []].forEach(child => {
+            if (isBodyEffectRootCandidate(child)) {
+                markRoot(child);
+                processRoot(child);
+            }
+        });
+
+        state.lastScanAt = Date.now();
+        updateDetectionUI();
+    }
+
+    function flushObserverQueue() {
+        state.observerFlushHandle = null;
+
+        const nodes = [...state.pendingNodes];
+        state.pendingNodes.clear();
+
+        // A queued ancestor already covers its descendants. Ignore removed nodes.
+        const queued = new Set(nodes);
+        const cards = new Set();
+        nodes.forEach(node => {
+            if (!node.isConnected) return;
+            for (let parent = node.parentElement; parent; parent = parent.parentElement) {
+                if (queued.has(parent)) return;
+            }
+            processAddedNode(node, cards);
+        });
+        updateDetectionUI();
+    }
+
+    function queueObservedNode(node) {
+        if (!(node instanceof Element)) return;
+        state.pendingNodes.add(node);
+
+        if (state.observerFlushHandle !== null) return;
+
+        const schedule = window.requestAnimationFrame || (callback => setTimeout(callback, 16));
+        state.observerFlushHandle = schedule(flushObserverQueue);
+    }
+
+    function installObserver() {
+        if (state.observer || !document.body) return;
+
+        state.observer = new MutationObserver(mutations => {
+            mutations.forEach(mutation => {
+                if (mutation.type === 'childList') {
+                    mutation.addedNodes.forEach(queueObservedNode);
+
+                    mutation.removedNodes.forEach(node => {
+                        if (!(node instanceof Element)) return;
+
+                        releaseRemovedStoreCards(node);
+                        state.liveParticles.delete(node);
+
+                        node
+                            .querySelectorAll?.('[data-fxq-weight]')
+                            .forEach(child => {
+                                state.liveParticles.delete(child);
+                            });
+                    });
+
+                    return;
+                }
+
+                if (mutation.type === 'attributes') {
+                    const target = mutation.target;
+                    if (!(target instanceof Element)) return;
+
+                    // Chỉ quét lại khi phần tử có khả năng thuộc runtime/card đang quản lý.
+                    if (
+                        findManagedRootForNode(target) ||
+                        findStoreCardForNode(target) ||
+                        isBodyEffectRootCandidate(target)
+                    ) {
+                        queueObservedNode(target);
+                    }
+                }
+            });
+        });
+
+        state.observer.observe(document.body, {
+            childList: true,
+            subtree: true,
+            attributes: true,
+            attributeFilter: ['class']
+        });
+    }
+
+
+    // ==========================================================
+    // EFFECT BUDGET v2 — SCHEDULER / QUOTA DUY NHẤT
+    // ==========================================================
+    // Không patch setInterval toàn website. Chỉ các timer được tạo
+    // bên trong EffectManager.create...() được chuyển vào scheduler này.
+    // Timer nghiệp vụ/update/Firebase của module khác không bị đụng tới.
+    // ==========================================================
+
+    const PARTICLE_BUDGETS = Object.freeze({
+        high: 280,
+        medium: 140,
+        low: 70
+    });
+
+    const EMITTER_TOKEN_BASE = 1800000000;
+
+    function compactLiveParticles(force = false) {
+        const now = Date.now();
+
+        if (
+            !force &&
+            now - state.lastParticleSweepAt < 700
+        ) {
+            return;
+        }
+
+        state.lastParticleSweepAt = now;
+
+        state.liveParticles.forEach(node => {
+            if (
+                !(node instanceof Element) ||
+                !node.isConnected
+            ) {
+                state.liveParticles.delete(node);
+            }
+        });
+    }
+
+    function getParticleBudget() {
+        const level = getEffectiveLevel();
+
+        return (
+            PARTICLE_BUDGETS[level] ||
+            PARTICLE_BUDGETS.high
+        );
+    }
+
+    function getLiveParticleCount() {
+        compactLiveParticles();
+
+        return state.liveParticles.size;
+    }
+
+    function requestParticleQuota(
+        owner = 'effect',
+        cost = 1
+    ) {
+        if (
+            document.visibilityState === 'hidden' ||
+            state.visibilityPaused
+        ) {
+            return false;
+        }
+
+        const normalizedCost =
+            Math.max(
+                1,
+                Math.ceil(
+                    Number(cost) || 1
+                )
+            );
+
+        compactLiveParticles();
+
+        const projected =
+            state.liveParticles.size +
+            state.reservedParticlesThisFrame +
+            normalizedCost;
+
+        if (projected > getParticleBudget()) {
+            return false;
+        }
+
+        /*
+         * Giữ reservation đến frame scheduler kế tiếp.
+         * MutationObserver sẽ kịp ghi nhận DOM vừa sinh trước frame sau.
+         */
+        state.reservedParticlesThisFrame +=
+            normalizedCost;
+
+        return true;
+    }
+
+    function normalizeEmitterInterval(delay) {
+        const numeric =
+            Number(delay);
+
+        if (
+            !Number.isFinite(numeric) ||
+            numeric <= 0
+        ) {
+            return 16;
+        }
+
+        return Math.max(
+            16,
+            Number(scaleInterval(numeric)) ||
+            numeric
+        );
+    }
+
+    function ensureScheduler() {
+        if (
+            state.schedulerRunning ||
+            state.emitters.size === 0 ||
+            state.visibilityPaused ||
+            document.visibilityState === 'hidden'
+        ) {
+            return;
+        }
+
+        state.schedulerRunning = true;
+
+        const raf =
+            window.requestAnimationFrame ||
+            (callback =>
+                setTimeout(
+                    () => callback(performance.now()),
+                    16
+                ));
+
+        const queueTick = now => {
+            if (state.schedulerWakeHandle !== null || state.schedulerHandle !== null) return;
+            let nextAt = Infinity;
+            for (const emitter of state.emitters.values()) {
+                if (!emitter.cancelled) nextAt = Math.min(nextAt, emitter.nextAt);
+            }
+            if (!Number.isFinite(nextAt)) { state.schedulerRunning = false; return; }
+            state.schedulerWakeHandle = window.setTimeout(() => {
+                state.schedulerWakeHandle = null;
+                if (state.visibilityPaused || document.visibilityState === 'hidden') {
+                    state.schedulerRunning = false;
+                    return;
+                }
+                state.schedulerHandle = raf(tick);
+            }, Math.max(0, nextAt - now));
+        };
+
+        const tick = now => {
+            state.schedulerHandle = null;
+            if (
+                state.visibilityPaused ||
+                document.visibilityState === 'hidden'
+            ) {
+                state.schedulerRunning = false;
+                state.schedulerHandle = null;
+                return;
+            }
+
+            state.reservedParticlesThisFrame = 0;
+            compactLiveParticles();
+
+            for (const emitter of state.emitters.values()) {
+                if (
+                    !emitter ||
+                    emitter.cancelled
+                ) {
+                    continue;
+                }
+
+                if (now < emitter.nextAt) {
+                    continue;
+                }
+
+                const interval =
+                    normalizeEmitterInterval(
+                        emitter.delay
+                    );
+
+                /*
+                 * Không catch-up sau lag/ẩn tab.
+                 * Mỗi emitter chỉ có tối đa một lần sinh ở frame hiện tại.
+                 */
+                emitter.nextAt =
+                    now + interval;
+
+                if (
+                    !requestParticleQuota(
+                        emitter.owner,
+                        emitter.cost
+                    )
+                ) {
+                    emitter.skipped += 1;
+                    continue;
+                }
+
+                try {
+                    emitter.handler(
+                        ...emitter.args
+                    );
+
+                    emitter.executed += 1;
+                } catch (error) {
+                    console.error(
+                        '[EffectQualityManager] Emitter lỗi:',
+                        emitter.owner,
+                        error
+                    );
+                }
+            }
+
+            if (
+                state.emitters.size > 0 &&
+                !state.visibilityPaused
+            ) {
+                queueTick(now);
+            } else {
+                state.schedulerRunning = false;
+                state.schedulerHandle = null;
+            }
+        };
+
+        queueTick(performance.now());
+    }
+
+    function scheduleEmitter(
+        owner,
+        handler,
+        delay,
+        options = {}
+    ) {
+        if (typeof handler !== 'function') {
+            throw new TypeError(
+                '[EffectQualityManager] emitter handler phải là function.'
+            );
+        }
+
+        const emitterId =
+            state.nextEmitterId++;
+
+        const token =
+            EMITTER_TOKEN_BASE +
+            emitterId;
+
+        const interval =
+            normalizeEmitterInterval(
+                delay
+            );
+
+        const now =
+            typeof performance !== 'undefined'
+                ? performance.now()
+                : Date.now();
+
+        state.emitters.set(
+            token,
+            {
+                token,
+                owner:
+                    String(
+                        owner ||
+                        'effect'
+                    ),
+                handler,
+                args:
+                    Array.isArray(
+                        options.args
+                    )
+                        ? options.args
+                        : [],
+                delay:
+                    Number(delay) || 16,
+                cost:
+                    Math.max(
+                        1,
+                        Math.ceil(
+                            Number(
+                                options.cost
+                            ) || 1
+                        )
+                    ),
+                nextAt:
+                    now + interval,
+                executed: 0,
+                skipped: 0,
+                cancelled: false
+            }
+        );
+
+        // A newly registered emitter may be due before the currently scheduled wake.
+        if (state.schedulerWakeHandle !== null) {
+            window.clearTimeout(state.schedulerWakeHandle);
+            state.schedulerWakeHandle = null;
+            state.schedulerRunning = false;
+        }
+        ensureScheduler();
+
+        return token;
+    }
+
+    function cancelEmitter(token) {
+        const emitter =
+            state.emitters.get(token);
+
+        if (!emitter) {
+            return false;
+        }
+
+        emitter.cancelled = true;
+        state.emitters.delete(token);
+        if (state.emitters.size === 0) stopEmitterScheduler();
+
+        return true;
+    }
+
+    function cancelScope(scopePrefix = '') {
+        const prefix =
+            String(scopePrefix || '');
+
+        let count = 0;
+
+        for (
+            const [token, emitter]
+            of state.emitters.entries()
+        ) {
+            if (
+                !prefix ||
+                String(
+                    emitter.owner || ''
+                ).startsWith(prefix)
+            ) {
+                emitter.cancelled = true;
+                state.emitters.delete(token);
+                count += 1;
+            }
+        }
+
+        if (state.emitters.size === 0) stopEmitterScheduler();
+        return count;
+    }
+
+    function stopEmitterScheduler() {
+        if (state.schedulerWakeHandle !== null) window.clearTimeout(state.schedulerWakeHandle);
+        if (state.schedulerHandle !== null) {
+            if (window.requestAnimationFrame) window.cancelAnimationFrame(state.schedulerHandle);
+            else window.clearTimeout(state.schedulerHandle);
+        }
+        state.schedulerWakeHandle = null;
+        state.schedulerHandle = null;
+        state.schedulerRunning = false;
+    }
+
+    function pauseEffectBudget() {
+        state.visibilityPaused = true;
+        stopEmitterScheduler();
+
+        if (
+            state.schedulerHandle !== null &&
+            typeof cancelAnimationFrame === 'function'
+        ) {
+            try {
+                cancelAnimationFrame(
+                    state.schedulerHandle
+                );
+            } catch (_) {}
+        }
+
+        state.schedulerHandle = null;
+        state.schedulerRunning = false;
+    }
+
+    function resumeEffectBudget() {
+        state.visibilityPaused = false;
+
+        const now =
+            typeof performance !== 'undefined'
+                ? performance.now()
+                : Date.now();
+
+        /*
+         * Reset nextAt để không sinh bù một loạt hạt sau khi tab visible.
+         */
+        state.emitters.forEach(emitter => {
+            emitter.nextAt =
+                now +
+                normalizeEmitterInterval(
+                    emitter.delay
+                );
+        });
+
+        ensureScheduler();
+    }
+
+    function getBudgetStats() {
+        compactLiveParticles(true);
+
+        const emitters =
+            [...state.emitters.values()];
+
+        return {
+            budget:
+                getParticleBudget(),
+            liveParticles:
+                state.liveParticles.size,
+            emitters:
+                emitters.length,
+            paused:
+                state.visibilityPaused ||
+                document.visibilityState === 'hidden',
+            executed:
+                emitters.reduce(
+                    (sum, item) =>
+                        sum +
+                        Number(
+                            item.executed || 0
+                        ),
+                    0
+                ),
+            skipped:
+                emitters.reduce(
+                    (sum, item) =>
+                        sum +
+                        Number(
+                            item.skipped || 0
+                        ),
+                    0
+                )
+        };
+    }
+
+    function getEffectiveLevel() {
+        return state.enabled ? state.level : 'high';
+    }
+
+    function getIntervalMultiplier() {
+        return LEVELS[getEffectiveLevel()]?.intervalMultiplier || 1;
+    }
+
+    function scaleInterval(delay) {
+        const numeric = Number(delay);
+        if (!Number.isFinite(numeric) || numeric <= 0) return delay;
+
+        const multiplier = getIntervalMultiplier();
+        if (multiplier <= 1) return numeric;
+
+        const minimum = state.level === 'low' ? 180 : 90;
+        return Math.max(minimum, Math.round(numeric * multiplier));
+    }
+
+    function getEffectManagerReference() {
+        try {
+            if (typeof EffectManager !== 'undefined') return EffectManager;
+        } catch (_) {}
+
+        return window.EffectManager || null;
+    }
+
+    function runWithCentralEffectBudget(
+        owner,
+        fn,
+        thisArg,
+        args
+    ) {
+        /*
+         * Nếu create... gọi lồng create... khác, wrapper ngoài đã patch timer.
+         * Không patch chồng để tránh mất owner/scheduler.
+         */
+        if (state.timerPatchDepth > 0) {
+            return fn.apply(thisArg, args);
+        }
+
+        const nativeSetInterval =
+            window.setInterval;
+
+        state.timerPatchDepth += 1;
+
+        window.setInterval =
+            function (
+                handler,
+                delay,
+                ...rest
+            ) {
+                if (
+                    typeof handler !==
+                    'function'
+                ) {
+                    /*
+                     * Effect hiện tại đều dùng callback function.
+                     * Trường hợp lạ thì fallback native để không phá code.
+                     */
+                    return nativeSetInterval.call(
+                        window,
+                        handler,
+                        scaleInterval(delay),
+                        ...rest
+                    );
+                }
+
+                return scheduleEmitter(
+                    owner,
+                    handler,
+                    delay,
+                    {
+                        args: rest,
+                        cost: 1
+                    }
+                );
+            };
+
+        try {
+            return fn.apply(
+                thisArg,
+                args
+            );
+        } finally {
+            window.setInterval =
+                nativeSetInterval;
+
+            state.timerPatchDepth =
+                Math.max(
+                    0,
+                    state.timerPatchDepth - 1
+                );
+        }
+    }
+
+    function patchEffectManager() {
+        const manager =
+            getEffectManagerReference();
+
+        if (!manager) {
+            return false;
+        }
+
+        let patchedAny = false;
+
+        /*
+         * stopIntervals() là điểm dọn effect chuẩn của hệ thống.
+         * Hủy toàn bộ emitter EffectManager ở budget scheduler trước,
+         * sau đó vẫn chạy hàm gốc để giữ nguyên cleanup hiện tại.
+         */
+        if (
+            !state.effectManagerStopPatched &&
+            typeof manager.stopIntervals ===
+                'function'
+        ) {
+            const originalStop =
+                manager.stopIntervals;
+
+            const wrappedStop =
+                function (...args) {
+                    cancelScope(
+                        'EffectManager.'
+                    );
+
+                    return originalStop.apply(
+                        this,
+                        args
+                    );
+                };
+
+            Object.defineProperty(
+                wrappedStop,
+                '__fxqBudgetWrapped',
+                {
+                    value: true,
+                    configurable: false
+                }
+            );
+
+            Object.defineProperty(
+                wrappedStop,
+                '__fxqOriginal',
+                {
+                    value: originalStop,
+                    configurable: false
+                }
+            );
+
+            try {
+                manager.stopIntervals =
+                    wrappedStop;
+
+                state.effectManagerStopPatched =
+                    true;
+            } catch (_) {}
+        }
+
+        Object
+            .getOwnPropertyNames(manager)
+            .forEach(name => {
+                if (
+                    !/^create[A-Z]/.test(
+                        name
+                    )
+                ) {
+                    return;
+                }
+
+                const original =
+                    manager[name];
+
+                if (
+                    typeof original !==
+                    'function'
+                ) {
+                    return;
+                }
+
+                if (
+                    original.__fxqBudgetWrapped ===
+                    true
+                ) {
+                    return;
+                }
+
+                const owner =
+                    `EffectManager.${name}`;
+
+                const wrapped =
+                    function (...args) {
+                        return runWithCentralEffectBudget(
+                            owner,
+                            original,
+                            this,
+                            args
+                        );
+                    };
+
+                Object.defineProperty(
+                    wrapped,
+                    '__fxqBudgetWrapped',
+                    {
+                        value: true,
+                        configurable: false
+                    }
+                );
+
+                Object.defineProperty(
+                    wrapped,
+                    '__fxqOriginal',
+                    {
+                        value: original,
+                        configurable: false
+                    }
+                );
+
+                try {
+                    manager[name] =
+                        wrapped;
+
+                    patchedAny = true;
+                } catch (_) {}
+            });
+
+        state.effectManagerPatched =
+            state.effectManagerPatched ||
+            patchedAny;
+
+        return (
+            patchedAny ||
+            state.effectManagerStopPatched
+        );
+    }
+
+    function restartActiveGlobalEffect() {
+        clearTimeout(state.restartTimer);
+
+        state.restartTimer = setTimeout(() => {
+            const manager = getEffectManagerReference();
+            const activeEffect = String(
+                localStorage.getItem('active_effect') || ''
+            ).trim();
+
+            if (!manager || !activeEffect || typeof manager.applyEffect !== 'function') {
+                return;
+            }
+
+            try {
+                // Chỉ dựng lại lớp hiển thị để interval nhận mức mới.
+                // Không thay item, quyền sở hữu, Coin hay Firebase.
+                manager.applyEffect(activeEffect);
+            } catch (error) {
+                console.warn('[EffectQualityManager] Không thể làm mới hiệu ứng đang dùng:', error);
+            }
+        }, 0);
+    }
+
+    function getWebAnimationState() {
+        try {
+            return window.WebAnimationSystem?.getState?.() || null;
+        } catch (_) {
+            return null;
+        }
+    }
+
+    function applyWebAnimationPolicy() {
+        // Item quality only reduces ambient decoration. Keep the user's UI
+        // motion preference independent; never silently disable all feedback.
+        window.WebAnimationSystem?.refresh?.();
+    }
+
+    function applyRootClasses() {
+        const root = document.documentElement;
+        if (!root) return;
+
+        root.classList.remove('fxq-enabled', 'fxq-high', 'fxq-medium', 'fxq-low');
+        root.removeAttribute('data-effect-quality');
+        root.classList.remove('fxq-luxury-medium','fxq-luxury-low');
+        if(resolveRole()==='student'&&state.enabled&&state.level!=='high')root.classList.add('fxq-luxury-'+state.level);
+
+        if (!state.enabled) return;
+
+        root.classList.add('fxq-enabled', `fxq-${state.level}`);
+        root.setAttribute('data-effect-quality', state.level);
+    }
+
+    function updateSettingsUI() {
+        const toggle = document.getElementById(TOGGLE_ID);
+        const levels = document.getElementById(LEVELS_ID);
+        const status = document.getElementById(STATUS_ID);
+
+        if (toggle) toggle.checked = state.enabled;
+        if (levels) levels.hidden = !state.enabled;
+        updateDetectionUI();
+
+        document.querySelectorAll(`#${LEVELS_ID} [data-fxq-level]`).forEach(button => {
+            const active = button.dataset.fxqLevel === state.level;
+            button.classList.toggle('is-active', active);
+            button.setAttribute('aria-pressed', active ? 'true' : 'false');
+        });
+
+        if (!status) return;
+
+        if (!state.enabled) {
+            status.textContent = 'Đang tắt • Website giữ nguyên hiệu ứng gốc';
+            return;
+        }
+
+        if (state.level === 'high') {
+            status.textContent = 'Cao • Đầy đủ hiệu ứng, không giảm chất lượng';
+        } else if (state.level === 'medium') {
+            status.textContent = 'Trung bình • Sang trọng: giảm hiệu ứng vật phẩm, ultimate, nhấn/chạm và di chuột. Cửa hàng thường giữ cơ chế cũ';
+        } else {
+            status.textContent = 'Thấp • Sang trọng: tắt nhấn/chạm, di chuột; hiệu ứng và ultimate tối thiểu. Cửa hàng thường giữ cơ chế cũ';
+        }
+    }
+
+    function announceChange() {
+        try {
+            window.dispatchEvent(new CustomEvent('effect-quality-change', {
+                detail: {
+                    enabled: state.enabled,
+                    level: state.level,
+                    effectiveLevel: getEffectiveLevel(),
+                    intervalMultiplier: getIntervalMultiplier(),
+                    stats: getDetectionStats()
+                }
+            }));
+        } catch (_) {}
+    }
+
+    function applyState(options = {}) {
+        applyRootClasses();
+        updateSettingsUI();
+        scanExistingEffects();
+        patchEffectManager();
+        applyWebAnimationPolicy();
+
+        if (options.restartEffect === true) {
+            restartActiveGlobalEffect();
+        }
+
+        announceChange();
+    }
+
+    function setEnabled(enabled, options = {}) {
+        const next = Boolean(enabled);
+        const changed = state.enabled !== next;
+        state.enabled = next;
+
+        if (state.enabled && !LEVELS[state.level]) {
+            state.level = 'high';
+        }
+
+        if (options.persist !== false) saveStoredState();
+        applyState({ restartEffect: changed || options.restartEffect === true });
+    }
+
+    function setLevel(level, options = {}) {
+        const normalized = normalizeLevel(level);
+        const changed = state.level !== normalized;
+        state.level = normalized;
+
+        if (options.persist !== false) saveStoredState();
+        applyState({ restartEffect: changed || options.restartEffect === true });
+    }
+
+    function injectSettingsControl() {
+        if (document.getElementById(SETTINGS_ROW_ID)) {
+            updateSettingsUI();
+            return true;
+        }
+
+        const settingsTab = document.getElementById('tab-settings');
+        const container = settingsTab?.querySelector('.form-container');
+        if (!container) return false;
+
+        const row = document.createElement('div');
+        row.id = SETTINGS_ROW_ID;
+        row.innerHTML = `
+            <div class="fxq-setting-head">
+                <div class="fxq-setting-copy">
+                    <strong>✨ Mức hiệu ứng vật phẩm & web</strong>
+                    <p>
+                        Tự nhận diện hiệu ứng động của vật phẩm, thú cưng, Premium/Luxury, card Cửa hàng thường/Sang trọng và Web Animations.
+                        Vật phẩm mới được quét theo runtime/lớp hiệu ứng, không cần khai báo từng ID. Không giảm theme và không thay đổi chức năng hay dữ liệu.
+                    </p>
+                    <span id="${STATUS_ID}">Đang tắt • Website giữ nguyên hiệu ứng gốc</span>
+                    <span id="${DETECTION_ID}">Đang quét các lớp hiệu ứng...</span>
+                    <button type="button" id="${RESCAN_ID}">↻ Quét lại hiệu ứng mới</button>
+                </div>
+                <label class="switch" title="Bật điều chỉnh mức hiệu ứng">
+                    <input type="checkbox" id="${TOGGLE_ID}">
+                    <span class="slider"></span>
+                </label>
+            </div>
+
+            <div id="${LEVELS_ID}" hidden aria-label="Chọn mức hiệu ứng">
+                <button type="button" class="fxq-level-btn" data-fxq-level="high" aria-pressed="false">
+                    <strong>🌟 Cao</strong>
+                    <small>Đầy đủ hiệu ứng</small>
+                </button>
+                <button type="button" class="fxq-level-btn" data-fxq-level="medium" aria-pressed="false">
+                    <strong>⚖️ Trung bình</strong>
+                    <small>Giảm lớp, ultimate và tương tác</small>
+                </button>
+                <button type="button" class="fxq-level-btn" data-fxq-level="low" aria-pressed="false">
+                    <strong>🛡️ Thấp</strong>
+                    <small>Sang trọng: tối thiểu, tắt nhấn/rê</small>
+                </button>
+            </div>
+        `;
+
+        // Đặt đầu nhóm cài đặt để dễ tìm; không sửa HTML chức năng có sẵn.
+        container.insertBefore(row, container.firstChild);
+
+        row.querySelector(`#${TOGGLE_ID}`)?.addEventListener('change', event => {
+            const checked = Boolean(event.target.checked);
+
+            // Lần đầu bật luôn bắt đầu ở Cao như yêu cầu.
+            if (checked && !state.enabled && !LEVELS[state.level]) {
+                state.level = 'high';
+            }
+
+            setEnabled(checked, { persist: true });
+        });
+
+        row.querySelector(`#${RESCAN_ID}`)?.addEventListener('click', () => {
+            patchEffectManager();
+            scanExistingEffects();
+            updateDetectionUI();
+        });
+
+        row.querySelectorAll('[data-fxq-level]').forEach(button => {
+            button.addEventListener('click', () => {
+                if (!state.enabled) return;
+                setLevel(button.dataset.fxqLevel, { persist: true });
+            });
+        });
+
+        updateSettingsUI();
+        return true;
+    }
+
+    function init() {
+        if (state.initialized) return;
+        state.initialized = true;
+
+        injectStyles();
+
+        const stored = loadStoredState();
+        state.enabled = stored.enabled;
+        state.level = stored.level;
+
+        injectSettingsControl();
+        patchEffectManager();
+        installObserver();
+        scanExistingEffects();
+        applyState({ restartEffect: false });
+
+        document.addEventListener(
+            'visibilitychange',
+            () => {
+                if (
+                    document.visibilityState ===
+                    'hidden'
+                ) {
+                    pauseEffectBudget();
+                } else {
+                    resumeEffectBudget();
+                }
+            }
+        );
+
+        /*
+         * effect-items.js có thể được lazy-load sau EffectQualityManager.
+         * Khi loader báo nhóm tính năng đã sẵn sàng, patch EffectManager
+         * trước khi vật phẩm đang trang bị được apply.
+         */
+        window.addEventListener(
+            'student-feature-loaded',
+            () => {
+                patchEffectManager();
+                scanExistingEffects();
+                ensureScheduler();
+            }
+        );
+
+        // Một số trang render tab Cài đặt sau; thử lại nhẹ, không tạo timer lặp vô hạn.
+        if (!document.getElementById(SETTINGS_ROW_ID)) {
+            setTimeout(injectSettingsControl, 500);
+            setTimeout(injectSettingsControl, 1400);
+        }
+
+        // effect-quality-manager được nạp trước luxury-store.js trên trang học sinh.
+        // Quét lại vài nhịp để tự nhận các runtime Premium/Luxury được đăng ký sau.
+        [700, 1800, 4200].forEach(delay => {
+            setTimeout(() => {
+                patchEffectManager();
+                scanExistingEffects();
+            }, delay);
+        });
+
+        window.addEventListener('load', () => {
+            patchEffectManager();
+            scanExistingEffects();
+        }, { once: true });
+
+        window.addEventListener('storage', event => {
+            if (event.key !== getStorageKey()) return;
+
+            const next = loadStoredState();
+            state.enabled = next.enabled;
+            state.level = next.level;
+            applyState({ restartEffect: true });
+        });
+
+        console.info(
+            `[EffectQualityManager] v${VERSION} ready — ` +
+            `${state.enabled ? state.level.toUpperCase() : 'OFF'}`
+        );
+    }
+
+    window.EffectQualityManager = Object.freeze({
+        version: VERSION,
+        init,
+        isEnabled: () => state.enabled,
+        getLevel: () => state.level,
+        getEffectiveLevel,
+        getLuxuryPolicy,
+        getIntervalMultiplier,
+        scaleInterval,
+        setEnabled: enabled => setEnabled(enabled, { persist: true }),
+        setLevel: level => setLevel(level, { persist: true }),
+        refresh: () => {
+            patchEffectManager();
+            scanExistingEffects();
+            applyWebAnimationPolicy();
+            updateSettingsUI();
+            return getDetectionStats();
+        },
+        rescan: () => {
+            patchEffectManager();
+            scanExistingEffects();
+            return getDetectionStats();
+        },
+        getStats: getDetectionStats,
+        markRoot: element => {
+            if (!(element instanceof Element)) return false;
+            element.dataset.effectQualityRoot = '1';
+            processRoot(element);
+            return true;
+        },
+        markStoreCard: element => {
+            if (!(element instanceof Element)) return false;
+            processStoreCard(element);
+            return true;
+        },
+
+        // API ngân sách chung cho effect hiện tại và module mới trong tương lai.
+        requestParticleQuota,
+        scheduleEmitter,
+        cancelEmitter,
+        cancelScope,
+        pause: pauseEffectBudget,
+        resume: resumeEffectBudget,
+        getBudgetStats,
+        getParticleBudget,
+        getLiveParticleCount,
+
+        getRecommendedCount(baseCount) {
+            const base = Math.max(0, Number(baseCount) || 0);
+            const level = getEffectiveLevel();
+
+            if (level === 'medium') return Math.max(1, Math.ceil(base * 0.58));
+            if (level === 'low') return Math.max(1, Math.ceil(base * 0.24));
+            return Math.ceil(base);
+        }
+    });
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init, { once: true });
+    } else {
+        init();
+    }
+})();

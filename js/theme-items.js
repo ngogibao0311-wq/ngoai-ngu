@@ -1,0 +1,2166 @@
+// js/theme-items.js
+
+class ThemeManager {
+    static themes = {
+        theme_hac_mong_regular_2: {primary:'#397d8a',secondary:'#adcdd0',background:'#eff5f7',className:'theme-hac-mong-regular'},
+        theme_kim_lien_regular_3: { primary:'#397567', secondary:'#b38a3c', background:'#edf4ef', className:'theme-kim-lien-regular' },
+        'default': { primary: '#5865d8', secondary: '#5865d8', background: '#f4f6fb', className: '' },
+        'theme_ocean': { primary: '#4facfe', secondary: '#00f2fe', background: '#e0f7fa', className: '' },
+        'theme_cotich': {
+            primary: '#d4af37',     // Vàng hoàng gia
+            secondary: '#1a1a2e',   // Xanh đêm huyền bí
+            background: '#0f0f1a',  // Màu nền tổng thể tối
+            className: 'theme-fairy-tale'
+        },
+        'theme_cotich_forest': {
+            primary: '#2ecc71',     // Xanh ngọc lục bảo
+            secondary: '#1abc9c',   // Xanh bạc hà
+            background: '#04120c',  // Xanh đen rừng sâu
+            className: 'theme-magic-forest'
+        },
+        'theme_doisong': {
+            primary: '#88ab75',     // Xanh lá dịu
+            secondary: '#4a3c31',   // Nâu gỗ đậm
+            background: '#fdfaf5',  // Màu giấy kem ấm
+            className: 'theme-lifestyle'
+        },
+        'theme_bandem': {
+            primary: '#81d4fa',     // Xanh ngọc sáng (Neon Cyan)
+            secondary: '#aa00ff',   // Tím dạ quang
+            background: '#0a0f1e',  // Xanh đen không gian
+            className: 'theme-night-sky'
+        },
+        'theme_banngay_ngaymoi': {
+            primary: '#ffaa00',     // Vàng cam mặt trời rực rỡ
+            secondary: '#00b4d8',   // Xanh bầu trời trong vắt
+            background: '#e0fbfc',  // Nền trời sáng sủa
+            className: 'theme-daylight-sky'
+        },
+        'theme_cotich_phale': {
+            primary: '#a29bfe',     // Tím pha lê mộng mơ
+            secondary: '#00cec9',   // Xanh ngọc bích
+            background: '#1a1829',  // Nền tím than đậm
+            className: 'theme-crystal-palace'
+        },
+        'theme_truyenthuyet_vutru': {
+            primary: '#bd00ff',     // Tím Neon
+            secondary: '#00f5ff',   // Xanh Cyan (Plasma)
+            background: '#050508',  // Đen vũ trụ sâu thẳm
+            className: 'theme-cosmic-godhood'
+        },
+        'theme_vutru_saothuy': {
+            primary: '#45f3ff',     // Xanh Cyan (Plasma lỏng)
+            secondary: '#c5c6c7',   // Bạc hợp kim
+            background: '#0b0c10',  // Đen không gian thẳm
+            className: 'theme-mercury-station'
+        },
+        'theme_cosmic_anomaly': {
+            primary: '#ec4899',       // Hồng Neon Tinh Vân (Deep Space Pink)
+            secondary: '#06b6d4',     // Xanh Plasma Lỏng (Quantum Cyan)
+            background: '#030712',    // Đen Hố Đen (Vantablack Void)
+            className: 'theme-cosmic-anomaly'
+        },
+        'theme_truyenthuyet_nganha': {
+            primary: '#00f2fe',       // Quang phổ Xanh Tinh Tú (Cyan Neon)
+            secondary: '#9b5de5',     // Hào quang Tím Tinh Vân (Deep Nebula Violet)
+            background: '#04060f',    // Đen Thẳm Không Gian (Abyssal Void)
+            className: 'theme-vethan-nganha'
+        },
+        'theme_lotm_mysteries': {
+            primary: '#c9a96e',
+            secondary: '#7f8b99',
+            background: '#07090d',
+            className: 'theme-lotm-mysteries'
+        },
+        // =========================================================
+        // LORD OF THE MYSTERIES · HỘI TAROT · NGHỊ ĐIỆN HUYỀN BÍ
+        // Theme sự kiện độc lập hoàn toàn: lotmevt-*.
+        // Không dùng lại CSS/animation của theme_lotm_mysteries hay Klein/Amon.
+        // =========================================================
+        'theme_lotm_tarot_council_event': {
+            primary: '#c7a76a',
+            secondary: '#768497',
+            background: '#080a10',
+            className: 'theme-lotm-tarot-council-event'
+        },
+        'theme_truyenthuyet_celestial': {
+            primary: '#ffd700',       // Màu Vàng Thần Thánh (Divine Gold)
+            secondary: '#e5e4e2',     // Màu Bạch Kim (Platinum)
+            background: '#050508',    // Màu Đen Vô Cực (Deep Void)
+            className: 'theme-legendary-celestial'
+        },
+        'theme_cotich_hai_nguyet': {
+            primary: '#42cfe5',
+            secondary: '#a78bfa',
+            background: '#e8fbff',
+            className: 'theme-fairy-sea-dream'
+        },
+        'theme_doraemon_childhood': {
+            primary: '#5ab4e6',
+            secondary: '#f5a3c2',
+            background: '#fff8ed',
+            className: 'theme-doraemon-childhood'
+        },
+        'theme_hoihoa_atelier': {
+            primary: '#1595a5',
+            secondary: '#8b5cf6',
+            background: '#f6efd9',
+            className: 'theme-enchanted-atelier'
+        },
+        'theme_thatdaitoi_acedia_dream': {
+            primary: '#8f68b8',
+            secondary: '#d4b9f2',
+            background: '#0b0712',
+            className: 'theme-seven-sins-acedia'
+        },
+
+        // =========================================================
+        // THẤT ĐẠI TỘI · ACEDIA · MIÊN KHẾ TĨNH GIỚI
+        // Theme cửa hàng thường 800 Coin, namespace tdtui2-* riêng hoàn toàn.
+        // Không dùng acedia-palace-* / theme-seven-sins-acedia của bộ sự kiện.
+        // =========================================================
+        'theme_thatdaitoi_mien_khe_tinh_gioi': {
+            primary: '#665378',
+            secondary: '#b6a7c4',
+            background: '#ece9ef',
+            className: 'theme-seven-sins-languor-codex'
+        },
+        'theme_he_mat_troi_sinh_quyen': {
+            primary: '#36d6c3',
+            secondary: '#ffbd45',
+            background: '#071a28',
+            className: 'theme-solar-biosphere'
+        },
+        'theme_sinh_nhat_tiec_ngot_2026': {
+            primary: '#ef7866',
+            secondary: '#2f846b',
+            background: '#fff7e9',
+            className: 'theme-birthday-sweet-2026'
+        },
+        'theme_he_mat_troi_vanh_dai_cassini': {
+            primary: '#c9a875',
+            secondary: '#efe0be',
+            background: '#100d0b',
+            className: 'theme-saturn-observatory'
+        },
+        'theme_doisong_mua_sao': {
+            primary: '#7fcbe6',
+            secondary: '#8b83d6',
+            background: '#071421',
+            className: 'theme-rain-cosmos'
+        },
+
+        // Premium Mùa Xuân - dùng như lớp phủ khi Nữ Thần Mùa Xuân được trang bị
+        'theme_premium_mua_xuan': {
+            primary: '#2f7d62',
+            secondary: '#d85f8c',
+            background: '#fffaf0',
+            className: 'theme-spring-vintage-banquet'
+        },
+        // Giao diện Mùa Xuân độc lập — concept giấy dó / men ngọc / mộc bản.
+        // Không dùng lại class, palette hay hình khối của Xuân Tửu Hoa Viên.
+        'theme_mua_xuan_thanh_minh': {
+            primary: '#276b57',
+            secondary: '#d96f45',
+            background: '#f4f0df',
+            className: 'theme-spring-celadon-almanac'
+        },
+
+        // =========================================================
+        // MÙA HẠ · HẠ QUANG LƯU LY
+        // Concept riêng: kính nắng lăng kính + gợn nhiệt + hạt quang.
+        // Không dùng lại summer-solstice-* hoặc ha2l-* của pet.
+        // =========================================================
+        'theme_mua_ha_ha_quang_luu_ly': {
+            primary: '#d89b2b',
+            secondary: '#2f9f9a',
+            background: '#f7f2d8',
+            className: 'theme-summer-prismatic-garden'
+        },
+
+        // =========================================================
+        // MÙA THU · PHONG DIỆP KÍNH SƯƠNG
+        // Runtime riêng hoàn toàn: auttheme8-*
+        // Không dùng autumn3-*, autumn4-*, autreg5-* của các vật phẩm cũ.
+        // =========================================================
+        'theme_mua_thu_phong_diep_kinh_suong': {
+            primary: '#d36a32',
+            secondary: '#496a5d',
+            background: '#e9eee8',
+            className: 'theme-autumn-frosted-grove'
+        },
+        // =========================================================
+        // QUỐC KHÁNH 2/9
+        // VIỆT DIỆU · HỒNG KỲ TÂN CHƯƠNG
+        // Concept riêng: nếp gấp quốc kỳ / quốc ấn / dải huy chương
+        // =========================================================
+        'theme_quoc_khanh_viet_dieu_hong_ky': {
+            primary: '#d71920',
+            secondary: '#f2c94c',
+            background: '#f7f0df',
+            className: 'theme-viet-dieu-hong-ky'
+        },
+        'theme_truyenthuyet_thanh_dien_nguyet_da': {
+            primary: '#8ed8ff',
+            secondary: '#7a9cff',
+            background: '#030814',
+            className: 'theme-nyx-moon-sanctum'
+        },
+        // =========================================================
+        // AETHER · THIÊN QUANG THÁNH VỰC
+        // Theme riêng hoàn toàn: aettheme-*.
+        // =========================================================
+        'theme_truyenthuyet_aether_thien_quang_thanh_vuc': {
+            primary: '#8cecff',
+            secondary: '#f2d580',
+            background: '#030b18',
+            className: 'theme-aether-luminous-sanctum'
+        },
+        // TAMON'S B-SIDE · HẬU TRƯỜNG NHIỄU SÓNG
+        // Theme độc lập, không dùng class/effect của các theme Tamon cũ.
+        'theme_tamon_bside_backstage': {
+            primary: '#ff5aa7',
+            secondary: '#76a9ff',
+            background: '#080b14',
+            className: 'theme-tamon-bside-backstage'
+        },
+
+        // =========================================================
+        // TAMON'S B-SIDE · HẮC MIÊU DẠ KHÚC
+        // Theme riêng cho Tamon · Nụ Cười Mèo Đen.
+        // Namespace CSS độc lập tbcat1-*; không tái dùng tbtheme1-/tbc1-/tbc2-*.
+        // =========================================================
+        'theme_tamon_bside_black_cat_nocturne': {
+            primary: '#c89cff',
+            secondary: '#ff8fbd',
+            background: '#090711',
+            className: 'theme-tamon-bside-black-cat-nocturne'
+        },
+
+        // =========================================================
+        // CẦM MỘNG · THANH HUYỀN TIÊN CÁC
+        // Theme hoàn toàn mới: cmtheme1-*
+        // =========================================================
+        'theme_cam_mong_thanh_huyen_tien_cac': {
+            primary: '#2f9a7e',
+            secondary: '#e0c16d',
+            background: '#071c17',
+            className: 'theme-cam-mong-thanh-huyen-tien-cac'
+        },
+
+        // =========================================================
+        // TRUNG THU · NGUYỆT HỘI HOA ĐĂNG
+        // Theme độc lập hoàn toàn: mttheme2-*
+        // =========================================================
+        'theme_trung_thu_nguyet_hoi_hoa_dang': {
+            primary: '#e8b85f',
+            secondary: '#4ea992',
+            background: '#0b1430',
+            className: 'theme-midautumn-lantern-festival'
+        },
+
+
+        // =========================================================
+        // TRUNG THU · QUẢNG HÀN NGUYỆT QUẾ
+        // Theme độc lập hoàn toàn: mtq5-*
+        // Concept: lưu ly ngọc bích + nguyệt quế + nguyệt song.
+        // =========================================================
+        'theme_trung_thu_quang_han_nguyet_que': {
+            primary: '#b99243',
+            secondary: '#3f8b72',
+            background: '#edf1df',
+            className: 'theme-midautumn-osmanthus-jade'
+        },
+
+        // =========================================================
+        // ĐÊM ĐẦY SAO · HỌA GIỚI ĐÊM SAO
+        // Theme riêng hoàn toàn: sndtheme-* / theme-starry-night-painted-gallery.
+        // Không tái sử dụng runtime/animation của pet Premium hoặc chibi.
+        // =========================================================
+        'theme_dem_day_sao_hoa_gioi': {
+            primary: '#36558d',
+            secondary: '#b7863f',
+            background: '#eadfbd',
+            className: 'theme-starry-night-painted-gallery'
+        },
+
+        // =========================================================
+        // LINK CLICK · KÝ ỨC PHÂN MẢNH
+        // Theme độc lập hoàn toàn: lct3-*
+        // Không dùng lcx-* của Luxury và không dùng lcc2-* của pet.
+        // =========================================================
+        'theme_linkclick_fragmented_memory': {
+            primary: '#35d9c5',
+            secondary: '#ef5b9d',
+            background: '#07131a',
+            className: 'theme-linkclick-fragmented-memory'
+        },
+    };
+
+    // Những popup phải giữ giao diện riêng,
+    // không nhận CSS từ vật phẩm giao diện.
+    static themeImmunePopupSelectors = Object.freeze([
+        '[data-theme-immune="true"]',
+        '.modal-overlay', '.student-modal-overlay', 'dialog',
+        '.ql-toolbar', '.ql-container', '.mcw2-overlay'
+    ]);
+
+    /* =========================================================
+   CARD AMON KHÔNG NHẬN GIAO DIỆN TOÀN WEB
+   ========================================================= */
+
+    /* =========================================================
+   CARD ĐẶC BIỆT KHÔNG NHẬN GIAO DIỆN TOÀN WEB
+   ========================================================= */
+
+    static specialStoreCardGroups = Object.freeze({
+        'hacmong2-premium': Object.freeze({ itemIds: Object.freeze(['pet_hac_mong_2']), className: 'hacmong2-card' }),
+        'autumn3-premium': Object.freeze({
+            itemIds: Object.freeze(['pet_luxury_mua_thu']),
+            className: 'autumn3-card'
+        }),
+        'autumn-regular': Object.freeze({
+            itemIds: Object.freeze([
+                'pet_premium_mua_thu_chibi_3',
+                'theme_mua_thu_phong_diep_kinh_suong',
+                'effect_mua_thu_phong_diep_quang_trieu',
+                'frame_mua_thu_phong_diep_chi_hoan',
+                'background_mua_thu_phong_lam_mong_canh'
+            ]),
+            className: 'store-card-autumn-regular'
+        }),
+        'amon-trinity': Object.freeze({
+            itemIds: Object.freeze([
+                'pet_lotm_amon',
+                'effect_lotm_amon',
+                'theme_lotm_mysteries'
+            ]),
+
+            className:
+                'store-card-amon-trinity',
+
+            styleId:
+                'amon-trinity-card-style'
+        }),
+
+        /*
+         * LORD OF THE MYSTERIES · KLEIN CHIBI EVENT PAIR
+         * Pet Klein + giao diện Hội Tarot dùng cùng skin/card Klein.
+         * Chỉ tag Lord of the Mysteries là dùng chung với Amon.
+         */
+        'lotm-klein-chibi-event': Object.freeze({
+            itemIds: Object.freeze([
+                'pet_lotm_klein_chibi_event_1',
+                'theme_lotm_tarot_council_event'
+            ]),
+
+            className:
+                'store-card-lotm-klein-chibi-event'
+        }),
+
+        'shizuka-trinity': Object.freeze({
+            itemIds: Object.freeze([
+                'pet_doraemon_shizuka',
+                'theme_doraemon_childhood',
+                'effect_doraemon_school_memories'
+            ]),
+
+            className:
+                'store-card-shizuka-trinity',
+
+            styleId:
+                'shizuka-trinity-card-style'
+        }),
+
+        'seven-sins-sloth': Object.freeze({
+            itemIds: Object.freeze([
+                'pet_thatdaitoi_luoibieng_1',
+                'theme_thatdaitoi_acedia_dream',
+                'effect_thatdaitoi_acedia_domain'
+            ]),
+
+            className:
+                'store-card-seven-sins-sloth'
+        }),
+
+        /*
+         * Acedia Chibi 850 Coin: cùng nhãn Thất Đại Tội nhưng card độc lập.
+         * Đăng ký tại ThemeManager để preserveSpecialStoreCards() luôn khôi phục
+         * class miễn nhiễm sau khi đổi giao diện.
+         */
+        'seven-sins-acedia-chibi': Object.freeze({
+            itemIds: Object.freeze([
+                'pet_thatdaitoi_luoibieng_chibi_1',
+                'theme_thatdaitoi_mien_khe_tinh_gioi',
+                'effect_thatdaitoi_mien_vu_tinh_da'
+            ]),
+            className: 'store-card-acedia-chibi-reverie'
+        }),
+
+        /* Bộ Thần Hệ Tinh Vân */
+        'galaxy-legend-trinity': Object.freeze({
+            itemIds: Object.freeze([
+                'pet_truyenthuyet_1',
+                'effect_truyenthuyet_vutru',
+                'theme_truyenthuyet_vutru'
+            ]),
+
+            className:
+                'store-card-galaxy-legend-trinity'
+        }),
+
+        /* Bộ Vệ Thần Ngân Hà */
+        'galaxy-guardian-trinity': Object.freeze({
+            itemIds: Object.freeze([
+                'pet_truyenthuyet_2',
+                'effect_truyenthuyet_nganha',
+                'theme_truyenthuyet_nganha'
+            ]),
+
+            className:
+                'store-card-galaxy-guardian-trinity'
+        }),
+
+        'birthday-2026': Object.freeze({
+            itemIds: Object.freeze([
+                'pet_sinh_nhat_2026',
+                'theme_sinh_nhat_tiec_ngot_2026',
+                'effect_sinh_nhat_than_an_phuc_loc_2026'
+            ]),
+
+            className:
+                'store-card-birthday-2026'
+        }),
+
+        /* =========================================================
+           MÙA HẠ · TIỂU HẠ QUANG + HẠ QUANG LƯU LY
+           Cùng tag, cùng thẻ; card miễn mọi giao diện toàn web khác.
+           ========================================================= */
+        'summer-limited-pair': Object.freeze({
+            itemIds: Object.freeze([
+                'pet_premium_mua_ha_chibi_2',
+                'theme_mua_ha_ha_quang_luu_ly'
+            ]),
+
+            className:
+                'store-card-premium-summer-limited'
+        }),
+
+        /* MÙA HẠ PREMIUM — card riêng, không nhận skin từ theme khác. */
+        'summer-premium-pet': Object.freeze({
+            itemIds: Object.freeze([
+                'pet_luxury_mua_ha'
+            ]),
+
+            className:
+                'store-card-summer-premium'
+        }),
+
+'national-day-premium-pet': Object.freeze({
+            itemIds: Object.freeze([
+                'pet_quoc_khanh_1'
+            ]),
+
+            className:
+                'store-card-national-day-pet',
+
+            tagImage:
+                'assets/Premium/quốc khánh/tag.png'
+        }),
+
+        /* =========================================================
+           AETHER · TIỂU THIÊN QUANG + THÁNH VỰC + THIÊN MÔN QUANG TRIỀU
+           Cùng tag, cùng thẻ Aether Chibi; miễn mọi theme khác.
+           ========================================================= */
+        'aether-little-spirit': Object.freeze({
+            itemIds: Object.freeze([
+                'pet_truyenthuyet_aether_chibi_2',
+                'theme_truyenthuyet_aether_thien_quang_thanh_vuc',
+                'effect_truyenthuyet_aether_thien_quang_thien_mon'
+            ]),
+
+            className:
+                'store-card-aether-little-spirit'
+        }),
+
+        /* =========================================================
+           TAMON'S B-SIDE · TIỂU QUỶ + GIAO DIỆN HẬU TRƯỜNG
+           Cùng tag, cùng thẻ; khóa khỏi mọi giao diện toàn web.
+           ========================================================= */
+        'tamon-bside-chibi-pair': Object.freeze({
+            itemIds: Object.freeze([
+                'pet_tamon_bside_chibi_1',
+                'theme_tamon_bside_backstage'
+            ]),
+
+            className:
+                'store-card-tamon-bside-chibi'
+        }),
+
+        /* =========================================================
+           TAMON'S B-SIDE · NỤ CƯỜI MÈO ĐEN + HẮC MIÊU DẠ KHÚC
+           Pet 2 + theme dùng chung card CHIBI2 riêng; chỉ tag dùng chung với Tamon 1.
+           Card CHIBI2 không dùng card Tamon 1 và khóa khỏi mọi theme toàn web khác.
+           ========================================================= */
+        'tamon-bside-chibi2-pair': Object.freeze({
+            itemIds: Object.freeze([
+                'pet_tamon_bside_chibi_2',
+                'theme_tamon_bside_black_cat_nocturne'
+            ]),
+
+            className:
+                'store-card-tamon-bside-chibi2'
+        }),
+
+        /* =========================================================
+           CẦM MỘNG · THANH HUYỀN
+           Pet + theme dùng chung card/tag, miễn mọi theme khác.
+           ========================================================= */
+        'cam-mong-thanh-huyen-pair': Object.freeze({
+            itemIds: Object.freeze([
+                'pet_cam_mong_chibi_1',
+                'theme_cam_mong_thanh_huyen_tien_cac'
+            ]),
+
+            className:
+                'store-card-cam-mong-chibi'
+        }),
+
+        /* =========================================================
+   TAMON'S B-SIDE · PET PREMIUM
+   Card có skin riêng nhưng giữ nguyên bố cục của Luxury Store.
+   Khi một theme toàn web đang hoạt động, card này vẫn được miễn skin.
+   ========================================================= */
+        'tamon-b-side-premium': Object.freeze({
+            itemIds: Object.freeze([
+                'pet_tamon_b_side_1'
+            ]),
+
+            className:
+                'store-card-tamon-b-side'
+        }),
+
+        /* =========================================================
+           TAMON · PINK STATIC · PET PREMIUM #2
+           Miễn toàn bộ theme khác; skin do tamon-b-side-2.css quản lý.
+           ========================================================= */
+        'tamon-pink-static-premium': Object.freeze({
+            itemIds: Object.freeze([
+                'pet_tamon_b_side_2'
+            ]),
+
+            className:
+                'store-card-tamon-pink-static'
+        }),
+
+        /* =========================================================
+           TRUNG THU · NGUYỆT CUNG TIÊN TỬ PREMIUM
+           Card riêng, giữ nguyên bố cục Luxury Store và miễn mọi theme khác.
+           ========================================================= */
+        'midautumn-moon-palace-premium': Object.freeze({
+            itemIds: Object.freeze([
+                'pet_trung_thu_nguyet_cung_tien_tu'
+            ]),
+
+            className:
+                'store-card-midautumn-moon-palace'
+        }),
+
+        /* =========================================================
+           TRUNG THU · CHÚ CUỘI PREMIUM
+           Card riêng, cùng tag Trung Thu nhưng khóa skin độc lập.
+           ========================================================= */
+        'midautumn-cuoi-premium': Object.freeze({
+            itemIds: Object.freeze([
+                'pet_trung_thu_chu_cuoi_2'
+            ]),
+
+            className:
+                'store-card-midautumn-cuoi'
+        }),
+
+        /* =========================================================
+   BỘ VIỆT DIỆU 2/9
+   Giữ card riêng, không bị theme toàn web ghi đè
+   ========================================================= */
+        /* =========================================================
+           TRUNG THU · TIỂU HẰNG NGA + NGUYỆT HỘI HOA ĐĂNG
+           Cùng tag, cùng thẻ; miễn mọi giao diện toàn web khác.
+           ========================================================= */
+        'midautumn-chibi': Object.freeze({
+            itemIds: Object.freeze([
+                'pet_trung_thu_hang_nga_chibi_1',
+                'theme_trung_thu_nguyet_hoi_hoa_dang'
+            ]),
+
+            className:
+                'store-card-midautumn-chibi'
+        }),
+
+        /* =========================================================
+           TRUNG THU · TIỂU CHÚ CUỘI + QUẢNG HÀN + QUẾ ẢNH PHI DIỆP
+           Cùng tag/card; miễn tuyệt đối skin từ theme toàn web khác.
+           ========================================================= */
+        'midautumn-cuoi-chibi': Object.freeze({
+            itemIds: Object.freeze([
+                'pet_trung_thu_chu_cuoi_chibi_2',
+                'theme_trung_thu_quang_han_nguyet_que',
+                'effect_trung_thu_que_anh_phi_diep'
+            ]),
+
+            className:
+                'store-card-midautumn-cuoi-chibi'
+        }),
+
+        /* =========================================================
+           LINK CLICK · CHENG XIAOSHI + KÝ ỨC PHÂN MẢNH
+           Cùng tag, cùng thẻ; card miễn mọi theme toàn web khác.
+           ========================================================= */
+        'linkclick-chibi-pair': Object.freeze({
+            itemIds: Object.freeze([
+                'pet_linkclick_cheng_xiaoshi_chibi_1',
+                'theme_linkclick_fragmented_memory'
+            ]),
+
+            className:
+                'store-card-linkclick-chibi'
+        }),
+
+        /* =========================================================
+           ĐÊM ĐẦY SAO · TIỂU LỮ KHÁCH + HỌA GIỚI ĐÊM SAO
+           Cùng tag, cùng thẻ; card miễn mọi giao diện toàn web khác.
+           ========================================================= */
+        'starry-night-chibi-pair': Object.freeze({
+            itemIds: Object.freeze([
+                'pet_dem_day_sao_chibi_1',
+                'theme_dem_day_sao_hoa_gioi'
+            ]),
+
+            className:
+                'store-card-starry-night-chibi'
+        }),
+
+        'national-day-2-9': Object.freeze({
+            itemIds: Object.freeze([
+                'pet_quoc_khanh_chibi_1',
+                'effect_quoc_khanh_viet_dieu_non_song',
+                'theme_quoc_khanh_viet_dieu_hong_ky'
+            ]),
+
+            className:
+                'store-card-national-day-2-9'
+        }),
+    });
+
+
+    static preserveSpecialStoreCards(
+        root = document
+    ) {
+        const selector =
+            '.store-item-card[data-item-id], ' +
+            '.luxury-product-card[data-item-id]';
+
+        const cards = [];
+
+        if (
+            root instanceof Element &&
+            root.matches(selector)
+        ) {
+            cards.push(root);
+        }
+
+        if (root.querySelectorAll) {
+            cards.push(
+                ...root.querySelectorAll(selector)
+            );
+        }
+
+
+        cards.forEach(card => {
+            const itemId =
+                card.dataset.itemId;
+
+            const matchedGroup =
+                Object.entries(
+                    this.specialStoreCardGroups
+                ).find(([, config]) => {
+                    return config
+                        .itemIds
+                        .includes(itemId);
+                });
+
+            if (!matchedGroup) {
+                return;
+            }
+
+            const [
+                groupName,
+                config
+            ] = matchedGroup;
+
+            card.classList.add(
+                config.className,
+                'store-theme-locked',
+                'ui-theme-immune'
+            );
+
+            card.dataset.themeImmune =
+                'true';
+
+            card.dataset.specialCard =
+                groupName;
+
+            /*
+* Tag ảnh riêng cho card sự kiện.
+* Chèn trực tiếp vào DOM để đường dẫn đúng từ document root
+* và không bị theme toàn web đổi nền / chữ của .item-tag.
+*/
+            if (config.tagImage) {
+                let tagImage =
+                    card.querySelector(
+                        '.special-card-tag-image'
+                    );
+
+                if (!tagImage) {
+                    tagImage =
+                        document.createElement('img');
+
+                    tagImage.className =
+                        'special-card-tag-image';
+
+                    tagImage.alt = 'Quốc khánh';
+
+                    tagImage.draggable =
+                        false;
+
+                    tagImage.setAttribute(
+                        'aria-hidden',
+                        'true'
+                    );
+
+                    card.appendChild(
+                        tagImage
+                    );
+                }
+
+                if (
+                    tagImage.getAttribute('src') !==
+                    config.tagImage
+                ) {
+                    tagImage.setAttribute(
+                        'src',
+                        config.tagImage
+                    );
+                }
+            }
+        });
+
+
+        /*
+         * Đưa CSS card đặc biệt xuống cuối <head>.
+         * Giao diện toàn web không thể ghi đè.
+         */
+        Object.values(
+            this.specialStoreCardGroups
+        ).forEach(config => {
+            const stylesheet =
+                document.getElementById(
+                    config.styleId
+                );
+
+            if (
+                stylesheet &&
+                stylesheet.parentNode
+            ) {
+                document.head.appendChild(
+                    stylesheet
+                );
+            }
+        });
+    }
+
+
+    static preserveAmonStoreCards(
+        root = document
+    ) {
+        const cards = [];
+
+        const selector =
+            '.store-item-card[data-item-id]';
+
+        if (
+            root instanceof Element &&
+            root.matches(selector)
+        ) {
+            cards.push(root);
+        }
+
+        if (root.querySelectorAll) {
+            cards.push(
+                ...root.querySelectorAll(
+                    selector
+                )
+            );
+        }
+
+        cards.forEach(card => {
+            const itemId =
+                card.dataset.itemId;
+
+            if (
+                !this.amonStoreItemIds.includes(
+                    itemId
+                )
+            ) {
+                return;
+            }
+
+            card.classList.add(
+                'store-card-amon-trinity',
+                'store-theme-locked',
+                'ui-theme-immune'
+            );
+
+            card.dataset.themeImmune =
+                'true';
+
+            card.dataset.specialCard =
+                'amon-trinity';
+        });
+
+
+        /*
+         * Luôn chuyển CSS card Amon xuống cuối <head>.
+         * Nhờ đó CSS của giao diện vừa mặc không thể
+         * ghi đè card Amon.
+         */
+        const amonStyle =
+            document.getElementById(
+                'amon-trinity-card-style'
+            );
+
+        if (
+            amonStyle &&
+            amonStyle.parentNode
+        ) {
+            document.head.appendChild(
+                amonStyle
+            );
+        }
+    }
+
+    static markThemeImmunePopups(root = document) {
+        const selector = this.themeImmunePopupSelectors.join(',');
+        const targets = [];
+
+        if (root instanceof Element && root.matches(selector)) {
+            targets.push(root);
+        }
+
+        if (root.querySelectorAll) {
+            targets.push(...root.querySelectorAll(selector));
+        }
+
+        targets.forEach(popup => {
+            popup.classList.add('ui-theme-immune');
+        });
+    }
+
+    static initThemePopupIsolation() {
+        if (this._themePopupObserver) return;
+
+        const start = () => {
+            // Bảo vệ những popup đã tồn tại
+            this.markThemeImmunePopups(document);
+            this.preserveSpecialStoreCards(
+                document
+            );
+
+            // Bảo vệ popup được JavaScript tạo sau
+            this._themePopupObserver = new MutationObserver(mutations => {
+                mutations.forEach(mutation => {
+                    mutation.addedNodes.forEach(node => {
+                        if (
+                            node.nodeType ===
+                            Node.ELEMENT_NODE
+                        ) {
+                            this.markThemeImmunePopups(
+                                node
+                            );
+
+                            this.preserveSpecialStoreCards(
+                                node
+                            );
+                        }
+                    });
+                });
+            });
+
+            this._themePopupObserver.observe(document.body, {
+                childList: true,
+                subtree: true
+            });
+        };
+
+        if (document.body) {
+            start();
+        } else {
+            document.addEventListener('DOMContentLoaded', start, {
+                once: true
+            });
+        }
+    }
+
+    static clearAcediaPalaceDecor() {
+        const oldDecor =
+            document.getElementById(
+                'acedia-palace-chrome'
+            );
+
+        if (oldDecor) {
+            oldDecor.remove();
+        }
+
+        document.documentElement.classList.remove(
+            'acedia-palace-mounted'
+        );
+    }
+
+    static createAcediaPalaceDecor() {
+        this.clearAcediaPalaceDecor();
+
+        if (!document.body) return;
+
+        const decor = document.createElement('div');
+
+        decor.id = 'acedia-palace-chrome';
+        decor.className = 'acedia-palace-chrome';
+        decor.setAttribute('aria-hidden', 'true');
+
+        decor.innerHTML = `
+            <div class="acedia-palace-vault"></div>
+
+            <div class="acedia-palace-eclipse">
+                <span class="eclipse-crown"></span>
+                <span class="eclipse-core">Ⅶ</span>
+            </div>
+
+            <div class="acedia-palace-arches"></div>
+
+            <div class="acedia-palace-hourglass">
+                <span class="hourglass-crown"></span>
+                <span class="hourglass-frame"></span>
+
+                <span
+                    class="hourglass-sand sand-upper"
+                ></span>
+
+                <span
+                    class="hourglass-sand sand-lower"
+                ></span>
+            </div>
+
+            <div
+                class="acedia-palace-chain chain-a"
+            ></div>
+
+            <div
+                class="acedia-palace-chain chain-b"
+            ></div>
+
+            <div
+                class="acedia-palace-chain chain-c"
+            ></div>
+
+            <div class="acedia-palace-dust"></div>
+
+            <div class="acedia-palace-inscription">
+                <span>PECCATUM VII</span>
+
+                <strong>
+                    MỘNG ĐIỆN TRÌ HOÃN
+                </strong>
+
+                <small>
+                    Ở đây, mọi khoảnh khắc đều đến muộn.
+                </small>
+            </div>
+        `;
+
+        const arches =
+            decor.querySelector(
+                '.acedia-palace-arches'
+            );
+
+        const numerals = [
+            'Ⅰ', 'Ⅱ', 'Ⅲ', 'Ⅳ', 'Ⅴ', 'Ⅵ', 'Ⅶ'
+        ];
+
+        for (let index = 0; index < 7; index++) {
+            const arch =
+                document.createElement('span');
+
+            arch.className = 'acedia-palace-arch';
+            arch.dataset.number = numerals[index];
+
+            arch.style.setProperty(
+                '--acedia-arch-index',
+                index
+            );
+
+            arch.style.setProperty(
+                '--acedia-arch-delay',
+                `${-index * 0.7}s`
+            );
+
+            arch.style.setProperty(
+                '--acedia-arch-height',
+                `${58 + index * 2.7}%`
+            );
+
+            arches.appendChild(arch);
+        }
+
+        const dustField =
+            decor.querySelector(
+                '.acedia-palace-dust'
+            );
+
+        const isMobile = window.matchMedia(
+            '(max-width: 768px), (pointer: coarse)'
+        ).matches;
+
+        const dustCount = isMobile ? 18 : 36;
+
+        for (
+            let index = 0;
+            index < dustCount;
+            index++
+        ) {
+            const mote =
+                document.createElement('span');
+
+            const duration = 8 + index % 9;
+
+            mote.className =
+                'acedia-palace-mote';
+
+            mote.style.setProperty(
+                '--acedia-palace-x',
+                `${(index * 37) % 100}%`
+            );
+
+            mote.style.setProperty(
+                '--acedia-palace-y',
+                `${(index * 61) % 100}%`
+            );
+
+            mote.style.setProperty(
+                '--acedia-palace-size',
+                `${1 + index % 4}px`
+            );
+
+            mote.style.setProperty(
+                '--acedia-palace-duration',
+                `${duration}s`
+            );
+
+            mote.style.setProperty(
+                '--acedia-palace-delay',
+                `${-(index % 13) * 0.55}s`
+            );
+
+            dustField.appendChild(mote);
+        }
+
+        document.body.prepend(decor);
+
+        document.documentElement.classList.add(
+            'acedia-palace-mounted'
+        );
+
+        requestAnimationFrame(() => {
+            decor.classList.add('is-mounted');
+        });
+    }
+
+    // =========================================================
+    // THẤT ĐẠI TỘI · MIÊN KHẾ TĨNH GIỚI — DECOR RUNTIME RIÊNG
+    // Namespace tdtui2-*; không dùng acedia-palace-* của theme sự kiện.
+    // =========================================================
+    static clearSevenSinsLanguorCodexDecor() {
+        document
+            .getElementById('tdtui2-languor-codex')
+            ?.remove();
+
+        document.documentElement.classList.remove(
+            'tdtui2-mounted'
+        );
+    }
+
+    static createSevenSinsLanguorCodexDecor() {
+        this.clearSevenSinsLanguorCodexDecor();
+
+        if (!document.body) return;
+
+        const decor = document.createElement('div');
+        decor.id = 'tdtui2-languor-codex';
+        decor.className = 'tdtui2-languor-codex';
+        decor.setAttribute('aria-hidden', 'true');
+
+        // Một lớp ánh màu nhẹ, không sinh hạt hoặc thay bố cục nội dung.
+        decor.innerHTML = '<div class="tdtui2-dream-glow"></div>';
+
+        document.body.prepend(decor);
+        document.documentElement.classList.add('tdtui2-mounted');
+
+        requestAnimationFrame(() => {
+            decor.classList.add('is-mounted');
+        });
+    }
+
+    // =========================================================
+    // PREMIUM MÙA XUÂN — LỚP PHỦ "XUÂN TỬU HOA VIÊN"
+    // Chỉ là overlay tạm thời của pet, không sửa active_theme.
+    // =========================================================
+    static applyPremiumSpringOverlay() {
+        const root = document.documentElement;
+        const body = document.body;
+
+        body?.classList.add(
+            'theme-spring-vintage-banquet'
+        );
+
+        root.classList.add(
+            'spring-vintage-equipped'
+        );
+
+        root.setAttribute(
+            'data-premium-spring-ui',
+            'spring-vintage-v1'
+        );
+
+        document.getElementById(
+            'spring-vintage-ui-frame'
+        )?.remove();
+
+        if (!body) return;
+
+        const frame = document.createElement('div');
+        frame.id = 'spring-vintage-ui-frame';
+        frame.className = 'spring-vintage-ui-frame';
+        frame.setAttribute('aria-hidden', 'true');
+        frame.innerHTML = `
+            <div class="sv-ui-top-vessel">
+                <span class="sv-ui-vessel-bowl"></span>
+                <span class="sv-ui-vessel-nectar"></span>
+                <span class="sv-ui-vessel-gem"></span>
+            </div>
+
+            <span class="sv-ui-vine sv-ui-vine-left"></span>
+            <span class="sv-ui-vine sv-ui-vine-right"></span>
+
+            <span class="sv-ui-grape-chain chain-left"></span>
+            <span class="sv-ui-grape-chain chain-right"></span>
+
+            <div class="sv-ui-bottom-cutglass">
+                <i></i><b>◆</b><i></i>
+            </div>
+        `;
+
+        body.prepend(frame);
+
+        requestAnimationFrame(() => {
+            frame.classList.add('is-mounted');
+        });
+    }
+
+    static clearPremiumSpringOverlay() {
+        document.body?.classList.remove(
+            'theme-spring-vintage-banquet'
+        );
+
+        document.documentElement.classList.remove(
+            'spring-vintage-equipped'
+        );
+
+        document.documentElement.removeAttribute(
+            'data-premium-spring-ui'
+        );
+
+        document.getElementById(
+            'spring-vintage-ui-frame'
+        )?.remove();
+    }
+
+    // =========================================================
+    // TAMON'S B-SIDE · HẬU TRƯỜNG NHIỄU SÓNG
+    // Decor/effect hoàn toàn mới: tbtheme1-*
+    // Không sửa, không gọi lại effect của các giao diện khác.
+    // =========================================================
+    static clearTamonBsideBackstageDecor() {
+        document.getElementById(
+            'tbtheme1-backstage-decor'
+        )?.remove();
+
+        document.documentElement.classList.remove(
+            'tbtheme1-backstage-mounted'
+        );
+    }
+
+    static createTamonBsideBackstageDecor() {
+        this.clearTamonBsideBackstageDecor();
+
+        if (!document.body) return;
+
+        const decor = document.createElement('div');
+        decor.id = 'tbtheme1-backstage-decor';
+        decor.className = 'tbtheme1-backstage-decor';
+        decor.setAttribute('aria-hidden', 'true');
+
+        decor.innerHTML = `
+            <div class="tbtheme1-screen-haze"></div>
+            <div class="tbtheme1-grid-plane"></div>
+            <div class="tbtheme1-scan-field"></div>
+
+            <div class="tbtheme1-stage-rail rail-top"></div>
+            <div class="tbtheme1-stage-rail rail-bottom"></div>
+
+            <div class="tbtheme1-signal-cluster cluster-left">
+                <span></span><span></span><span></span><span></span><span></span>
+            </div>
+
+            <div class="tbtheme1-signal-cluster cluster-right">
+                <span></span><span></span><span></span><span></span><span></span>
+            </div>
+
+            <div class="tbtheme1-vinyl-orbit orbit-a"></div>
+            <div class="tbtheme1-vinyl-orbit orbit-b"></div>
+
+            <div class="tbtheme1-stage-caption">
+                <small>TAMON'S B-SIDE</small>
+                <strong>BACKSTAGE SIGNAL</strong>
+            </div>
+        `;
+
+        document.body.prepend(decor);
+
+        document.documentElement.classList.add(
+            'tbtheme1-backstage-mounted'
+        );
+
+        requestAnimationFrame(() => {
+            decor.classList.add('is-mounted');
+        });
+    }
+
+
+    // =========================================================
+    // CẦM MỘNG · THANH HUYỀN TIÊN CÁC
+    // Decor/effect hoàn toàn mới: cmtheme1-*
+    // =========================================================
+    static clearCamMongThanhHuyenDecor() {
+        document
+            .getElementById(
+                'cmtheme1-court-decor'
+            )
+            ?.remove();
+
+        document.documentElement.classList.remove(
+            'cmtheme1-court-mounted'
+        );
+    }
+
+    static createCamMongThanhHuyenDecor() {
+        this.clearCamMongThanhHuyenDecor();
+
+        if (!document.body) return;
+
+        const decor =
+            document.createElement('div');
+
+        decor.id =
+            'cmtheme1-court-decor';
+
+        decor.className =
+            'cmtheme1-court-decor';
+
+        decor.setAttribute(
+            'aria-hidden',
+            'true'
+        );
+
+        decor.innerHTML = `
+            <div class="cmtheme1-screen-silk"></div>
+
+            <div class="cmtheme1-moon-window">
+                <i></i>
+                <b>琴</b>
+                <span>梦</span>
+            </div>
+
+            <div class="cmtheme1-palace-line palace-left"></div>
+            <div class="cmtheme1-palace-line palace-right"></div>
+
+            <div class="cmtheme1-cloud cloud-a"></div>
+            <div class="cmtheme1-cloud cloud-b"></div>
+            <div class="cmtheme1-cloud cloud-c"></div>
+
+            <div class="cmtheme1-ribbon ribbon-a"></div>
+            <div class="cmtheme1-ribbon ribbon-b"></div>
+
+            <div class="cmtheme1-qin-field"></div>
+            <div class="cmtheme1-lantern-field"></div>
+            <div class="cmtheme1-petal-field"></div>
+            <div class="cmtheme1-jade-dust"></div>
+
+            <div class="cmtheme1-corner corner-tl">❀</div>
+            <div class="cmtheme1-corner corner-tr">❀</div>
+            <div class="cmtheme1-corner corner-bl">琴</div>
+            <div class="cmtheme1-corner corner-br">梦</div>
+
+            <div class="cmtheme1-caption">
+                <small>清 弦 · 梦 阁</small>
+                <strong>THANH HUYỀN CẦM MỘNG TIÊN CÁC</strong>
+            </div>
+        `;
+
+        const qinField =
+            decor.querySelector(
+                '.cmtheme1-qin-field'
+            );
+
+        for (let index = 0; index < 11; index++) {
+            const string =
+                document.createElement('i');
+
+            string.style.setProperty(
+                '--cmtheme1-qdelay',
+                `${-index * .19}s`
+            );
+
+            qinField?.appendChild(string);
+        }
+
+        const lanternField =
+            decor.querySelector(
+                '.cmtheme1-lantern-field'
+            );
+
+        for (let index = 0; index < 6; index++) {
+            const lantern =
+                document.createElement('i');
+
+            lantern.innerHTML =
+                '<b></b><span></span>';
+
+            lantern.style.setProperty(
+                '--cmtheme1-lx',
+                `${7 + ((index * 83) % 86)}%`
+            );
+
+            lantern.style.setProperty(
+                '--cmtheme1-ly',
+                `${11 + ((index * 47) % 57)}%`
+            );
+
+            lantern.style.setProperty(
+                '--cmtheme1-ld',
+                `${-index * .74}s`
+            );
+
+            lanternField?.appendChild(lantern);
+        }
+
+        const petalField =
+            decor.querySelector(
+                '.cmtheme1-petal-field'
+            );
+
+        const dustField =
+            decor.querySelector(
+                '.cmtheme1-jade-dust'
+            );
+
+        const reduced =
+            window.matchMedia?.(
+                '(max-width: 768px), (pointer: coarse), (prefers-reduced-motion: reduce)'
+            ).matches;
+
+        const petalCount =
+            reduced ? 14 : 34;
+
+        const dustCount =
+            reduced ? 18 : 42;
+
+        for (
+            let index = 0;
+            index < petalCount;
+            index++
+        ) {
+            const petal =
+                document.createElement('i');
+
+            petal.style.setProperty(
+                '--cmtheme1-px',
+                `${(index * 37 + 8) % 96}%`
+            );
+
+            petal.style.setProperty(
+                '--cmtheme1-pd',
+                `${-(index % 11) * .57}s`
+            );
+
+            petal.style.setProperty(
+                '--cmtheme1-ps',
+                `${6 + (index % 5) * 1.25}px`
+            );
+
+            petal.style.setProperty(
+                '--cmtheme1-pr',
+                `${(index * 41) % 180}deg`
+            );
+
+            petalField?.appendChild(petal);
+        }
+
+        for (
+            let index = 0;
+            index < dustCount;
+            index++
+        ) {
+            const dust =
+                document.createElement('i');
+
+            dust.style.setProperty(
+                '--cmtheme1-dx',
+                `${(index * 29 + 4) % 97}%`
+            );
+
+            dust.style.setProperty(
+                '--cmtheme1-dy',
+                `${(index * 53 + 6) % 91}%`
+            );
+
+            dust.style.setProperty(
+                '--cmtheme1-dd',
+                `${-(index % 13) * .44}s`
+            );
+
+            dustField?.appendChild(dust);
+        }
+
+        document.body.prepend(decor);
+
+        document.documentElement.classList.add(
+            'cmtheme1-court-mounted'
+        );
+
+        requestAnimationFrame(() => {
+            decor.classList.add(
+                'is-mounted'
+            );
+        });
+    }
+
+
+    // =========================================================
+    // TRUNG THU · NGUYỆT HỘI HOA ĐĂNG
+    // Decor/effect độc lập hoàn toàn: mttheme2-*
+    // =========================================================
+    static clearMidAutumnLanternFestivalDecor() {
+        document
+            .getElementById(
+                'mttheme2-festival-decor'
+            )
+            ?.remove();
+
+        document.documentElement.classList.remove(
+            'mttheme2-festival-mounted'
+        );
+    }
+
+    static createMidAutumnLanternFestivalDecor() {
+        this.clearMidAutumnLanternFestivalDecor();
+
+        if (!document.body) return;
+
+        const decor = document.createElement('div');
+
+        decor.id = 'mttheme2-festival-decor';
+        decor.className = 'mttheme2-festival-decor';
+        decor.setAttribute('aria-hidden', 'true');
+
+        decor.innerHTML = `
+            <div class="mttheme2-night-wash"></div>
+
+            <div class="mttheme2-moon-gate">
+                <span class="mttheme2-moon-disc"></span>
+                <span class="mttheme2-rabbit-mark">兔</span>
+                <i class="mttheme2-gate-ring ring-a"></i>
+                <i class="mttheme2-gate-ring ring-b"></i>
+            </div>
+
+            <div class="mttheme2-cloud cloud-a"></div>
+            <div class="mttheme2-cloud cloud-b"></div>
+            <div class="mttheme2-cloud cloud-c"></div>
+
+            <div class="mttheme2-lantern-field"></div>
+            <div class="mttheme2-firefly-field"></div>
+            <div class="mttheme2-petal-field"></div>
+
+            <div class="mttheme2-corner corner-tl">☾</div>
+            <div class="mttheme2-corner corner-tr">✦</div>
+            <div class="mttheme2-corner corner-bl">花</div>
+            <div class="mttheme2-corner corner-br">灯</div>
+
+            <div class="mttheme2-festival-caption">
+                <small>中 秋 · 花 灯</small>
+                <strong>NGUYỆT HỘI HOA ĐĂNG</strong>
+            </div>
+        `;
+
+        const lanternField =
+            decor.querySelector('.mttheme2-lantern-field');
+
+        const fireflyField =
+            decor.querySelector('.mttheme2-firefly-field');
+
+        const petalField =
+            decor.querySelector('.mttheme2-petal-field');
+
+        const reduced =
+            window.matchMedia?.(
+                '(max-width: 768px), (pointer: coarse), (prefers-reduced-motion: reduce)'
+            ).matches;
+
+        const lanternCount = reduced ? 5 : 9;
+        const fireflyCount = reduced ? 15 : 34;
+        const petalCount = reduced ? 10 : 24;
+
+        for (let index = 0; index < lanternCount; index++) {
+            const lantern = document.createElement('i');
+
+            lantern.className = 'mttheme2-floating-lantern';
+            lantern.innerHTML = '<b></b><span></span><em></em>';
+
+            lantern.style.setProperty(
+                '--mttheme2-lx',
+                `${4 + ((index * 79) % 92)}%`
+            );
+
+            lantern.style.setProperty(
+                '--mttheme2-ly',
+                `${9 + ((index * 43) % 68)}%`
+            );
+
+            lantern.style.setProperty(
+                '--mttheme2-ld',
+                `${-index * .63}s`
+            );
+
+            lantern.style.setProperty(
+                '--mttheme2-ls',
+                `${.72 + (index % 4) * .11}`
+            );
+
+            lanternField?.appendChild(lantern);
+        }
+
+        for (let index = 0; index < fireflyCount; index++) {
+            const firefly = document.createElement('i');
+
+            firefly.style.setProperty(
+                '--mttheme2-fx',
+                `${(index * 37 + 7) % 98}%`
+            );
+
+            firefly.style.setProperty(
+                '--mttheme2-fy',
+                `${(index * 61 + 11) % 94}%`
+            );
+
+            firefly.style.setProperty(
+                '--mttheme2-fd',
+                `${-(index % 12) * .41}s`
+            );
+
+            firefly.style.setProperty(
+                '--mttheme2-fs',
+                `${2 + (index % 3)}px`
+            );
+
+            fireflyField?.appendChild(firefly);
+        }
+
+        for (let index = 0; index < petalCount; index++) {
+            const petal = document.createElement('i');
+
+            petal.style.setProperty(
+                '--mttheme2-px',
+                `${(index * 41 + 5) % 96}%`
+            );
+
+            petal.style.setProperty(
+                '--mttheme2-pd',
+                `${-(index % 10) * .57}s`
+            );
+
+            petal.style.setProperty(
+                '--mttheme2-pr',
+                `${(index * 29) % 180}deg`
+            );
+
+            petalField?.appendChild(petal);
+        }
+
+        document.body.prepend(decor);
+
+        document.documentElement.classList.add(
+            'mttheme2-festival-mounted'
+        );
+
+        requestAnimationFrame(() => {
+            decor.classList.add('is-mounted');
+        });
+    }
+
+
+    // =========================================================
+    // TRUNG THU · QUẢNG HÀN NGUYỆT QUẾ
+    // Ambient/effect HOÀN TOÀN MỚI: mtq5-*
+    // Không dùng mttheme2-* và không sửa runtime theme/effect khác.
+    // =========================================================
+    static clearMidAutumnOsmanthusJadeDecor() {
+        document
+            .getElementById(
+                'mtq5-osmanthus-jade-decor'
+            )
+            ?.remove();
+
+        document.documentElement.classList.remove(
+            'mtq5-osmanthus-jade-mounted'
+        );
+    }
+
+    static createMidAutumnOsmanthusJadeDecor() {
+        this.clearMidAutumnOsmanthusJadeDecor();
+
+        if (!document.body) return;
+
+        const decor = document.createElement('div');
+
+        decor.id = 'mtq5-osmanthus-jade-decor';
+        decor.className = 'mtq5-osmanthus-jade-decor';
+        decor.setAttribute('aria-hidden', 'true');
+
+        decor.innerHTML = `
+            <div class="mtq5-silk-wash"></div>
+
+            <div class="mtq5-moon-window">
+                <span class="mtq5-window-disc"></span>
+                <span class="mtq5-window-lattice"></span>
+                <i class="mtq5-window-ring ring-a"></i>
+                <i class="mtq5-window-ring ring-b"></i>
+            </div>
+
+            <div class="mtq5-cloud-ribbon ribbon-a"></div>
+            <div class="mtq5-cloud-ribbon ribbon-b"></div>
+            <div class="mtq5-cloud-ribbon ribbon-c"></div>
+
+            <div class="mtq5-osmanthus-branch branch-left"></div>
+            <div class="mtq5-osmanthus-branch branch-right"></div>
+
+            <div class="mtq5-leaf-field"></div>
+            <div class="mtq5-glass-field"></div>
+            <div class="mtq5-moon-dust-field"></div>
+
+            <div class="mtq5-corner corner-tl">桂</div>
+            <div class="mtq5-corner corner-tr">月</div>
+            <div class="mtq5-corner corner-bl">玉</div>
+            <div class="mtq5-corner corner-br">光</div>
+
+            <div class="mtq5-theme-caption">
+                <small>中 秋 · 桂 影 · 玉 光</small>
+                <strong>QUẢNG HÀN NGUYỆT QUẾ</strong>
+            </div>
+        `;
+
+        const leafField =
+            decor.querySelector('.mtq5-leaf-field');
+
+        const glassField =
+            decor.querySelector('.mtq5-glass-field');
+
+        const dustField =
+            decor.querySelector('.mtq5-moon-dust-field');
+
+        const reduced =
+            window.matchMedia?.(
+                '(max-width: 768px), (pointer: coarse), (prefers-reduced-motion: reduce)'
+            ).matches;
+
+        const leafCount = reduced ? 10 : 26;
+        const glassCount = reduced ? 7 : 16;
+        const dustCount = reduced ? 15 : 38;
+
+        for (let index = 0; index < leafCount; index++) {
+            const leaf = document.createElement('i');
+            leaf.className = 'mtq5-floating-leaf';
+
+            leaf.style.setProperty(
+                '--mtq5-lx',
+                `${(index * 43 + 5) % 98}%`
+            );
+
+            leaf.style.setProperty(
+                '--mtq5-ld',
+                `${-(index % 12) * .58}s`
+            );
+
+            leaf.style.setProperty(
+                '--mtq5-lr',
+                `${(index * 31) % 180}deg`
+            );
+
+            leaf.style.setProperty(
+                '--mtq5-ls',
+                `${.72 + (index % 5) * .11}`
+            );
+
+            leafField?.appendChild(leaf);
+        }
+
+        for (let index = 0; index < glassCount; index++) {
+            const shard = document.createElement('i');
+            shard.className = 'mtq5-glass-shard';
+
+            shard.style.setProperty(
+                '--mtq5-gx',
+                `${(index * 61 + 8) % 96}%`
+            );
+
+            shard.style.setProperty(
+                '--mtq5-gy',
+                `${(index * 37 + 13) % 90}%`
+            );
+
+            shard.style.setProperty(
+                '--mtq5-gd',
+                `${-(index % 9) * .74}s`
+            );
+
+            shard.style.setProperty(
+                '--mtq5-gr',
+                `${(index * 27) % 160 - 80}deg`
+            );
+
+            glassField?.appendChild(shard);
+        }
+
+        for (let index = 0; index < dustCount; index++) {
+            const dust = document.createElement('i');
+
+            dust.style.setProperty(
+                '--mtq5-dx',
+                `${(index * 37 + 4) % 99}%`
+            );
+
+            dust.style.setProperty(
+                '--mtq5-dy',
+                `${(index * 59 + 9) % 94}%`
+            );
+
+            dust.style.setProperty(
+                '--mtq5-dd',
+                `${-(index % 14) * .46}s`
+            );
+
+            dust.style.setProperty(
+                '--mtq5-ds',
+                `${1.5 + (index % 4) * .75}px`
+            );
+
+            dustField?.appendChild(dust);
+        }
+
+        document.body.prepend(decor);
+
+        document.documentElement.classList.add(
+            'mtq5-osmanthus-jade-mounted'
+        );
+
+        requestAnimationFrame(() => {
+            decor.classList.add('is-mounted');
+        });
+    }
+
+
+    // =========================================================
+    // MÙA HẠ · HẠ QUANG LƯU LY — AMBIENT RIÊNG
+    // Namespace: ha2theme-* (không dùng ha2l-* / summer-solstice-*).
+    // =========================================================
+    static clearSummerPrismaticGardenDecor() {
+        const oldDecor =
+            document.getElementById('ha2theme-prismatic-garden-decor');
+
+        oldDecor?.remove();
+
+        document.documentElement.classList.remove(
+            'ha2theme-prismatic-mounted'
+        );
+    }
+
+    static createSummerPrismaticGardenDecor() {
+        this.clearSummerPrismaticGardenDecor();
+
+        if (!document.body) return;
+
+        const decor = document.createElement('div');
+        decor.id = 'ha2theme-prismatic-garden-decor';
+        decor.className = 'ha2theme-prismatic-garden-decor';
+        decor.setAttribute('aria-hidden', 'true');
+
+        decor.innerHTML = `
+            <div class="ha2theme-heat-haze haze-a"></div>
+            <div class="ha2theme-heat-haze haze-b"></div>
+            <div class="ha2theme-prism-band band-a"></div>
+            <div class="ha2theme-prism-band band-b"></div>
+            <div class="ha2theme-prism-band band-c"></div>
+            <div class="ha2theme-caustic-field"></div>
+            <div class="ha2theme-mote-field"></div>
+        `;
+
+        const causticField =
+            decor.querySelector('.ha2theme-caustic-field');
+
+        const moteField =
+            decor.querySelector('.ha2theme-mote-field');
+
+        const reduced = window.matchMedia?.(
+            '(max-width: 768px), (pointer: coarse), (prefers-reduced-motion: reduce)'
+        ).matches;
+
+        const causticCount = reduced ? 8 : 18;
+        const moteCount = reduced ? 12 : 30;
+
+        for (let index = 0; index < causticCount; index++) {
+            const shard = document.createElement('i');
+            shard.className = 'ha2theme-caustic';
+            shard.style.setProperty('--ha2theme-x', `${(index * 47 + 9) % 96}%`);
+            shard.style.setProperty('--ha2theme-y', `${(index * 61 + 13) % 92}%`);
+            shard.style.setProperty('--ha2theme-r', `${(index * 29) % 180}deg`);
+            shard.style.setProperty('--ha2theme-d', `${-(index % 9) * .73}s`);
+            shard.style.setProperty('--ha2theme-s', `${.72 + (index % 5) * .13}`);
+            causticField?.appendChild(shard);
+        }
+
+        for (let index = 0; index < moteCount; index++) {
+            const mote = document.createElement('i');
+            mote.className = 'ha2theme-mote';
+            mote.style.setProperty('--ha2theme-mx', `${(index * 37 + 5) % 98}%`);
+            mote.style.setProperty('--ha2theme-my', `${(index * 53 + 17) % 96}%`);
+            mote.style.setProperty('--ha2theme-md', `${-(index % 13) * .52}s`);
+            mote.style.setProperty('--ha2theme-ms', `${2 + (index % 3)}px`);
+            moteField?.appendChild(mote);
+        }
+
+        document.body.prepend(decor);
+        document.documentElement.classList.add(
+            'ha2theme-prismatic-mounted'
+        );
+
+        requestAnimationFrame(() => {
+            decor.classList.add('is-mounted');
+        });
+    }
+
+    // =========================================================
+    // AETHER · THIÊN QUANG THÁNH VỰC V2 — DECOR TOÀN WEB
+    // Namespace aettheme2-* hoàn toàn riêng, không dùng decor của theme khác.
+    // =========================================================
+    static clearAetherLuminousSanctumDecor() {
+        document.documentElement.classList.remove('aettheme2-mounted');
+
+        document
+            .querySelectorAll(
+                '.aettheme2-sanctum-decor[data-aettheme2-decor="1"]'
+            )
+            .forEach(node => {
+                node.classList.add('is-leaving');
+                window.setTimeout(() => node.remove(), 360);
+            });
+    }
+
+    static createAetherLuminousSanctumDecor() {
+        this.clearAetherLuminousSanctumDecor();
+        this.ensureAetherLuminousSanctumStylesheet();
+
+        if (!document.body) return null;
+
+        const reduced = window.matchMedia?.(
+            '(max-width: 768px), (pointer: coarse), (prefers-reduced-motion: reduce)'
+        ).matches;
+
+        const decor = document.createElement('div');
+        decor.className = 'aettheme2-sanctum-decor';
+        decor.dataset.aettheme2Decor = '1';
+        decor.setAttribute('aria-hidden', 'true');
+        decor.innerHTML = `
+            <div class="aettheme2-aurora aurora-a"></div>
+            <div class="aettheme2-aurora aurora-b"></div>
+            <div class="aettheme2-celestial-grid"></div>
+
+            <div class="aettheme2-astrolabe">
+                <span class="aettheme2-astro-ring ring-a"></span>
+                <span class="aettheme2-astro-ring ring-b"></span>
+                <span class="aettheme2-astro-ring ring-c"></span>
+                <span class="aettheme2-astro-diamond diamond-a"></span>
+                <span class="aettheme2-astro-diamond diamond-b"></span>
+                <b class="aettheme2-astro-core">ΑΙΘΗΡ</b>
+            </div>
+
+            <span class="aettheme2-wing-arc wing-left"></span>
+            <span class="aettheme2-wing-arc wing-right"></span>
+
+            <div class="aettheme2-star-field"></div>
+            <div class="aettheme2-lance-field"></div>
+            <div class="aettheme2-sigil-field"></div>
+        `;
+
+        const starField = decor.querySelector('.aettheme2-star-field');
+        const starCount = reduced ? 18 : 38;
+        for (let index = 0; index < starCount; index++) {
+            const star = document.createElement('i');
+            star.textContent = index % 7 === 0 ? '✦' : '';
+            star.style.setProperty('--aettheme2-x', `${(index * 37 + 7) % 100}%`);
+            star.style.setProperty('--aettheme2-y', `${(index * 61 + 13) % 100}%`);
+            star.style.setProperty('--aettheme2-size', `${2 + (index % 4)}px`);
+            star.style.setProperty('--aettheme2-delay', `${-(index % 13) * .47}s`);
+            star.style.setProperty('--aettheme2-dur', `${4.6 + (index % 6) * .75}s`);
+            starField?.appendChild(star);
+        }
+
+        const lanceField = decor.querySelector('.aettheme2-lance-field');
+        const lanceCount = reduced ? 5 : 11;
+        for (let index = 0; index < lanceCount; index++) {
+            const lance = document.createElement('i');
+            lance.style.setProperty('--aettheme2-lance-x', `${5 + (index * 19) % 90}%`);
+            lance.style.setProperty('--aettheme2-lance-rot', `${-28 + (index % 7) * 9}deg`);
+            lance.style.setProperty('--aettheme2-lance-delay', `${-(index % 8) * 1.1}s`);
+            lance.style.setProperty('--aettheme2-lance-dur', `${10 + (index % 5) * 1.4}s`);
+            lanceField?.appendChild(lance);
+        }
+
+        const sigilField = decor.querySelector('.aettheme2-sigil-field');
+        const glyphs = ['✦','☼','◇','✧','✥','⋄','✦','☼'];
+        glyphs.forEach((glyph, index) => {
+            const sigil = document.createElement('span');
+            sigil.textContent = glyph;
+            sigil.style.setProperty('--aettheme2-sigil-angle', `${index * 45}deg`);
+            sigil.style.setProperty('--aettheme2-sigil-angle-back', `${index * -45}deg`);
+            sigil.style.setProperty('--aettheme2-sigil-delay', `${-index * .63}s`);
+            sigilField?.appendChild(sigil);
+        });
+
+        document.body.prepend(decor);
+        document.documentElement.classList.add('aettheme2-mounted');
+
+        requestAnimationFrame(() => decor.classList.add('is-mounted'));
+        return decor;
+    }
+
+    static ensureAetherLuminousSanctumStylesheet() {
+        if (typeof document === 'undefined' || !document.head) {
+            return null;
+        }
+
+        const existing = Array.from(
+            document.querySelectorAll('link[rel="stylesheet"][href]')
+        ).find(link =>
+            /(?:^|\/)aether-than-thoai(?:\(\d+\))?\.css(?:[?#].*)?$/i
+                .test(link.href || '')
+        );
+
+        if (existing) return existing;
+
+        const old = document.getElementById(
+            'aether-luminous-sanctum-runtime-style'
+        );
+        if (old) return old;
+
+        const link = document.createElement('link');
+        link.id = 'aether-luminous-sanctum-runtime-style';
+        link.rel = 'stylesheet';
+        link.href =
+            'css/aether-than-thoai.css?v=20260917.aether-theme-sanctum-v2';
+        link.dataset.aetherTheme = 'luminous-sanctum';
+
+        link.addEventListener('error', () => {
+            console.error(
+                '[AETHER THEME] Không tải được css/aether-than-thoai.css'
+            );
+        }, { once: true });
+
+        document.head.appendChild(link);
+        return link;
+    }
+
+    // =========================================================
+    // ĐÊM ĐẦY SAO · HỌA GIỚI — CSS RUNTIME GUARD
+    // Dùng chung dem-day-sao.css nhưng namespace theme riêng sndtheme-*.
+    // Không sửa/khởi chạy hiệu ứng snv-* hoặc snch-*.
+    // =========================================================
+    static ensureStarryNightPaintedGalleryStylesheet() {
+        if (typeof document === 'undefined' || !document.head) return null;
+
+        const targetHref = 'css/dem-day-sao.css?v=20260921.starry-night-distinct-v2';
+        const existing = Array.from(
+            document.querySelectorAll('link[rel="stylesheet"][href]')
+        ).find(link =>
+            /(?:^|\/)dem-day-sao(?:\(\d+\))?\.css(?:[?#].*)?$/i
+                .test(link.href || '')
+        );
+
+        if (existing) {
+            existing.id = existing.id || 'starry-night-premium-style';
+            if (!String(existing.getAttribute('href') || '').includes('20260921.starry-night-distinct-v2')) {
+                existing.setAttribute('href', targetHref);
+            }
+            return existing;
+        }
+
+        const byId = document.getElementById('starry-night-premium-style');
+        if (byId) {
+            byId.setAttribute('href', targetHref);
+            return byId;
+        }
+
+        const link = document.createElement('link');
+        link.id = 'starry-night-premium-style';
+        link.rel = 'stylesheet';
+        link.href = targetHref;
+        link.dataset.starryNightTheme = 'painted-gallery';
+        document.head.appendChild(link);
+        return link;
+    }
+
+    static applyTheme(themeId) {
+        this.initThemePopupIsolation();
+        this.clearAcediaPalaceDecor();
+        this.clearSevenSinsLanguorCodexDecor();
+        this.clearTamonBsideBackstageDecor();
+        this.clearCamMongThanhHuyenDecor();
+        this.clearMidAutumnLanternFestivalDecor();
+        this.clearMidAutumnOsmanthusJadeDecor();
+        this.clearSummerPrismaticGardenDecor();
+        this.clearAetherLuminousSanctumDecor();
+
+        if (
+            themeId ===
+            'theme_truyenthuyet_aether_thien_quang_thanh_vuc'
+        ) {
+            this.ensureAetherLuminousSanctumStylesheet();
+        }
+
+        if (themeId === 'theme_dem_day_sao_hoa_gioi') {
+            this.ensureStarryNightPaintedGalleryStylesheet();
+        }
+
+        const resolvedThemeId =
+            Object.prototype.hasOwnProperty.call(this.themes, themeId)
+                ? themeId
+                : 'default';
+        const theme = this.themes[resolvedThemeId];
+        const root = document.documentElement;
+
+        // Marker duy nhất cho giao diện đang hoạt động.
+        // Không đụng các class runtime của pet/effect; chỉ cô lập skin giao diện.
+        root.dataset.activeThemeId = resolvedThemeId;
+
+        // Áp dụng biến màu sắc CSS
+        root.style.setProperty('--primary-color', theme.primary);
+        root.style.setProperty('--secondary-color', theme.secondary);
+        root.style.setProperty('--bg-color', theme.background);
+
+        // 1. Xóa động TẤT CẢ các class theme cũ một cách tối ưu
+        Array.from(document.body.classList).forEach(className => {
+            if (className.startsWith('theme-') || className.startsWith('theme_')) {
+                document.body.classList.remove(className);
+            }
+        });
+
+        // 2. Tiêm class mới vào body nếu theme đó có yêu cầu thay đổi hình dáng
+        if (theme.className) {
+            document.body.classList.add(theme.className);
+        }
+
+
+        if (
+            themeId ===
+            'theme_truyenthuyet_aether_thien_quang_thanh_vuc'
+        ) {
+            this.createAetherLuminousSanctumDecor();
+        }
+
+        if (
+            themeId ===
+            'theme_thatdaitoi_acedia_dream'
+        ) {
+            this.createAcediaPalaceDecor();
+        }
+
+        if (
+            themeId ===
+            'theme_thatdaitoi_mien_khe_tinh_gioi'
+        ) {
+            this.createSevenSinsLanguorCodexDecor();
+        }
+
+        if (
+            themeId ===
+            'theme_tamon_bside_backstage'
+        ) {
+            this.createTamonBsideBackstageDecor();
+        }
+
+        if (
+            themeId ===
+            'theme_cam_mong_thanh_huyen_tien_cac'
+        ) {
+            this.createCamMongThanhHuyenDecor();
+        }
+
+        if (
+            themeId ===
+            'theme_trung_thu_nguyet_hoi_hoa_dang'
+        ) {
+            this.createMidAutumnLanternFestivalDecor();
+        }
+
+        if (
+            themeId ===
+            'theme_trung_thu_quang_han_nguyet_que'
+        ) {
+            this.createMidAutumnOsmanthusJadeDecor();
+        }
+
+        if (
+            themeId ===
+            'theme_mua_ha_ha_quang_luu_ly'
+        ) {
+            this.createSummerPrismaticGardenDecor();
+        }
+
+        // Lưu lựa chọn vào bộ nhớ trình duyệt
+        localStorage.setItem('active_theme', resolvedThemeId);
+        requestAnimationFrame(() => {
+            this.preserveSpecialStoreCards(
+                document
+            );
+        });
+    }
+}
+
+// Bắt cả popup có sẵn và popup được tạo động.
+ThemeManager.initThemePopupIsolation();

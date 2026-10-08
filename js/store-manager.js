@@ -1,0 +1,7143 @@
+// js/store-manager.js
+
+// STORE GUARD companion build (logic bảo vệ giao dịch nằm ở student.js + Firebase Rules)
+window.__STORE_MANAGER_GUARD_BUILD = '20260918.v2-K2-K3-ownership';
+
+
+const StoreConfig = {
+    items: [
+
+        { id: 'theme_ocean', name: 'Đại Dương Xanh', type: 'theme', price: 150, isNonCoin: false, tag: 'Giao diện' },
+        { id: 'effect_snow', name: 'Tuyết Mùa Đông', type: 'effect', price: 200, isNonCoin: false, tag: 'Hiệu ứng' },
+        { id: 'pet_shiba', name: 'Chó Shiba', type: 'pet', price: 300, isNonCoin: false, tag: 'Thú cưng', value: '🐕', isIcon: true },
+        {
+            id: 'pet_citlalin_pillow',
+            name: 'Gối Citlalin',
+            type: 'pet',
+            price: 300,
+            isNonCoin: false,
+            tag: 'Thú cưng',
+            value: 'assets/pet/pet.png',
+            isIcon: false,
+            disableClickEffect: true
+        },
+        {
+            id: 'background_doisong_bau_troi_mong_mo',
+            name: 'Bầu Trời Sao Mộng Mơ',
+            type: 'background',
+            price: 70,
+            isNonCoin: false,
+            tag: 'Đời sống',
+            value: 'assets/pet/nền.jpg',
+            isIcon: false,
+            backgroundFit: 'cover',
+            backgroundPosition: 'center center',
+            backgroundRepeat: 'no-repeat',
+            backgroundAttachment: 'fixed'
+        },
+        {
+            id: 'pet_cat_wizard',
+            name: 'Mèo Phù Thủy',
+            type: 'pet',
+            price: 0,
+            isNonCoin: true,
+            tag: 'Thú cưng',
+            value: 'assets/pet/cat_wizard.png',
+            isIcon: false
+        },
+        {
+            id: 'pet_cotich_1',
+            name: 'Phượng Hoàng Lửa',
+            type: 'pet',
+            price: 400,
+            isNonCoin: false,
+            tag: 'Cổ tích',
+            value: 'assets/pet/cổ tích/cổ tích 1.png',
+            isIcon: false,
+            petEffect: 'phoenix-fire'
+        },
+        {
+            id: 'theme_cotich',
+            name: 'Vương Quốc Thần Thoại',
+            type: 'theme',
+            price: 450,
+            isNonCoin: false,
+            tag: 'Cổ tích',
+            value: 'theme-fairy-tale', // Đây là tên Class CSS sẽ áp dụng cho toàn bộ trang
+            customIcon: '🏰'
+        },
+        {
+            id: 'pet_cotich_2',
+            name: 'Hồ Ly Chín Đuôi',
+            type: 'pet',
+            price: 0,
+            isNonCoin: true,
+            tag: 'Cổ tích',
+            value: 'assets/pet/cổ tích/cổ tích 2.png',
+            isIcon: false,
+            petEffect: 'nine-tailed-fox-magic'
+        },
+        {
+            id: 'effect_cotich',
+            name: 'Bụi Phép Thuật',
+            type: 'effect',
+            price: 300,
+            isNonCoin: false,
+            tag: 'Cổ tích',
+            value: '🧚‍♂️'
+        },
+        {
+            id: 'theme_cotich_forest',
+            name: 'Khu Rừng Phép Thuật',
+            type: 'theme',
+            price: 0,             // Giá 0 đồng
+            isNonCoin: true,      // Nhận từ sự kiện, kích hoạt khóa preview
+            tag: 'Cổ tích',
+            value: 'theme-magic-forest', // Class CSS kích hoạt giao diện
+            customIcon: '🌲'
+        },
+        {
+            id: 'effect_cotich_firefly',
+            name: 'Đom Đóm Rừng Tiên',
+            type: 'effect',
+            price: 0,             // Không bán bằng coin
+            isNonCoin: true,      // Nhận từ sự kiện
+            tag: 'Cổ tích',
+            value: '🎇'           // Icon hiển thị trong cửa hàng
+        },
+        {
+            id: 'pet_doisong_thiennhien',
+            name: 'Cáo Thiên Nhiên',
+            type: 'pet',
+            price: 350,
+            isNonCoin: false,
+            tag: 'Đời sống',
+            value: 'assets/pet/đời sống/thiên nhiên/thiên nhiên.png',
+            isIcon: false,
+            petEffect: 'nature-fox-magic'
+        },
+        {
+            id: 'effect_doisong_laroi',
+            name: 'Lá Rơi Mùa Hạ',
+            type: 'effect',
+            price: 0,             // Không bán bằng coin
+            isNonCoin: true,      // Nhận từ sự kiện, khóa chức năng preview theo logic có sẵn
+            tag: 'Đời sống',
+            value: '🍃'           // Icon hiển thị chính trong cửa hàng
+        },
+        {
+            id: 'theme_doisong',
+            name: 'Nhịp Sống Xanh',
+            type: 'theme',
+            price: 300,
+            isNonCoin: false,
+            tag: 'Đời sống',
+            value: 'theme-lifestyle', // Class CSS sẽ áp dụng
+            customIcon: '🌿'
+        },
+        {
+            id: 'pet_doisong_bandem',
+            name: 'Mèo Đêm Đầy Sao',
+            type: 'pet',
+            price: 400,
+            isNonCoin: false,
+            tag: 'Ban đêm',
+            value: 'assets/pet/đời sống/thời tiết/ban đêm.png',
+            isIcon: false,
+            petEffect: 'night-cat-magic' // Phục vụ cho class CSS hiệu ứng
+        },
+        {
+            id: 'effect_bandem_tinhthu',
+            name: 'Đêm Sao Huyền Bí',
+            type: 'effect',
+            price: 0,
+            isNonCoin: true, // Vật phẩm sự kiện, kích hoạt khóa preview theo logic của bạn
+            tag: 'Ban đêm',
+            value: '🌌' // Icon hiển thị đại diện trong cửa hàng
+        },
+        {
+            id: 'theme_bandem',
+            name: 'Dải Ngân Hà',
+            type: 'theme',
+            price: 0,             // Không bán bằng coin
+            isNonCoin: true,      // Kích hoạt khóa preview theo logic sự kiện của bạn
+            tag: 'Ban đêm',
+            value: 'theme-night-sky', // Class CSS sẽ tiêm vào <body>
+            customIcon: '🌃'
+        },
+        {
+            id: 'pet_doisong_banngay',
+            name: 'Cún Vui Vẻ',
+            type: 'pet',
+            price: 350,
+            isNonCoin: false,
+            tag: 'Ban ngày',
+            value: 'assets/pet/đời sống/thời tiết/ban ngày.png',
+            isIcon: false,
+            petEffect: 'daylight-magic' // Class CSS tạo hiệu ứng
+        },
+        {
+            id: 'effect_banngay_bautroi',
+            name: 'Bầu Trời Mùa Hạ',
+            type: 'effect',
+            price: 300,
+            isNonCoin: false,
+            tag: 'Ban ngày',
+            value: '🌤️'
+        },
+        {
+            id: 'theme_banngay_ngaymoi',
+            name: 'Ngày Mới Rực Rỡ',
+            type: 'theme',
+            price: 390,
+            isNonCoin: false,
+            tag: 'Ban ngày',
+            value: 'theme-daylight-sky', // Class CSS kích hoạt giao diện
+            customIcon: '🌅'
+        },
+        {
+            id: 'pet_cotich_3',
+            name: 'Thần Thú Cổ Tích',
+            type: 'pet',
+            price: 300,
+            isNonCoin: false,
+            tag: 'Cổ tích',
+            value: 'assets/pet/cổ tích/cổ tích 3.png',
+            isIcon: false,
+            petEffect: 'fairy-tale-magic-3' // Đã thêm dòng này để gọi hiệu ứng CSS
+        },
+        {
+            id: 'effect_cotich_tinhlinh',
+            name: 'Mưa Tinh Linh',
+            type: 'effect',
+            price: 300,
+            isNonCoin: false,
+            tag: 'Cổ tích',
+            value: '🧚'
+        },
+        {
+            id: 'theme_cotich_phale',
+            name: 'Cung Điện Pha Lê',
+            type: 'theme',
+            price: 250,
+            tag: 'Cổ tích',
+            value: 'theme-crystal-palace', // Tên class CSS kích hoạt giao diện
+            customIcon: '🔮'
+        },
+        {
+            id: 'pet_truyenthuyet_1',
+            name: 'Kỳ Lân Tinh Tú',
+            type: 'pet',
+            price: 0,             // Không bán bằng Coin
+            isNonCoin: true,      // Nhận từ sự kiện Royal Ball
+            tag: 'Truyền thuyết',
+            value: 'assets/pet/truyền thuyết/truyền thuyết 1.png',
+            isIcon: false,
+            petEffect: 'galaxy-legend-magic' // Kích hoạt hiệu ứng Điện Ảnh Vũ Trụ
+        },
+        {
+            id: 'effect_truyenthuyet_vutru',
+            name: 'Tinh Trần Vũ Trụ',
+            type: 'effect',
+            price: 0,             // Nhận từ sự kiện
+            isNonCoin: true,      // Không bán bằng Coin
+            tag: 'Truyền thuyết', // Gắn tag Truyền thuyết
+            value: 'effect_truyenthuyet_vutru',
+            customIcon: '🌘'
+        },
+        {
+            id: 'theme_truyenthuyet_vutru',
+            name: 'Thần Hệ Tinh Vân',
+            type: 'theme',
+            price: 0,               // Không bán bằng Coin
+            isNonCoin: true,        // Vật phẩm sự kiện đặc biệt
+            tag: 'Truyền thuyết',   // Gắn tag Truyền thuyết
+            value: 'theme-cosmic-godhood', // Class CSS định danh của giao diện
+            customIcon: '🌗'
+        },
+        {
+            id: 'pet_vutru_saothuy',
+            name: 'Mèo Sao Thủy',
+            type: 'pet',
+            price: 290,
+            isNonCoin: false,
+            tag: 'Sao thủy', // Sửa ở đây
+            value: 'assets/pet/sao thủy.png',
+            isIcon: false,
+            petEffect: 'mercury-magic'
+        },
+        {
+            id: 'effect_vutru_saothuy',
+            name: 'Mưa Tinh Thể',
+            type: 'effect',
+            price: 300,
+            isNonCoin: false,
+            tag: 'Sao thủy', // Sửa ở đây
+            value: '☄️'
+        },
+        {
+            id: 'theme_vutru_saothuy',
+            name: 'Trạm Không Gian Sao Thủy',
+            type: 'theme',
+            price: 300,
+            isNonCoin: false,
+            tag: 'Sao thủy',
+            value: 'theme-mercury-station', // Class CSS kích hoạt
+            customIcon: '🛸'
+        },
+        {
+            id: 'pet_vutru_meotinhvan',
+            name: 'Mèo Tinh Vân',
+            type: 'pet',
+            price: 400,
+            isNonCoin: false,
+            tag: 'Vũ trụ',
+            value: 'assets/pet/vũ trụ.png',
+            isIcon: false,
+            petEffect: 'nebula-cat-magic' // Class kích hoạt hiệu ứng hoàn toàn mới
+        },
+        {
+            id: 'theme_cosmic_anomaly',
+            name: 'Dị Điểm Không Gian',
+            type: 'theme',
+            price: 350,
+            tag: 'Vũ trụ',
+            value: 'theme-cosmic-anomaly', // Tên Class CSS đại diện cho toàn bộ giao diện
+            customIcon: '🌌'
+        },
+        {
+            id: 'effect_cosmic_dust',
+            name: 'Bụi Tinh Vân',
+            type: 'effect',
+            price: 300,
+            isNonCoin: false, // Bán bằng coin bình thường
+            tag: 'Vũ trụ',
+            customIcon: '☄️' // Icon sao băng
+        },
+        {
+            id: 'pet_truyenthuyet_2',
+            name: 'Vệ Thần Ngân Hà',
+            type: 'pet',
+            price: 0,             // Không bán bằng Coin (nhận từ sự kiện)
+            isNonCoin: true,      // Đánh dấu là vật phẩm sự kiện
+            tag: 'Truyền thuyết', // Gắn tag Truyền thuyết
+            value: 'assets/pet/truyền thuyết/truyền thuyết 2.png',
+            isIcon: false,
+            petEffect: 'galaxy-guardian-magic' // Tên class hiệu ứng hoàn toàn mới
+        },
+        {
+            id: 'effect_truyenthuyet_nganha',
+            name: 'Tinh Vân Vệ Thần',
+            type: 'effect',
+            price: 0,             // Không bán bằng Coin
+            isNonCoin: true,      // Kích hoạt cơ chế nhận từ sự kiện
+            tag: 'Truyền thuyết', // Gắn tag Truyền thuyết
+            value: 'effect_truyenthuyet_nganha',
+            customIcon: '🌠'      // Icon hiển thị trong cửa hàng
+        },
+        {
+            id: 'theme_truyenthuyet_nganha',
+            name: 'Giao Diện Vệ Thần Ngân Hà',
+            type: 'theme',
+            price: 0,             // Sự kiện, không bán bằng coin
+            isNonCoin: true,      // Cờ vật phẩm sự kiện
+            tag: 'Truyền thuyết', // Gắn tag Truyền thuyết bảo chứng
+            value: 'theme-vethan-nganha', // Tên Class CSS độc quyền sẽ bọc toàn bộ Web
+            customIcon: '🌌'      // Biểu tượng thiên hà tinh vân
+        },
+        {
+            id: 'pet_lotm_amon',
+            name: 'Thiên Sứ Thời Gian Amon',
+            type: 'pet',
+            price: 0,
+            isNonCoin: true,
+            tag: 'Lord of the Mysteries',
+            value: 'assets/pet/quỷ bí chi chủ/Amon.png',
+            isIcon: false,
+            petEffect: 'amon-time-magic',
+            eventTier: 'event-mythic',
+            effectScale: 'grand'
+        },
+        {
+            id: 'pet_lotm_klein_chibi_event_1',
+            name: 'Klein Moretti · Tiểu Kẻ Khờ',
+            type: 'pet',
+            price: 0,
+            isNonCoin: true,
+            eventOnly: true,
+            tag: 'Lord of the Mysteries',
+            tags: [
+                'Lord of the Mysteries',
+                'Klein Moretti',
+                'Sự kiện'
+            ],
+            value: 'assets/Premium/quỷ bí/klain_chibi1.png',
+            isIcon: false,
+
+            /*
+             * PET SỰ KIỆN CỬA HÀNG THƯỜNG.
+             * Namespace hiệu ứng riêng: lotme-*.
+             * Không dùng / sửa hiệu ứng Luxury Klein (lotm-klein-* / lotmk-*).
+             */
+            petEffect: 'lotm-event-klein-chibi-magic',
+            disableClickEffect: true,
+
+            eventTier: 'event-lotm',
+            rewardSource: 'lord_of_the_mysteries_event',
+            rewardLabel: 'Sự kiện Lord of the Mysteries'
+        },
+        {
+            id: 'effect_lotm_amon',
+            name: 'Nghịch Lý Ký Sinh',
+            type: 'effect',
+            price: 0,
+            isNonCoin: true,
+            tag: 'Lord of the Mysteries',
+            value: 'effect_lotm_amon',
+            customIcon: '⊘',
+            eventTier: 'event-mythic',
+            effectScale: 'grand'
+        },
+        {
+            id: 'effect_lotm_gray_fog_revelation_event',
+            name: 'Khải Huyền Sương Xám',
+            type: 'effect',
+            price: 0,
+            isNonCoin: true,
+            eventOnly: true,
+            tag: 'Lord of the Mysteries',
+            tags: [
+                'Lord of the Mysteries',
+                'Sự kiện',
+                'Hiệu ứng',
+                'Sương Xám'
+            ],
+            value: 'effect_lotm_gray_fog_revelation_event',
+            customIcon: '✥',
+            eventTier: 'event-lotm',
+            effectScale: 'grand',
+            rewardSource: 'lord_of_the_mysteries_event',
+            rewardLabel: 'Sự kiện Lord of the Mysteries'
+        },
+        {
+            id: 'frame_lotm_klein_gray_fog_ring_event',
+            name: 'Klein Moretti · Bí Vụ Chi Hoàn',
+            type: 'frame',
+            price: 0,
+            isNonCoin: true,
+            eventOnly: true,
+
+            tag: 'Lord of the Mysteries',
+            tags: [
+                'Lord of the Mysteries',
+                'Klein Moretti',
+                'Sự kiện',
+                'Khung viền'
+            ],
+
+            value: 'assets/Premium/quỷ bí/klain_khung1.png',
+            isIcon: false,
+
+            /*
+             * Khung sự kiện Lord of the Mysteries.
+             * Dùng AvatarFrameManager chuẩn hiện có.
+             * Vị trí bám theo FINAL HOTFIX Premium Mùa Xuân:
+             * - profile: 60x60, center/center;
+             * - popup: 126x126, offset -2px / +2px.
+             *
+             * Namespace riêng lotmf1-*; không dùng / sửa hiệu ứng
+             * của bất kỳ khung viền hay vật phẩm khác.
+             */
+            frameEffect: 'lotmf1-klein-gray-fog-frame',
+
+            eventTier: 'event-lotm',
+            rewardSource: 'lord_of_the_mysteries_event',
+            rewardLabel: 'Sự kiện Lord of the Mysteries'
+        },
+        {
+            id: 'background_lotm_klein_gray_fog_world_event',
+            name: 'Klein Moretti · Bí Cảnh Sương Xám',
+            type: 'background',
+
+            price: 0,
+            isNonCoin: true,
+            eventOnly: true,
+
+            tag: 'Lord of the Mysteries',
+            tags: [
+                'Lord of the Mysteries',
+                'Klein Moretti',
+                'Sự kiện',
+                'Nền'
+            ],
+
+            value: 'assets/Premium/quỷ bí/klain_nen1.png',
+            isIcon: false,
+
+            /*
+             * NỀN SỰ KIỆN LORD OF THE MYSTERIES · ĐỘC LẬP
+             * - cover: phủ kín viewport nhưng không kéo méo ảnh;
+             * - center center: giữ trọng tâm ảnh ở giữa màn hình;
+             * - no-repeat + fixed: nền PC toàn màn hình ổn định khi cuộn;
+             * - các thuộc tính nằm trên CHÍNH item này nên không thay đổi
+             *   bất kỳ nền khác trong cửa hàng;
+             * - WebBackgroundManager đặt các thuộc tính nền bằng inline !important,
+             *   nên theme/giao diện đang trang bị không được nhuộm hoặc đổi fit.
+             */
+            backgroundFit: 'cover',
+            backgroundPosition: 'center center',
+            backgroundRepeat: 'no-repeat',
+            backgroundAttachment: 'fixed',
+
+            premiumSuite:
+                'lotmbg1-klein-gray-fog-world-background-v1',
+
+            eventTier: 'event-lotm',
+            rewardSource: 'lord_of_the_mysteries_event',
+            rewardLabel: 'Sự kiện Lord of the Mysteries'
+        },
+        {
+            id: 'theme_lotm_mysteries',
+            name: 'Thần Điện Sương Mù Xám',
+            type: 'theme',
+            price: 0,
+            isNonCoin: true,
+            tag: 'Lord of the Mysteries',
+            value: 'theme-lotm-mysteries',
+            customIcon: '♜',
+            eventTier: 'event-mythic',
+            effectScale: 'grand'
+        },
+        {
+            id: 'theme_lotm_tarot_council_event',
+            name: 'Hội Tarot · Nghị Điện Huyền Bí',
+            type: 'theme',
+            price: 0,
+            isNonCoin: true,
+            eventOnly: true,
+            tag: 'Lord of the Mysteries',
+            tags: [
+                'Lord of the Mysteries',
+                'Hội Tarot',
+                'Sự kiện',
+                'Giao diện'
+            ],
+            value: 'theme-lotm-tarot-council-event',
+            customIcon: '◈',
+            eventTier: 'event-lotm',
+            rewardSource: 'lord_of_the_mysteries_event',
+            rewardLabel: 'Sự kiện Lord of the Mysteries'
+        },
+        // Thêm vào cuối mảng StoreConfig.items
+        {
+            id: 'music_lofi_01',
+            name: 'Hí Khúc',
+            type: 'music',
+            price: 250,
+            isNonCoin: false,
+            tag: 'Âm nhạc',
+            customIcon: '🎧',
+            musicUrl: 'assets/music/hi-khuc.mp3',
+            musicEngine: 'web-audio',
+            volume: 0.35,
+            loop: true,
+            hideFromMediaControls: true
+        },
+        {
+            id: 'music_quy_linh_01',
+            name: 'Nhạc',
+            type: 'music',
+            price: 350,
+            isNonCoin: false,
+            tag: 'Âm nhạc',
+            customIcon: '🎵',
+            musicUrl: 'assets/music/归零2.0 - Quy Linh (ver2.0) -- Hot Douyin -- Rứa official.mp3',
+            musicEngine: 'web-audio',
+            volume: 0.35,
+            loop: true,
+            hideFromMediaControls: true
+        },
+        {
+            id: 'music_nga_01',
+            name: 'Nhạc Nga',
+            type: 'music',
+            price: 250,
+            isNonCoin: false,
+            tag: 'Âm nhạc',
+            customIcon: '🎼',
+            musicUrl: 'https://youtu.be/ujA0Hlg5-_g?si=Al3qxeIzjAx6oo6Y',
+            volume: 0.35,
+            loop: true,
+            hideFromMediaControls: true
+        },
+        {
+            id: 'music_bl_01',
+            name: 'Thiếu Niên Hoa Hồng',
+            type: 'music',
+            price: 350,
+            isNonCoin: false,
+            tag: 'BL',
+            customIcon: '🎧',
+            musicUrl: 'https://youtu.be/h7Z9ftlqoPQ?si=Cz-i6SWb-Q3AVhZg',
+            volume: 0.35,
+            loop: true,
+            hideFromMediaControls: true,
+
+            /*
+             * Card BL có thiết kế riêng nhưng KHÔNG khóa giao diện.
+             * Không gắn ui-theme-immune / store-theme-locked nên các theme
+             * đang trang bị vẫn có thể ảnh hưởng màu, font, nút... theo CSS chung.
+             */
+            storeCardVariant: 'bl-music-card-v1'
+        },
+        {
+            id: 'pet_truyenthuyet_nyx',
+            name: 'Nyx - Nữ Thần Màn Đêm',
+            type: 'pet',
+            price: 2000,
+            isNonCoin: false,
+            tag: 'Truyền thuyết',
+            value: 'assets/pet/truyền thuyết/truyền thuyết 3.png',
+            isIcon: false,
+            petEffect: 'nyx-night-goddess-magic'
+        },
+        {
+            id: 'effect_truyenthuyet_nyx_domain',
+            name: 'Kỷ Nguyên Đêm Trường Cửu',
+            type: 'effect',
+            price: 1500,
+            isNonCoin: false,
+            tag: 'Truyền thuyết',
+            value: 'effect_truyenthuyet_nyx_domain',
+            customIcon: '🌌'
+        },
+        {
+            id: 'theme_truyenthuyet_celestial',
+            name: 'Thánh Vực Tối Thượng',
+            type: 'theme',
+            price: 1500,
+            isNonCoin: false,
+            tag: 'Truyền thuyết',
+            value: 'theme-legendary-celestial', // Tên Class CSS sẽ kích hoạt
+            customIcon: '👁️‍🗨️'
+        },
+        {
+            id: 'pet_cotich_5',
+            name: 'Kỳ Lân Biển Mộng Mơ',
+            type: 'pet',
+            price: 700,
+            isNonCoin: false,
+            tag: 'Cổ tích',
+            value: 'assets/pet/cổ tích/cổ tích 5.png',
+            isIcon: false,
+            petEffect: 'fairy-narwhal-bubble-magic'
+        },
+        {
+            id: 'theme_cotich_hai_nguyet',
+            name: 'Vịnh Ngọc Trai Mộng',
+            type: 'theme',
+            price: 550,
+            isNonCoin: false,
+            tag: 'Cổ tích',
+            value: 'theme-fairy-sea-dream',
+            customIcon: '🐚'
+        },
+        {
+            id: 'effect_cotich_bot_ngoc_mong',
+            name: 'Bọt Ngọc Mộng',
+            type: 'effect',
+            price: 300,
+            isNonCoin: false,
+            tag: 'Cổ tích',
+            customIcon: '🫧'
+        },
+        {
+            id: 'pet_doraemon_shizuka',
+            name: 'Shizuka - Giai Điệu Dịu Dàng',
+            type: 'pet',
+            price: 300,
+            isNonCoin: false,
+            tag: 'Doraemon',
+            value: 'assets/pet/Doraemon/sishuka.png',
+            isIcon: false,
+            petEffect: 'doraemon-shizuka-study-magic',
+            disableClickEffect: true
+        },
+        {
+            id: 'theme_doraemon_childhood',
+            name: 'Khúc Ca Tuổi Thơ',
+            type: 'theme',
+            price: 0,
+            isNonCoin: true,
+            tag: 'Doraemon',
+            value: 'theme-doraemon-childhood',
+            customIcon: '🎶'
+        },
+        {
+            id: 'effect_doraemon_school_memories',
+            name: 'Ký Ức Sân Trường',
+            type: 'effect',
+            price: 0,
+            isNonCoin: true,
+            tag: 'Doraemon',
+            value: 'effect_doraemon_school_memories',
+            customIcon: '🪁'
+        },
+        {
+            id: 'pet_hoihoa_1',
+            name: 'Nàng Họa Sĩ Tinh Linh',
+            type: 'pet',
+            price: 0,
+            isNonCoin: true,
+            tag: 'Hội họa',
+            value: 'assets/pet/hội họa/hội họa 1.png',
+            isIcon: false,
+            petEffect: 'painting-muse-magic',
+            disableClickEffect: true
+        },
+        {
+            id: 'theme_hoihoa_atelier',
+            name: 'Xưởng Vẽ Tinh Linh',
+            type: 'theme',
+            price: 0,
+            isNonCoin: true,
+            tag: 'Hội họa',
+            value: 'theme-enchanted-atelier',
+            customIcon: '🎨'
+        },
+        {
+            id: 'effect_hoihoa_living_canvas',
+            name: 'Họa Giới Sắc Màu',
+            type: 'effect',
+            price: 0,
+            isNonCoin: true,
+            tag: 'Hội họa',
+            value: 'effect_hoihoa_living_canvas',
+            customIcon: '🖌️'
+        },
+        {
+            id: 'pet_dem_day_sao_chibi_1',
+            name: 'Tinh Dạ · Tiểu Lữ Khách Đêm Sao',
+            type: 'pet',
+            price: 850,
+            isNonCoin: false,
+            tag: 'Đêm đầy sao',
+            value: 'assets/Premium/đêm đầy sao/nam_chibi1.png',
+            isIcon: false,
+            petEffect: 'starry-night-chibi-wanderer-magic',
+            disableClickEffect: true,
+            runtimeCss: 'css/dem-day-sao.css?v=20260921.starry-night-distinct-v2'
+        },
+        {
+            id: 'theme_dem_day_sao_hoa_gioi',
+            name: 'Tinh Dạ · Họa Giới Đêm Sao',
+            type: 'theme',
+            price: 800,
+            isNonCoin: false,
+            tag: 'Đêm đầy sao',
+            value: 'theme-starry-night-painted-gallery',
+            customIcon: '🌌',
+            runtimeCss: 'css/dem-day-sao.css?v=20260921.starry-night-distinct-v2'
+        },
+        {
+            id: 'effect_dem_day_sao_tinh_hoa_luu_van',
+            name: 'Tinh Dạ · Tinh Hoa Lưu Vân',
+            type: 'effect',
+            price: 900,
+            isNonCoin: false,
+            tag: 'Đêm đầy sao',
+            value: 'effect_dem_day_sao_tinh_hoa_luu_van',
+            customIcon: '✦',
+            runtimeCss: 'css/dem-day-sao.css?v=20260921.starry-night-distinct-v2'
+        },
+        {
+            id: 'frame_dem_day_sao_tinh_da_chi_hoan',
+            name: 'Tinh Dạ · Tinh Họa Chi Hoàn',
+            type: 'frame',
+            price: 250,
+            isNonCoin: false,
+            tag: 'Đêm đầy sao',
+            tags: ['Đêm đầy sao'],
+            value: 'assets/Premium/đêm đầy sao/nam_khung1.png',
+            isIcon: false,
+            frameEffect: 'sndf1-starry-night-painted-frame',
+            runtimeCss: 'css/dem-day-sao.css?v=20260921.starry-night-frame-v1'
+        },
+        {
+            id: 'background_dem_day_sao_mong_canh_1',
+            name: 'Tinh Dạ · Mộng Cảnh Đêm Sao',
+            type: 'background',
+            price: 150,
+            isNonCoin: false,
+            tag: 'Đêm đầy sao',
+            tags: ['Đêm đầy sao'],
+            value: 'assets/Premium/đêm đầy sao/nam_nen1.png',
+            isIcon: false,
+
+            /*
+             * NỀN ĐÊM ĐẦY SAO · ĐỘC LẬP
+             * FIX: không dùng cover vì cover sẽ cắt ảnh khi tỉ lệ ảnh khác viewport.
+             * - 100vw 100vh: ép toàn bộ ảnh vừa đúng khung màn hình, không mất phần nào;
+             * - center center: giữ ảnh nằm giữa viewport;
+             * - no-repeat + fixed: nền ổn định khi cuộn;
+             * - chỉ áp dụng cho item này, không thay đổi nền khác;
+             * - card vẫn khóa giao diện qua starryNightChibiIds bên dưới.
+             */
+            backgroundFit: '100vw 100vh',
+            backgroundPosition: 'center center',
+            backgroundRepeat: 'no-repeat',
+            backgroundAttachment: 'fixed',
+            runtimeCss: 'css/dem-day-sao.css?v=20260921.starry-night-background-v2'
+        },
+        {
+            id: 'pet_thatdaitoi_luoibieng_1',
+            name: 'Acedia - Linh Thú Lười Biếng',
+            type: 'pet',
+            price: 0,
+            isNonCoin: true,
+            eventOnly: true,
+            tag: 'Thất Đại Tội',
+            value: 'assets/pet/thất đại tội/lười biếng/lười biếng i.png',
+            isIcon: false,
+            petEffect: 'seven-sins-sloth-magic',
+            disableClickEffect: true,
+
+            acediaRole: 'Linh thú ngủ giới',
+            acediaLore: 'Kẻ canh giữ giấc ngủ vĩnh hằng',
+            acediaGlyph: '☾',
+            acediaIndex: 'VII·FAMILIAR'
+        },
+        {
+            id: 'pet_thatdaitoi_luoibieng_chibi_1',
+            name: 'Acedia · Linh Thú Lười Biếng Chibi',
+            type: 'pet',
+            price: 850,
+            isNonCoin: false,
+            tag: 'Thất Đại Tội',
+            tags: [
+                'Thất Đại Tội',
+                'Acedia',
+                'Lười Biếng',
+                'Thú cưng'
+            ],
+            value: 'assets/Premium/thất đại tội/lười biếng/luoi_bieng_chipi1.png',
+            isIcon: false,
+
+            /*
+             * PET CỬA HÀNG THƯỜNG · 850 COIN.
+             * Namespace acch1-* hoàn toàn riêng, không dùng seven-sins-sloth-magic
+             * của Acedia sự kiện và không dùng bất kỳ runtime Luxury nào.
+             */
+            petEffect: 'acedia-chibi-dream-magic',
+            disableClickEffect: true
+        },
+        {
+            id: 'effect_thatdaitoi_mien_vu_tinh_da',
+            name: 'Acedia · Miên Vũ Tĩnh Dạ',
+            type: 'effect',
+            price: 900,
+            isNonCoin: false,
+            tag: 'Thất Đại Tội',
+            tags: ['Thất Đại Tội', 'Acedia', 'Lười Biếng', 'Hiệu ứng'],
+            customIcon: '✦'
+        },
+        {
+            id: 'background_thatdaitoi_mien_canh_tinh_da',
+            name: 'Acedia · Miên Cảnh Tĩnh Dạ',
+            type: 'background',
+            price: 150,
+            isNonCoin: false,
+            tag: 'Thất Đại Tội',
+            tags: ['Thất Đại Tội', 'Acedia', 'Lười Biếng', 'Nền'],
+            value: 'assets/Premium/thất đại tội/lười biếng/luoi_bieng_nen1.png',
+            isIcon: false,
+            backgroundFit: 'cover',
+            backgroundPosition: 'center center',
+            backgroundRepeat: 'no-repeat',
+            backgroundAttachment: 'fixed'
+        },
+        {
+            id: 'frame_thatdaitoi_mien_khe_chi_hoan',
+            name: 'Acedia · Miên Khế Chi Hoàn',
+            type: 'frame',
+            price: 250,
+            isNonCoin: false,
+            tag: 'Thất Đại Tội',
+            tags: ['Thất Đại Tội', 'Acedia', 'Lười Biếng', 'Khung viền'],
+            value: 'assets/Premium/thất đại tội/lười biếng/luoi_bieng_khung1.png',
+            isIcon: false,
+            frameEffect: 'acedia-slumber-ring'
+        },
+        {
+            id: 'theme_thatdaitoi_mien_khe_tinh_gioi',
+            name: 'Acedia · Miên Khế Tĩnh Giới',
+            type: 'theme',
+            price: 800,
+            isNonCoin: false,
+            tag: 'Thất Đại Tội',
+            tags: [
+                'Thất Đại Tội',
+                'Acedia',
+                'Lười Biếng',
+                'Giao diện'
+            ],
+            value: 'theme-seven-sins-languor-codex',
+            customIcon: '⌁',
+
+            /*
+             * GIAO DIỆN CỬA HÀNG THƯỜNG · 800 COIN.
+             * Namespace tdtui2-* hoàn toàn riêng.
+             * Không dùng theme-seven-sins-acedia / acedia-palace-* của bộ sự kiện
+             * và không dùng bất kỳ runtime Luxury nào.
+             */
+            themeRuntime: 'tdtui2-languor-codex'
+        },
+        {
+            id: 'theme_thatdaitoi_acedia_dream',
+            name: 'Mộng Điện Trì Hoãn',
+            type: 'theme',
+            price: 0,
+            isNonCoin: true,
+            eventOnly: true,
+            tag: 'Thất Đại Tội',
+            value: 'theme-seven-sins-acedia',
+            customIcon: '⌛',
+
+            acediaRole: 'Mộng điện tối thượng',
+            acediaLore: 'Cung điện nơi thời gian từ chối bước tiếp',
+            acediaGlyph: '⌛',
+            acediaIndex: 'VII·PALACE'
+        },
+        {
+            id: 'effect_thatdaitoi_acedia_domain',
+            name: 'Thất Trọng Mộng Vực',
+            type: 'effect',
+            price: 0,
+            isNonCoin: true,
+            eventOnly: true,
+            tag: 'Thất Đại Tội',
+            value: 'effect_thatdaitoi_acedia_domain',
+            customIcon: 'Ⅶ',
+
+            acediaRole: 'Mộng vực bảy tầng',
+            acediaLore: 'Bảy tầng giấc mơ đè nặng lên thực tại',
+            acediaGlyph: 'Ⅶ',
+            acediaIndex: 'VII·DOMAIN'
+        },
+        {
+            id: 'pet_he_mat_troi_trai_dat',
+            name: 'Linh Thú Trái Đất',
+            type: 'pet',
+            price: 400,
+            isNonCoin: false,
+            tag: 'Hệ Mặt Trời',
+            value: 'assets/pet/Trái Đất.png',
+            isIcon: false,
+            petEffect: 'earth-guardian-magic',
+            disableClickEffect: true
+        },
+        {
+            id: 'theme_he_mat_troi_sinh_quyen',
+            name: 'Quỹ Đạo Sinh Quyển',
+            type: 'theme',
+            price: 705,
+            isNonCoin: false,
+            tag: 'Hệ Mặt Trời',
+
+            value: 'theme-solar-biosphere',
+            customIcon: '🌞',
+            annualSale: {
+                startMonth: 4,
+                startDay: 22,
+                endMonth: 4,
+                endDay: 25
+            }
+        },
+        {
+            id: 'effect_he_mat_troi_nhat_trieu_gaia',
+            name: 'Nhật Triều Gaia',
+            type: 'effect',
+            price: 710,
+            isNonCoin: false,
+            tag: 'Hệ Mặt Trời',
+            value: 'effect_he_mat_troi_nhat_trieu_gaia',
+            customIcon: '◉',
+            annualSale: {
+                startMonth: 4,
+                startDay: 22,
+                endMonth: 4,
+                endDay: 25
+            }
+        },
+        {
+            id: 'pet_sinh_nhat_2026',
+            name: 'Bé Rắn Phúc Lộc 2026',
+            type: 'pet',
+            price: 0,
+            isNonCoin: true,
+            eventOnly: true,
+            rewardSource: 'birthday_coin',
+            rewardLabel: 'Xu Sinh Nhật',
+            birthdayYear: 2026,
+            tag: 'Sinh nhật 2026',
+            value: 'assets/pet/sinh nhật/2026/sinh nhật 2026.png',
+            isIcon: false,
+            petEffect: 'birthday-serpent-2026-magic'
+        },
+        {
+            id: 'theme_sinh_nhat_tiec_ngot_2026',
+            name: 'Bữa Tiệc Ngọt 2026',
+            type: 'theme',
+
+            price: 0,
+            isNonCoin: true,
+            eventOnly: true,
+
+            rewardSource: 'birthday_coin',
+            rewardLabel: 'Xu Sinh Nhật',
+
+            /* Cho phép đổi bằng Xu Đặc Biệt */
+            specialBirthdayCoinEligible: true,
+
+            birthdayYear: 2026,
+            tag: 'Sinh nhật 2026',
+
+            value: 'theme-birthday-sweet-2026',
+            customIcon: '🎂'
+        },
+        {
+            id: 'effect_sinh_nhat_than_an_phuc_loc_2026',
+            name: 'Thần Ấn Phúc Lộc 2026',
+            type: 'effect',
+
+            price: 0,
+            isNonCoin: true,
+            eventOnly: true,
+
+            rewardSource: 'birthday_coin',
+            rewardLabel: 'Xu Sinh Nhật',
+
+            /* Cho phép dùng cả Xu Đặc Biệt */
+            specialBirthdayCoinEligible: true,
+
+            birthdayYear: 2026,
+            tag: 'Sinh nhật 2026',
+
+            value:
+                'effect_sinh_nhat_than_an_phuc_loc_2026',
+
+            customIcon: '✦'
+        },
+        {
+            id: 'pet_he_mat_troi_sao_tho',
+            name: 'Linh Thú Sao Thổ',
+            type: 'pet',
+            price: 550,
+            isNonCoin: false,
+            tag: 'Hệ Mặt Trời',
+            value: 'assets/pet/Sao Thổ.png',
+            isIcon: false,
+            petEffect: 'saturn-cassini-magic',
+            disableClickEffect: true
+        },
+        {
+            id: 'theme_he_mat_troi_vanh_dai_cassini',
+            name: 'Đài Quan Sát Cassini',
+            type: 'theme',
+            price: 550,
+            isNonCoin: false,
+            tag: 'Hệ Mặt Trời',
+            value: 'theme-saturn-observatory',
+            customIcon: '🪐',
+            annualSaleIcon: '🪐',
+            annualSaleTitle:
+                'Mở bán duy nhất ngày 30/07 hằng năm',
+            annualSale: {
+                startMonth: 7,
+                startDay: 30,
+                endMonth: 7,
+                endDay: 30
+            }
+        },
+        {
+            id: 'effect_he_mat_troi_dai_trieu_cassini',
+            name: 'Đại Triều Vành Đai Cassini',
+            type: 'effect',
+            price: 600,
+            isNonCoin: false,
+            tag: 'Hệ Mặt Trời',
+            value: 'effect_he_mat_troi_dai_trieu_cassini',
+            customIcon: '◉',
+            annualSaleIcon: '🪐',
+            annualSaleTitle:
+                'Mở bán duy nhất ngày 30/07 hằng năm',
+            annualSale: {
+                startMonth: 7,
+                startDay: 30,
+                endMonth: 7,
+                endDay: 30
+            }
+        },
+        {
+            id: 'pet_doisong_conmua',
+            name: 'Mèo Nhỏ Ngày Mưa',
+            type: 'pet',
+            price: 750,
+            isNonCoin: false,
+            tag: 'Cơn mưa',
+            value: 'assets/pet/đời sống/thời tiết/mưa.png',
+            isIcon: false,
+            petEffect: 'rainy-day-cat-magic',
+            disableClickEffect: true // Dùng hiệu ứng nhấn riêng, không gọi hiệu ứng cũ
+        },
+        {
+            id: 'theme_doisong_mua_sao',
+            name: 'Đài Quan Trắc Mưa Sao',
+            type: 'theme',
+            price: 700,
+            isNonCoin: false,
+            tag: 'Cơn mưa',
+            value: 'theme-rain-cosmos',
+            customIcon: '🛰️'
+        },
+        {
+            id: 'effect_doisong_mua_ngoai_o_cua',
+            name: 'Mưa Ngoài Ô Cửa',
+            type: 'effect',
+            price: 600,
+            isNonCoin: false,
+            tag: 'Cơn mưa',
+            value: 'effect_doisong_mua_ngoai_o_cua',
+            customIcon: '🌧️'
+        },
+        {
+            id: 'pet_premium_mua_thu_chibi_3',
+            name: 'Tiểu Phong Diệp',
+            type: 'pet',
+            price: 850,
+            isNonCoin: false,
+            tag: 'Mùa thu',
+            value: 'assets/Premium/Bốn mùa/thu_chibi3.png',
+            isIcon: false,
+            petEffect: 'autreg5-maple-chibi-magic',
+            disableClickEffect: true,
+            runtimeCss: 'css/premium-mua-thu.css?v=20261003.cleanup1',
+
+            // ==========================================
+            // MỞ BÁN GIỚI HẠN · MÙA THU
+            // Chỉ ngày 01 → 05 của tháng 09, 10 và 11
+            // ==========================================
+            annualSaleIcon: '🍁',
+            annualSaleTitle:
+                'Chỉ mở bán ngày 01–05 của tháng 09, 10 và 11 hằng năm',
+            annualSaleWindows: [
+                {
+                    startMonth: 9,
+                    startDay: 1,
+                    endMonth: 9,
+                    endDay: 5
+                },
+                {
+                    startMonth: 10,
+                    startDay: 1,
+                    endMonth: 10,
+                    endDay: 5
+                },
+                {
+                    startMonth: 11,
+                    startDay: 1,
+                    endMonth: 11,
+                    endDay: 5
+                }
+            ]
+        },
+        {
+            id: 'theme_mua_thu_phong_diep_kinh_suong',
+            name: 'Phong Diệp Kính Sương',
+            type: 'theme',
+            price: 800,
+            isNonCoin: false,
+            tag: 'Mùa thu',
+            value: 'theme-autumn-frosted-grove',
+            customIcon: '🍁',
+            runtimeCss: 'css/premium-mua-thu.css?v=20261003.cleanup1',
+
+            // MỞ BÁN GIỚI HẠN · 01–05 THÁNG 09, 10, 11
+            annualSaleIcon: '🍁',
+            annualSaleTitle:
+                'Chỉ mở bán ngày 01–05 của tháng 09, 10 và 11 hằng năm',
+            annualSaleWindows: [
+                { startMonth: 9, startDay: 1, endMonth: 9, endDay: 5 },
+                { startMonth: 10, startDay: 1, endMonth: 10, endDay: 5 },
+                { startMonth: 11, startDay: 1, endMonth: 11, endDay: 5 }
+            ]
+        },
+        {
+            id: 'effect_mua_thu_phong_diep_quang_trieu',
+            name: 'Phong Diệp Quang Triều',
+            type: 'effect',
+            price: 900,
+            isNonCoin: false,
+            tag: 'Mùa thu',
+            value: 'effect_mua_thu_phong_diep_quang_trieu',
+            customIcon: '🍂',
+            runtimeCss: 'css/premium-mua-thu.css?v=20261003.cleanup1',
+
+            // MỞ BÁN GIỚI HẠN · 01–05 THÁNG 09, 10, 11
+            annualSaleIcon: '🍁',
+            annualSaleTitle:
+                'Chỉ mở bán ngày 01–05 của tháng 09, 10 và 11 hằng năm',
+            annualSaleWindows: [
+                { startMonth: 9, startDay: 1, endMonth: 9, endDay: 5 },
+                { startMonth: 10, startDay: 1, endMonth: 10, endDay: 5 },
+                { startMonth: 11, startDay: 1, endMonth: 11, endDay: 5 }
+            ]
+        },
+        {
+            id: 'frame_mua_thu_phong_diep_chi_hoan',
+            name: 'Phong Diệp · Lưu Ly Chi Hoàn',
+            type: 'frame',
+            price: 250,
+            isNonCoin: false,
+            tag: 'Mùa thu',
+            value: 'assets/Premium/Bốn mùa/thu_khung3.png',
+            isIcon: false,
+            frameEffect: 'autf1-autumn-maple-ring',
+            runtimeCss: 'css/premium-mua-thu.css?v=20261003.cleanup1',
+
+            // Chỉ mở bán ngày 01–05 tháng 09, 10 và 11 hằng năm
+            annualSaleIcon: '🍁',
+            annualSaleTitle:
+                'Chỉ mở bán ngày 01–05 của tháng 09, 10 và 11 hằng năm',
+            annualSaleWindows: [
+                { startMonth: 9, startDay: 1, endMonth: 9, endDay: 5 },
+                { startMonth: 10, startDay: 1, endMonth: 10, endDay: 5 },
+                { startMonth: 11, startDay: 1, endMonth: 11, endDay: 5 }
+            ]
+        },
+        {
+            id: 'background_mua_thu_phong_lam_mong_canh',
+            name: 'Phong Diệp · Thu Lâm Mộng Cảnh',
+            type: 'background',
+            price: 150,
+            isNonCoin: false,
+            tag: 'Mùa thu',
+            value: 'assets/Premium/Bốn mùa/thu_nen3.png',
+            isIcon: false,
+
+            // Chỉ mở bán ngày 01–05 tháng 09, 10 và 11 hằng năm.
+            annualSaleIcon: '🍁',
+            annualSaleTitle:
+                'Chỉ mở bán ngày 01–05 của tháng 09, 10 và 11 hằng năm',
+            annualSaleWindows: [
+                { startMonth: 9, startDay: 1, endMonth: 9, endDay: 5 },
+                { startMonth: 10, startDay: 1, endMonth: 10, endDay: 5 },
+                { startMonth: 11, startDay: 1, endMonth: 11, endDay: 5 }
+            ],
+
+            /*
+             * NỀN MÙA THU RIÊNG — cấu hình chỉ thuộc item này.
+             * 100vw 100vh: toàn bộ ảnh vừa đúng màn hình, không bị cắt bởi cover.
+             * Không sửa WebBackgroundManager và không thay đổi backgroundFit của nền khác.
+             */
+            backgroundFit: '100vw 100vh',
+            backgroundPosition: 'center center',
+            backgroundRepeat: 'no-repeat',
+            backgroundAttachment: 'fixed',
+            runtimeCss: 'css/premium-mua-thu.css?v=20261003.cleanup1',
+            premiumSuite: 'autbg1-autumn-maple-background-v1'
+        },
+        {
+            id: 'pet_premium_mua_xuan',
+            name: 'Tiểu Hoa Mộng',
+            type: 'pet',
+            price: 750,
+            isNonCoin: false,
+            tag: 'Mùa xuân',
+            value: 'assets/Premium/Bốn mùa/mua-xuan-chibi.png',
+            isIcon: false,
+            petEffect: 'spring-vintage-goddess-magic',
+            disableClickEffect: true,
+
+            // ==========================================
+            // MỞ BÁN THEO MÙA
+            // Chỉ ngày 01 → 05 của tháng 3, 4 và 5
+            // ==========================================
+            annualSaleIcon: '🌸',
+
+            annualSaleTitle:
+                'Chỉ mở bán ngày 01–05 của tháng 03, 04 và 05 hằng năm',
+
+            annualSaleWindows: [
+                {
+                    startMonth: 3,
+                    startDay: 1,
+                    endMonth: 3,
+                    endDay: 5
+                },
+                {
+                    startMonth: 4,
+                    startDay: 1,
+                    endMonth: 4,
+                    endDay: 5
+                },
+                {
+                    startMonth: 5,
+                    startDay: 1,
+                    endMonth: 5,
+                    endDay: 5
+                }
+            ]
+        },
+        {
+            id: 'pet_premium_mua_ha_chibi_2',
+            name: 'Tiểu Hạ Quang',
+            type: 'pet',
+            price: 900,
+            isNonCoin: false,
+            tag: 'Mùa Hạ',
+            value: 'assets/Premium/Bốn mùa/ha_chibi2.png',
+            isIcon: false,
+            petEffect: 'ha2-limited-sunleaf-magic',
+            disableClickEffect: true,
+
+            // ==========================================
+            // PREMIUM MÙA HẠ · PET GIỚI HẠN
+            // Chỉ ngày 01 → 05 của tháng 5, 6, 7 và 8.
+            // Người đã sở hữu vẫn có thể trang bị quanh năm.
+            // ==========================================
+            annualSaleIcon: '☀️',
+            annualSaleTitle:
+                'Chỉ mở bán ngày 01–05 của tháng 05, 06, 07 và 08 hằng năm',
+            annualSaleWindows: [
+                {
+                    startMonth: 5,
+                    startDay: 1,
+                    endMonth: 5,
+                    endDay: 5
+                },
+                {
+                    startMonth: 6,
+                    startDay: 1,
+                    endMonth: 6,
+                    endDay: 5
+                },
+                {
+                    startMonth: 7,
+                    startDay: 1,
+                    endMonth: 7,
+                    endDay: 5
+                },
+                {
+                    startMonth: 8,
+                    startDay: 1,
+                    endMonth: 8,
+                    endDay: 5
+                }
+            ]
+        },
+
+        {
+            id: 'theme_mua_ha_ha_quang_luu_ly',
+            name: 'Hạ Quang Lưu Ly',
+            type: 'theme',
+            price: 800,
+            isNonCoin: false,
+            tag: 'Mùa Hạ',
+            value: 'theme-summer-prismatic-garden',
+            customIcon: '🌤️',
+
+            // ==========================================
+            // PREMIUM MÙA HẠ · GIAO DIỆN GIỚI HẠN
+            // Chỉ ngày 01 → 05 của tháng 5, 6, 7 và 8.
+            // Người đã sở hữu vẫn có thể trang bị quanh năm.
+            // ==========================================
+            annualSaleIcon: '☀️',
+            annualSaleTitle:
+                'Chỉ mở bán ngày 01–05 của tháng 05, 06, 07 và 08 hằng năm',
+            annualSaleWindows: [
+                {
+                    startMonth: 5,
+                    startDay: 1,
+                    endMonth: 5,
+                    endDay: 5
+                },
+                {
+                    startMonth: 6,
+                    startDay: 1,
+                    endMonth: 6,
+                    endDay: 5
+                },
+                {
+                    startMonth: 7,
+                    startDay: 1,
+                    endMonth: 7,
+                    endDay: 5
+                },
+                {
+                    startMonth: 8,
+                    startDay: 1,
+                    endMonth: 8,
+                    endDay: 5
+                }
+            ]
+        },
+        {
+            id: 'effect_mua_ha_phong_linh_ha_nhat',
+            name: 'Phong Linh Hạ Nhật',
+            type: 'effect',
+            price: 850,
+            isNonCoin: false,
+            tag: 'Mùa Hạ',
+            value: 'effect_mua_ha_phong_linh_ha_nhat',
+            customIcon: '🎐',
+
+            // ==========================================
+            // PREMIUM MÙA HẠ · HIỆU ỨNG TOÀN WEB GIỚI HẠN
+            // Chỉ ngày 01 → 05 của tháng 5, 6, 7 và 8.
+            // Người đã sở hữu vẫn có thể trang bị quanh năm.
+            // ==========================================
+            annualSaleIcon: '☀️',
+            annualSaleTitle:
+                'Chỉ mở bán ngày 01–05 của tháng 05, 06, 07 và 08 hằng năm',
+            annualSaleWindows: [
+                {
+                    startMonth: 5,
+                    startDay: 1,
+                    endMonth: 5,
+                    endDay: 5
+                },
+                {
+                    startMonth: 6,
+                    startDay: 1,
+                    endMonth: 6,
+                    endDay: 5
+                },
+                {
+                    startMonth: 7,
+                    startDay: 1,
+                    endMonth: 7,
+                    endDay: 5
+                },
+                {
+                    startMonth: 8,
+                    startDay: 1,
+                    endMonth: 8,
+                    endDay: 5
+                }
+            ]
+        },
+        {
+            id: 'frame_mua_ha_nhat_diep_chi_hoan',
+            name: 'Hạ Quang · Nhật Diệp Chi Hoàn',
+            type: 'frame',
+            price: 250,
+            isNonCoin: false,
+            tag: 'Mùa Hạ',
+            tags: ['Mùa Hạ'],
+            value: 'assets/Premium/Bốn mùa/ha_khung2.png',
+            isIcon: false,
+            frameEffect: 'ha2f-summer-sunleaf-frame',
+
+            // ==========================================
+            // PREMIUM MÙA HẠ · KHUNG VIỀN GIỚI HẠN
+            // Chỉ ngày 01 → 05 của tháng 5, 6, 7 và 8.
+            // Người đã sở hữu vẫn có thể trang bị quanh năm.
+            // ==========================================
+            annualSaleIcon: '☀️',
+            annualSaleTitle:
+                'Chỉ mở bán ngày 01–05 của tháng 05, 06, 07 và 08 hằng năm',
+            annualSaleWindows: [
+                {
+                    startMonth: 5,
+                    startDay: 1,
+                    endMonth: 5,
+                    endDay: 5
+                },
+                {
+                    startMonth: 6,
+                    startDay: 1,
+                    endMonth: 6,
+                    endDay: 5
+                },
+                {
+                    startMonth: 7,
+                    startDay: 1,
+                    endMonth: 7,
+                    endDay: 5
+                },
+                {
+                    startMonth: 8,
+                    startDay: 1,
+                    endMonth: 8,
+                    endDay: 5
+                }
+            ]
+        },
+        {
+            id: 'background_mua_ha_luu_phong_mong_canh',
+            name: 'Hạ Quang · Lưu Phong Mộng Cảnh',
+            type: 'background',
+            price: 150,
+            isNonCoin: false,
+            tag: 'Mùa Hạ',
+            tags: ['Mùa Hạ'],
+
+            value: 'assets/Premium/Bốn mùa/ha_nen2.png',
+            isIcon: false,
+
+            // ==========================================
+            // PREMIUM MÙA HẠ · NỀN GIỚI HẠN
+            // Chỉ ngày 01 → 05 của tháng 5, 6, 7 và 8.
+            // Người đã sở hữu vẫn có thể trang bị quanh năm.
+            // ==========================================
+            annualSaleIcon: '☀️',
+            annualSaleTitle:
+                'Chỉ mở bán ngày 01–05 của tháng 05, 06, 07 và 08 hằng năm',
+            annualSaleWindows: [
+                {
+                    startMonth: 5,
+                    startDay: 1,
+                    endMonth: 5,
+                    endDay: 5
+                },
+                {
+                    startMonth: 6,
+                    startDay: 1,
+                    endMonth: 6,
+                    endDay: 5
+                },
+                {
+                    startMonth: 7,
+                    startDay: 1,
+                    endMonth: 7,
+                    endDay: 5
+                },
+                {
+                    startMonth: 8,
+                    startDay: 1,
+                    endMonth: 8,
+                    endDay: 5
+                }
+            ],
+
+            /*
+             * NỀN ĐỘC LẬP VỚI GIAO DIỆN:
+             * cover = lấp đầy viewport nhưng không kéo méo ảnh.
+             * center center = cắt đều hai bên khi tỉ lệ màn hình khác ảnh gốc.
+             * WebBackgroundManager chuẩn của hệ thống đọc các thuộc tính này.
+             */
+            backgroundFit: 'cover',
+            backgroundPosition: 'center center',
+            backgroundRepeat: 'no-repeat',
+            backgroundAttachment: 'fixed',
+            premiumSuite: 'ha2bg-summer-limited-background-v1'
+        },
+        {
+            id: 'effect_premium_mua_xuan',
+            name: 'Xuân Tửu Hoa Viên',
+            type: 'effect',
+            price: 700,
+            isNonCoin: false,
+            tag: 'Mùa xuân',
+            value: 'effect_premium_mua_xuan',
+            customIcon: '🍇',
+
+            // ==========================================
+            // HIỆU ỨNG GIỚI HẠN MÙA XUÂN
+            // Chỉ ngày 01 → 05 của tháng 3, 4 và 5
+            // Đồng bộ lịch mở bán với Nữ Thần Mùa Xuân
+            // ==========================================
+            annualSaleIcon: '🌸',
+
+            annualSaleTitle:
+                'Chỉ mở bán ngày 01–05 của tháng 03, 04 và 05 hằng năm',
+
+            annualSaleWindows: [
+                {
+                    startMonth: 3,
+                    startDay: 1,
+                    endMonth: 3,
+                    endDay: 5
+                },
+                {
+                    startMonth: 4,
+                    startDay: 1,
+                    endMonth: 4,
+                    endDay: 5
+                },
+                {
+                    startMonth: 5,
+                    startDay: 1,
+                    endMonth: 5,
+                    endDay: 5
+                }
+            ]
+        },
+        {
+            id: 'theme_mua_xuan_thanh_minh',
+            name: 'Thanh Minh Xuân Phổ',
+            type: 'theme',
+            price: 700,
+            isNonCoin: false,
+            tag: 'Mùa xuân',
+            value: 'theme-spring-celadon-almanac',
+            customIcon: '🌿',
+
+            // ==========================================
+            // GIAO DIỆN MÙA XUÂN GIỚI HẠN
+            // Chỉ ngày 01 → 05 của tháng 3, 4 và 5
+            // Người đã sở hữu vẫn được trang bị quanh năm.
+            // ==========================================
+            annualSaleIcon: '🌱',
+            annualSaleTitle:
+                'Chỉ mở bán ngày 01–05 của tháng 03, 04 và 05 hằng năm',
+
+            annualSaleWindows: [
+                {
+                    startMonth: 3,
+                    startDay: 1,
+                    endMonth: 3,
+                    endDay: 5
+                },
+                {
+                    startMonth: 4,
+                    startDay: 1,
+                    endMonth: 4,
+                    endDay: 5
+                },
+                {
+                    startMonth: 5,
+                    startDay: 1,
+                    endMonth: 5,
+                    endDay: 5
+                }
+            ]
+        },
+        {
+            id: 'frame_premium_mua_xuan_hoa_mong',
+            name: 'Hoa Mộng · Vạn Sinh Chi Hoàn',
+            type: 'frame',
+            price: 400,
+            isNonCoin: false,
+            tag: 'Mùa xuân',
+
+            value: 'assets/Premium/Bốn mùa/khung-xuan.png',
+            isIcon: false,
+
+            frameEffect: 'spring-dream-ring',
+
+            // Chỉ mở bán ngày 01–05 tháng 3, 4 và 5
+            annualSaleIcon: '🌸',
+
+            annualSaleTitle:
+                'Chỉ mở bán ngày 01–05 của tháng 03, 04 và 05 hằng năm',
+
+            annualSaleWindows: [
+                {
+                    startMonth: 3,
+                    startDay: 1,
+                    endMonth: 3,
+                    endDay: 5
+                },
+                {
+                    startMonth: 4,
+                    startDay: 1,
+                    endMonth: 4,
+                    endDay: 5
+                },
+                {
+                    startMonth: 5,
+                    startDay: 1,
+                    endMonth: 5,
+                    endDay: 5
+                }
+            ]
+        },
+        {
+            id: 'background_premium_mua_xuan_hoa_mong',
+            name: 'Hoa Mộng · Vạn Sinh Thần Viên',
+            type: 'background',
+            price: 150,
+            isNonCoin: false,
+            tag: 'Mùa xuân',
+
+            value: 'assets/Premium/Bốn mùa/nen-xuan.png',
+            isIcon: false,
+
+            // Chỉ mở bán ngày 01–05 tháng 3, 4 và 5
+            annualSaleIcon: '🌸',
+
+            annualSaleTitle:
+                'Chỉ mở bán ngày 01–05 của tháng 03, 04 và 05 hằng năm',
+
+            annualSaleWindows: [
+                {
+                    startMonth: 3,
+                    startDay: 1,
+                    endMonth: 3,
+                    endDay: 5
+                },
+                {
+                    startMonth: 4,
+                    startDay: 1,
+                    endMonth: 4,
+                    endDay: 5
+                },
+                {
+                    startMonth: 5,
+                    startDay: 1,
+                    endMonth: 5,
+                    endDay: 5
+                }
+            ]
+        },
+        {
+            id: 'pet_quoc_khanh_chibi_1',
+            name: 'Việt Diệu · Sao Vàng Nhí',
+            type: 'pet',
+
+            price: 0,
+            isNonCoin: true,
+            eventOnly: true,
+
+            tag: '2/9',
+            tags: ['2/9', 'Quốc khánh'],
+
+            value: 'assets/Premium/quốc khánh/chibi1.png',
+            isIcon: false,
+
+            petEffect: 'national-day-chibi-star-magic',
+            disableClickEffect: true,
+
+            eventTier: 'event-national-day',
+
+            rewardSource: 'lich_su_hao_hung',
+            rewardLabel: 'Sự kiện Lịch sử hào hùng'
+        },
+        {
+            id: 'effect_quoc_khanh_viet_dieu_non_song',
+            name: 'Việt Diệu · Hào Quang Non Sông',
+            type: 'effect',
+
+            price: 0,
+            isNonCoin: true,
+            eventOnly: true,
+
+            tag: '2/9',
+            tags: ['2/9', 'Quốc khánh'],
+
+            value: 'effect_quoc_khanh_viet_dieu_non_song',
+            customIcon: '★',
+
+            eventTier: 'event-national-day',
+            effectScale: 'grand',
+
+            rewardSource: 'lich_su_hao_hung',
+            rewardLabel: 'Sự kiện Lịch sử hào hùng'
+        },
+        {
+            id: 'theme_quoc_khanh_viet_dieu_hong_ky',
+            name: 'Việt Diệu · Hồng Kỳ Tân Chương',
+            type: 'theme',
+
+            price: 0,
+            isNonCoin: true,
+            eventOnly: true,
+
+            tag: '2/9',
+            tags: ['2/9', 'Quốc khánh'],
+
+            value: 'theme-viet-dieu-hong-ky',
+            customIcon: '🇻🇳',
+
+            eventTier: 'event-national-day',
+
+            rewardSource: 'lich_su_hao_hung',
+            rewardLabel: 'Sự kiện Lịch sử hào hùng'
+        },
+        {
+            id: 'frame_quoc_khanh_viet_dieu_quoc_an',
+            name: 'Việt Nam · Vòng Sao Non Sông',
+            type: 'frame',
+
+            price: 0,
+            isNonCoin: true,
+            eventOnly: true,
+
+            tag: '2/9',
+            tags: ['2/9', 'Quốc khánh'],
+
+            value: 'assets/Premium/quốc khánh/khung1.png',
+            isIcon: false,
+
+            frameEffect: 'national-day-viet-dieu-frame',
+
+            eventTier: 'event-national-day',
+
+            rewardSource: 'lich_su_hao_hung',
+            rewardLabel: 'Sự kiện Lịch sử hào hùng'
+        },
+        {
+            id: 'background_quoc_khanh_son_ha_ruc_sang',
+            name: 'Việt Nam · Sơn Hà Rực Sáng',
+            type: 'background',
+
+            price: 0,
+            isNonCoin: true,
+            eventOnly: true,
+
+            tag: '2/9',
+            tags: ['2/9', 'Quốc khánh'],
+
+            value: 'assets/Premium/quốc khánh/nen1.png',
+            isIcon: false,
+
+            eventTier: 'event-national-day',
+
+            rewardSource: 'lich_su_hao_hung',
+            rewardLabel: 'Sự kiện Lịch sử hào hùng'
+        },
+        {
+            id: 'pet_tamon_bside_chibi_1',
+            name: 'Tiểu Quỷ Sân Khấu',
+            type: 'pet',
+
+            price: 850,
+            isNonCoin: false,
+
+            tag: "Tamon's B-Side",
+            tags: ["Tamon's B-Side"],
+
+            value: 'assets/Premium/Tamon/tamon-chibi1.png',
+            asset: 'assets/Premium/Tamon/tamon-chibi1.png',
+            isIcon: false,
+
+            // Hiệu ứng RIÊNG của vật phẩm mới, không tái dùng effect Tamon cũ.
+            petEffect: 'tamon-bside-chibi-signal-magic',
+            disableClickEffect: true
+        },
+        {
+            id: 'pet_tamon_bside_chibi_2',
+            name: 'Tamon · Nụ Cười Mèo Đen',
+            type: 'pet',
+
+            price: 900,
+            isNonCoin: false,
+
+            tag: "Tamon's B-Side",
+            tags: ["Tamon's B-Side"],
+
+            value: 'assets/Premium/Tamon/tamon-chibi2.png',
+            asset: 'assets/Premium/Tamon/tamon-chibi2.png',
+            isIcon: false,
+
+            // Pet mới dùng runtime/namespace riêng tbc2-*; không tái dùng Tamon cũ.
+            petEffect: 'tamon-bside-chibi2-eclipse-magic',
+            disableClickEffect: true
+        },
+        {
+            id: 'theme_tamon_bside_black_cat_nocturne',
+            name: 'Tamon · Hắc Miêu Dạ Khúc',
+            type: 'theme',
+
+            price: 800,
+            isNonCoin: false,
+
+            tag: "Tamon's B-Side",
+            tags: ["Tamon's B-Side"],
+
+            value: 'theme-tamon-bside-black-cat-nocturne',
+            customIcon: '☾',
+
+            /*
+             * Theme hoàn toàn mới cho Tamon · Nụ Cười Mèo Đen.
+             * Namespace giao diện riêng tbcat1-*; không dùng effect/runtime Tamon cũ.
+             */
+            themeSuite: 'tamon-black-cat-nocturne-v1'
+        },
+        {
+            id: 'effect_tamon_bside_black_cat_eclipse',
+            name: 'Tamon · Hắc Miêu Nguyệt Thực',
+            type: 'effect',
+
+            price: 850,
+            isNonCoin: false,
+
+            tag: "Tamon's B-Side",
+            tags: ["Tamon's B-Side"],
+
+            value: 'effect_tamon_bside_black_cat_eclipse',
+            customIcon: '◉',
+
+            /*
+             * Hiệu ứng toàn web RIÊNG cho bộ Tamon 2.
+             * Namespace tuyệt đối riêng tbcatfx2-*.
+             * Không tái dùng tbfx1-* / tbc1-* / tbc2-* hay effect khác.
+             */
+            effectNamespace: 'tbcatfx2-black-cat-eclipse'
+        },
+        {
+            id: 'frame_tamon_bside_black_cat_moon_ring',
+            name: 'Tamon · Hắc Miêu Nguyệt Hoàn',
+            type: 'frame',
+
+            price: 250,
+            isNonCoin: false,
+
+            tag: "Tamon's B-Side",
+            tags: ["Tamon's B-Side"],
+
+            value: 'assets/Premium/Tamon/tamon-khung2.png',
+            asset: 'assets/Premium/Tamon/tamon-khung2.png',
+            isIcon: false,
+
+            /*
+             * KHUNG TAMON 2 · HẮC MIÊU
+             * - Dùng AvatarFrameManager chuẩn hiện có.
+             * - Geometry lấy theo FINAL FIX của Premium Mùa Xuân:
+             *   profile 60x60, popup 126x126, popup offset -2px/+2px.
+             * - CSS khóa theo data-avatar-frame-id; không ảnh hưởng khung khác.
+             */
+            frameEffect: 'tamon-black-cat-moon-ring',
+            runtimeCss: 'css/tamon-b-side.css?v=20260920.tamon2-black-cat-frame-v1'
+        },
+        {
+            id: 'background_tamon_bside_black_cat_nocturne',
+            name: 'Tamon · Hắc Miêu Dạ Cảnh',
+            type: 'background',
+
+            price: 150,
+            isNonCoin: false,
+
+            tag: "Tamon's B-Side",
+            tags: ["Tamon's B-Side"],
+
+            value: 'assets/Premium/Tamon/tamon-nen2.png',
+            asset: 'assets/Premium/Tamon/tamon-nen2.png',
+            isIcon: false,
+
+            /*
+             * NỀN TAMON 2 · HẮC MIÊU
+             * - cover: phủ kín viewport, giữ nguyên tỉ lệ ảnh, không kéo méo;
+             * - center center: cắt cân hai bên khi tỉ lệ màn hình khác ảnh;
+             * - no-repeat + fixed: không lặp và ổn định khi cuộn;
+             * - cấu hình nằm trên chính item này, không sửa nền khác;
+             * - card thuộc nhóm Tamon 2 và ui-theme-immune.
+             */
+            backgroundFit: 'cover',
+            backgroundPosition: 'center center',
+            backgroundRepeat: 'no-repeat',
+            backgroundAttachment: 'fixed',
+
+            premiumSuite: 'tamon-black-cat-nocturne-background-v1'
+        },
+        {
+            id: 'theme_tamon_bside_backstage',
+            name: "Hậu Trường Nhiễu Sóng",
+            type: 'theme',
+
+            price: 800,
+            isNonCoin: false,
+
+            tag: "Tamon's B-Side",
+            tags: ["Tamon's B-Side"],
+
+            value: 'theme-tamon-bside-backstage',
+            customIcon: '◈',
+
+            // Theme riêng: không tái dùng effect / class của các giao diện Tamon khác.
+            themeEffect: 'tbtheme1-backstage-signal-field'
+        },
+        {
+            id: 'effect_tamon_bside_spectrum_break',
+            name: 'Phổ Nhiễu B-Side',
+            type: 'effect',
+
+            price: 900,
+            isNonCoin: false,
+
+            tag: "Tamon's B-Side",
+            tags: ["Tamon's B-Side"],
+
+            value: 'effect_tamon_bside_spectrum_break',
+            customIcon: '≋',
+
+            // Effect toàn web RIÊNG, namespace tbfx1-*; không tái dùng effect Tamon cũ.
+            effectNamespace: 'tbfx1-spectrum-break'
+        },
+        {
+            id: 'frame_tamon_bside_signal_ring',
+            name: 'B-Mask · Neon Heart',
+            type: 'frame',
+
+            price: 250,
+            isNonCoin: false,
+
+            tag: "Tamon's B-Side",
+            tags: ["Tamon's B-Side"],
+
+            value: 'assets/Premium/Tamon/tamon-khung1.png',
+            isIcon: false,
+
+            // Khung avatar riêng của bộ Tamon's B-Side.
+            // Vị trí/size lấy theo chuẩn khung Premium Mùa Xuân.
+            // Tự khai báo CSS runtime để không phụ thuộc việc mở Cửa hàng.
+            runtimeCss: 'css/tamon-b-side.css?v=20260917.bmask-frame-selfcontained-v1',
+            frameEffect: 'tamon-bside-signal-ring'
+        },
+        {
+            id: 'background_tamon_bside_stage_signal',
+            name: 'Tamon · Midnight Idol Room',
+            type: 'background',
+
+            price: 150,
+            isNonCoin: false,
+
+            tag: "Tamon's B-Side",
+            tags: ["Tamon's B-Side"],
+
+            value: 'assets/Premium/Tamon/tamon-nen1.png',
+            isIcon: false,
+
+            // Nền tĩnh riêng. WebBackgroundManager hiện tại tự dùng:
+            // cover + center center + no-repeat + fixed.
+            backgroundFit: 'cover',
+            backgroundPosition: 'center center'
+        },
+        {
+            id: 'pet_truyenthuyet_aether_chibi_2',
+
+            name: 'AETHER · Tiểu Thiên Quang',
+
+            type: 'pet',
+
+            price: 900,
+            isNonCoin: false,
+
+            /*
+             * Dùng CHÍNH XÁC tag hiển thị của NYX · Tiểu Dạ Tinh Linh.
+             * tags bổ sung chỉ phục vụ tìm kiếm/phân loại, không đổi tag trên card.
+             */
+            tag: 'Truyền thuyết',
+            tags: [
+                'Truyền thuyết',
+                'Thần thoại',
+                'Aether'
+            ],
+
+            value:
+                'assets/Premium/Thần thoại/aether-chibi2.png',
+
+            asset:
+                'assets/Premium/Thần thoại/aether-chibi2.png',
+
+            isIcon: false,
+
+            /*
+             * CSS tự chứa card + realm + click skill Aether Chibi.
+             * Namespace aetlc-* hoàn toàn tách khỏi Aether Luxury/NYX.
+             */
+            runtimeCss:
+                'css/aether-than-thoai.css?v=20260917.aether-little-spirit-v1',
+
+            petEffect:
+                'aether-little-daystar-magic',
+
+            /*
+             * Không chạy hiệu ứng click mặc định; pet có click skill riêng.
+             */
+            disableClickEffect: true
+        },
+        {
+            id: 'theme_truyenthuyet_aether_thien_quang_thanh_vuc',
+
+            name: 'AETHER · Thiên Quang Thánh Vực',
+            type: 'theme',
+
+            price: 920,
+            isNonCoin: false,
+
+            // Cùng tag hiển thị và cùng card với AETHER · Tiểu Thiên Quang.
+            tag: 'Truyền thuyết',
+            tags: [
+                'Truyền thuyết',
+                'Thần thoại',
+                'Aether'
+            ],
+
+            value: 'theme-aether-luminous-sanctum',
+            customIcon: '✦',
+
+            // V2: giao diện Thánh Vực cao cấp hơn, vẫn dùng namespace riêng aettheme2-*.
+            runtimeCss:
+                'css/aether-than-thoai.css?v=20260917.aether-theme-sanctum-v2'
+        },
+        {
+            id: 'effect_truyenthuyet_aether_thien_quang_thien_mon',
+
+            name: 'AETHER · Thiên Môn Quang Triều',
+            type: 'effect',
+
+            price: 950,
+            isNonCoin: false,
+
+            // Cùng tag + cùng card với Tiểu Thiên Quang và Thiên Quang Thánh Vực.
+            tag: 'Truyền thuyết',
+            tags: [
+                'Truyền thuyết',
+                'Thần thoại',
+                'Aether'
+            ],
+
+            value: 'effect_truyenthuyet_aether_thien_quang_thien_mon',
+            customIcon: '☼',
+
+            // Effect toàn web độc lập: namespace aetfx2-*.
+            runtimeCss:
+                'css/aether-than-thoai.css?v=20260917.aether-heaven-gate-effect-v1',
+            effectNamespace: 'aetfx2-heavenly-aureole'
+        },
+        {
+            id: 'frame_truyenthuyet_aether_thien_quang_chi_hoan',
+
+            name: 'AETHER · Thiên Quang Chi Hoàn',
+            type: 'frame',
+
+            price: 250,
+            isNonCoin: false,
+
+            // Cùng tag + cùng card với AETHER · Tiểu Thiên Quang.
+            tag: 'Truyền thuyết',
+            tags: [
+                'Truyền thuyết',
+                'Thần thoại',
+                'Aether'
+            ],
+
+            value:
+                'assets/Premium/Thần thoại/aether-khung2.png',
+
+            asset:
+                'assets/Premium/Thần thoại/aether-khung2.png',
+
+            isIcon: false,
+
+            /*
+             * Khung Aether V2 dùng namespace CSS aetfr3-* riêng.
+             * Không dùng selector/keyframe của NYX hay các khung khác.
+             */
+            frameEffect:
+                'aether-thien-quang-chi-hoan',
+
+            // Tự nạp đúng CSS khung sau F5, không phụ thuộc việc mở Cửa hàng.
+            runtimeCss:
+                'css/aether-than-thoai.css?v=20260917.aether-frame-v1'
+        },
+        {
+            id: 'background_truyenthuyet_aether_thien_khung_luu_quang',
+
+            name: 'AETHER · Thiên Khung Lưu Quang',
+            type: 'background',
+
+            price: 150,
+            isNonCoin: false,
+
+            // Cùng tag + cùng card với AETHER · Tiểu Thiên Quang.
+            tag: 'Truyền thuyết',
+            tags: [
+                'Truyền thuyết',
+                'Thần thoại',
+                'Aether',
+                'Nền'
+            ],
+
+            value:
+                'assets/Premium/Thần thoại/aether-nen2.png',
+
+            asset:
+                'assets/Premium/Thần thoại/aether-nen2.png',
+
+            isIcon: false,
+
+            /*
+             * NỀN AETHER RIÊNG — chỉ cấu hình trên chính item này.
+             * - cover: phủ kín màn hình nhưng giữ đúng tỉ lệ ảnh;
+             * - center center: ưu tiên trọng tâm ảnh ở giữa viewport;
+             * - no-repeat + fixed: không lặp và không trượt nền khi cuộn;
+             * - không sửa WebBackgroundManager và không tác động nền khác.
+             */
+            backgroundFit:
+                'cover',
+
+            backgroundPosition:
+                'center center',
+
+            backgroundRepeat:
+                'no-repeat',
+
+            backgroundAttachment:
+                'fixed',
+
+            premiumSuite:
+                'aetbg4-heaven-sky-radiance-background-v1'
+        },
+        {
+            id: 'pet_truyenthuyet_nyx_chibi_1',
+
+            name: 'NYX · Tiểu Dạ Tinh Linh',
+
+            type: 'pet',
+
+            price: 1700,
+            isNonCoin: false,
+
+            /*
+             * Dùng CHÍNH XÁC tag của:
+             * Nyx - Nữ Thần Màn Đêm
+             */
+            tag: 'Truyền thuyết',
+
+            value:
+                'assets/Premium/Thần thoại/nyx-chibi1.png',
+
+            asset:
+                'assets/Premium/Thần thoại/nyx-chibi1.png',
+
+            isIcon: false,
+
+            /*
+             * Effect HOÀN TOÀN RIÊNG.
+             * Không phải mythic-nyx-night-magic.
+             */
+            petEffect:
+                'nyx-little-night-spirit-magic',
+
+            /*
+             * Không chạy click effect mặc định,
+             * vì pet có kỹ năng toàn màn hình riêng.
+             */
+            disableClickEffect: true
+        },
+        {
+            id: 'theme_truyenthuyet_thanh_dien_nguyet_da',
+            name: 'Thánh Điện Nguyệt Dạ',
+            type: 'theme',
+
+            price: 1700,
+            isNonCoin: false,
+
+            tag: 'Truyền thuyết',
+
+            value: 'theme-nyx-moon-sanctum',
+
+            customIcon: '☾'
+        },
+        {
+            id: 'effect_truyenthuyet_da_trieu_tinh_nguyet',
+            name: 'Dạ Triều Tinh Nguyệt',
+            type: 'effect',
+
+            price: 1700,
+            isNonCoin: false,
+
+            tag: 'Truyền thuyết',
+
+            value: 'effect_truyenthuyet_da_trieu_tinh_nguyet',
+            customIcon: '☽'
+        },
+        {
+            id: 'frame_truyenthuyet_nyx_hac_nguyet_chi_hoan',
+
+            name: 'Vương Miện Vĩnh Dạ',
+
+            type: 'frame',
+
+            price: 250,
+            isNonCoin: false,
+
+            tag: 'Truyền thuyết',
+
+            value:
+                'assets/Premium/Thần thoại/nyx-khung1.png',
+
+            isIcon: false,
+
+            frameEffect:
+                'nyx-hac-nguyet-frame'
+        },
+        {
+            id: 'background_truyenthuyet_nyx_vinh_da_thien_mac',
+
+            name: 'Thánh Điện Nguyệt Dạ',
+
+            type: 'background',
+
+            price: 150,
+            isNonCoin: false,
+
+            tag: 'Truyền thuyết',
+
+            value:
+                'assets/Premium/Thần thoại/nyx-nen1.png',
+
+            isIcon: false
+        },
+
+        {
+            id: 'pet_cam_mong_chibi_1',
+
+            name: 'Thanh Huyền Tiểu Cầm Tiên',
+
+            type: 'pet',
+
+            price: 850,
+            isNonCoin: false,
+
+            tag: 'Cầm Mộng',
+
+            value:
+                'assets/Premium/Tu tiên/cam_co_chibi1.png',
+
+            asset:
+                'assets/Premium/Tu tiên/cam_co_chibi1.png',
+
+            isIcon: false,
+
+            /*
+             * Hiệu ứng HOÀN TOÀN MỚI cho bản chibi.
+             * Không dùng runtime / class / keyframe của
+             * Cầm Mộng Premium hoặc bất kỳ pet cũ nào.
+             */
+            petEffect:
+                'cam-mong-chibi-qin-spirit-magic',
+
+            /*
+             * Không dùng click-effect mặc định vì pet này
+             * có hiệu ứng nhấn cục bộ riêng trong PetManager.
+             */
+            disableClickEffect: true
+        },
+        {
+            id: 'theme_cam_mong_thanh_huyen_tien_cac',
+
+            name: 'Thanh Huyền Cầm Mộng Tiên Các',
+
+            type: 'theme',
+
+            price: 800,
+            isNonCoin: false,
+
+            tag: 'Cầm Mộng',
+
+            value:
+                'theme-cam-mong-thanh-huyen-tien-cac',
+
+            customIcon: '琴',
+
+            /*
+             * Giao diện Cầm Mộng mới, namespace riêng cmtheme1-*.
+             * Không tái sử dụng effect/runtime của giao diện cũ.
+             */
+            premiumSuite:
+                'cam-mong-thanh-huyen-court-v1'
+        },
+        {
+            id: 'effect_cam_mong_van_cam_luu_quang',
+
+            name: 'Thanh Huyền Vạn Cầm Lưu Quang',
+
+            type: 'effect',
+
+            price: 850,
+            isNonCoin: false,
+
+            tag: 'Cầm Mộng',
+
+            value:
+                'effect_cam_mong_van_cam_luu_quang',
+
+            customIcon: '弦',
+
+            /*
+             * Hiệu ứng toàn web Cầm Mộng hoàn toàn mới.
+             * Namespace riêng cmefx1-*.
+             * Không dùng lại class / keyframe / runtime của effect khác.
+             */
+            effectSuite:
+                'cam-mong-wan-qin-radiance-v1'
+        },
+        {
+            id: 'frame_cam_mong_thanh_huyen_chi_hoan',
+
+            name: 'Bích Trúc Cầm Nguyệt',
+
+            type: 'frame',
+
+            price: 250,
+            isNonCoin: false,
+
+            tag: 'Cầm Mộng',
+
+            value:
+                'assets/Premium/Tu tiên/cam_co_khung1.png',
+
+            isIcon: false,
+
+            /*
+             * Khung avatar riêng của bộ Cầm Mộng.
+             * Vị trí lấy theo chuẩn Premium Mùa Xuân:
+             * - profile: 60x60, căn giữa avatar
+             * - popup: 126x126, căn giữa host
+             *
+             * CSS định danh bằng data-avatar-frame-effect
+             * nên không bị theme đang mặc nhuộm/đổi vị trí.
+             */
+            frameEffect:
+                'cam-mong-thanh-huyen-frame'
+        },
+        {
+            id: 'background_cam_mong_thanh_huyen_tien_canh',
+
+            name: 'Trúc Hải Tiên Âm',
+
+            type: 'background',
+
+            price: 150,
+            isNonCoin: false,
+
+            tag: 'Cầm Mộng',
+            tags: ['Cầm Mộng'],
+
+            value:
+                'assets/Premium/Tu tiên/cam_co_nen1.png',
+
+            isIcon: false,
+
+            /*
+             * Nền Cầm Mộng độc lập với giao diện/theme.
+             * Dùng cơ chế background chuẩn hiện có.
+             * cover = luôn lấp đầy viewport, không kéo méo ảnh.
+             */
+            backgroundFit: 'cover',
+            backgroundPosition: 'center center',
+            backgroundRepeat: 'no-repeat',
+            backgroundAttachment: 'fixed',
+
+            premiumSuite:
+                'cam-mong-thanh-huyen-background-v1'
+        },
+        {
+            id: 'pet_trung_thu_hang_nga_chibi_1',
+
+            name: 'Tiểu Hằng Nga · Nguyệt Đăng',
+
+            type: 'pet',
+
+            price: 1,
+            isNonCoin: true,
+
+            currency: 'mid_autumn_coin',
+            midAutumnCoinCost: 1,
+            disableTrial: true,
+
+            tag: 'Trung thu',
+            tags: ['Trung thu'],
+
+            value:
+                'assets/Premium/Trung thu/hang_chbi1.png',
+
+            asset:
+                'assets/Premium/Trung thu/hang_chbi1.png',
+
+            isIcon: false,
+
+            /*
+             * Pet Trung Thu độc lập hoàn toàn:
+             * - chỉ tạo realm quanh pet + ultimate khi click;
+             * - không gọi ThemeManager / EffectManager;
+             * - không bật/tắt giao diện hoặc effect đang trang bị.
+             */
+            petEffect:
+                'midautumn-chibi-moon-lantern-magic',
+
+            disableClickEffect: true,
+
+            premiumCard:
+                'midautumn-chibi-lantern-v1'
+        },
+        {
+            id: 'pet_trung_thu_chu_cuoi_chibi_2',
+
+            name: 'Tiểu Chú Cuội · Quế Ảnh',
+
+            type: 'pet',
+
+            price: 1,
+            isNonCoin: true,
+
+            currency: 'mid_autumn_coin',
+            midAutumnCoinCost: 1,
+            disableTrial: true,
+
+            tag: 'Trung thu',
+            tags: [
+                'Trung thu',
+                'Chú Cuội',
+                'Chibi'
+            ],
+
+            value:
+                'assets/Premium/Trung thu/cuoi_chibi2.png',
+
+            asset:
+                'assets/Premium/Trung thu/cuoi_chibi2.png',
+
+            isIcon: false,
+
+            /*
+             * Chú Cuội Chibi dùng hiệu ứng HOÀN TOÀN RIÊNG.
+             * Namespace runtime/CSS: macc2-*.
+             * Chỉ tạo thần vực quanh pet + hiệu ứng nhấn cục bộ.
+             * Không gọi ThemeManager / EffectManager và không tái sử dụng
+             * mafc-* của Tiểu Hằng Nga hay midautumn-cuoi-* của Chú Cuội Luxury.
+             */
+            petEffect:
+                'midautumn-cuoi-chibi-banyan-magic',
+
+            disableClickEffect: true,
+
+            premiumCard:
+                'midautumn-cuoi-chibi-banyan-v1'
+        },
+        {
+            id: 'theme_trung_thu_nguyet_hoi_hoa_dang',
+
+            name: 'Nguyệt Hội Hoa Đăng',
+
+            type: 'theme',
+
+            price: 1,
+            isNonCoin: true,
+
+            currency: 'mid_autumn_coin',
+            midAutumnCoinCost: 1,
+            disableTrial: true,
+
+            tag: 'Trung thu',
+            tags: ['Trung thu'],
+
+            value:
+                'theme-midautumn-lantern-festival',
+
+            customIcon: '🏮',
+
+            /*
+             * Giao diện Trung Thu độc lập hoàn toàn:
+             * - namespace mttheme2-* riêng;
+             * - không dùng lại effect/runtime của vật phẩm khác;
+             * - cùng card/tag với Tiểu Hằng Nga · Nguyệt Đăng.
+             */
+            themeEffectSuite:
+                'mttheme2-lantern-festival-v1',
+
+            premiumCard:
+                'midautumn-chibi-lantern-v1'
+        },
+
+        {
+            id: 'theme_trung_thu_quang_han_nguyet_que',
+
+            name: 'Quảng Hàn Nguyệt Quế',
+
+            type: 'theme',
+
+            price: 1,
+            isNonCoin: true,
+
+            currency: 'mid_autumn_coin',
+            midAutumnCoinCost: 1,
+            disableTrial: true,
+
+            tag: 'Trung thu',
+            tags: ['Trung thu', 'Chú Cuội', 'Nguyệt Quế'],
+
+            value:
+                'theme-midautumn-osmanthus-jade',
+
+            customIcon: '🌿',
+
+            /*
+             * Giao diện Trung Thu đổi bằng 1 Xu Trung Thu.
+             * - namespace mtq5-* hoàn toàn độc lập;
+             * - cùng tag + cùng card với Tiểu Chú Cuội · Quế Ảnh;
+             * - card khóa khỏi mọi giao diện toàn web khác.
+             */
+            themeEffectSuite:
+                'mtq5-osmanthus-jade-v1',
+
+            premiumCard:
+                'midautumn-cuoi-chibi-banyan-v1'
+        },
+        {
+            id: 'effect_trung_thu_que_anh_phi_diep',
+
+            name: 'Quế Ảnh Phi Diệp',
+
+            type: 'effect',
+
+            price: 1,
+            isNonCoin: true,
+
+            currency: 'mid_autumn_coin',
+            midAutumnCoinCost: 1,
+            disableTrial: true,
+
+            tag: 'Trung thu',
+            tags: ['Trung thu', 'Chú Cuội', 'Nguyệt Quế'],
+
+            value:
+                'effect_trung_thu_que_anh_phi_diep',
+
+            customIcon: '🍃',
+
+            /*
+             * Hiệu ứng toàn web MỚI HOÀN TOÀN.
+             * Namespace duy nhất: mtefx4-*.
+             * Không gọi/tái sử dụng mtefx3-*, macc2-* hoặc effect khác.
+             * Cùng tag + cùng card với Tiểu Chú Cuội · Quế Ảnh.
+             */
+            effectSuite:
+                'mtefx4-osmanthus-shadow-leaves-v1',
+
+            premiumCard:
+                'midautumn-cuoi-chibi-banyan-v1'
+        },
+        {
+            id: 'effect_trung_thu_nguyet_trieu_luu_quang',
+
+            name: 'Nguyệt Triều Lưu Quang',
+
+            type: 'effect',
+
+            price: 1,
+            isNonCoin: true,
+
+            currency: 'mid_autumn_coin',
+            midAutumnCoinCost: 1,
+            disableTrial: true,
+
+            tag: 'Trung thu',
+            tags: ['Trung thu'],
+
+            value:
+                'effect_trung_thu_nguyet_trieu_luu_quang',
+
+            customIcon: '🌙',
+
+            /*
+             * Effect Trung Thu toàn web độc lập hoàn toàn:
+             * - namespace mtefx3-* riêng;
+             * - không gọi/tái sử dụng effect khác;
+             * - không thay đổi theme, pet hoặc UI đang trang bị;
+             * - cùng card/tag với Tiểu Hằng Nga và Nguyệt Hội Hoa Đăng.
+             */
+            effectSuite:
+                'mtefx3-moon-tide-radiance-v1',
+
+            premiumCard:
+                'midautumn-chibi-lantern-v1'
+        },
+        {
+            id: 'frame_trung_thu_chu_cuoi_que_anh_chi_hoan',
+
+            name: 'Chú Cuội · Quế Ảnh Chi Hoàn',
+
+            type: 'frame',
+
+            price: 1,
+            isNonCoin: true,
+
+            currency: 'mid_autumn_coin',
+            midAutumnCoinCost: 1,
+            disableTrial: true,
+
+            tag: 'Trung thu',
+            tags: ['Trung thu', 'Chú Cuội', 'Khung viền'],
+
+            value:
+                'assets/Premium/Trung thu/cuoi_khung2.png',
+
+            isIcon: false,
+
+            frameEffect:
+                'midautumn-cuoi-osmanthus-shadow-ring',
+
+            /*
+             * Khung Chú Cuội Trung Thu nhận bằng 1 Xu Trung Thu.
+             * - dùng AvatarFrameManager chuẩn đang có;
+             * - vị trí profile/popup bám đúng chuẩn của
+             *   Nguyệt Quế · Hoa Đăng Chi Hoàn và Premium Mùa Xuân;
+             * - CSS chỉ khóa theo data-avatar-frame-id riêng;
+             * - card dùng skin Tiểu Chú Cuội và miễn mọi theme khác.
+             */
+            premiumCard:
+                'midautumn-cuoi-chibi-banyan-v1'
+        },
+        {
+            id: 'background_trung_thu_chu_cuoi_que_lam_nguyet_da',
+
+            name: 'Chú Cuội · Quế Lâm Nguyệt Dạ',
+
+            type: 'background',
+
+            price: 1,
+            isNonCoin: true,
+
+            currency: 'mid_autumn_coin',
+            midAutumnCoinCost: 1,
+            disableTrial: true,
+
+            tag: 'Trung thu',
+            tags: ['Trung thu', 'Chú Cuội', 'Nền'],
+
+            value:
+                'assets/Premium/Trung thu/cuoi_nen2.png',
+
+            isIcon: false,
+
+            /*
+             * Nền Chú Cuội Trung Thu độc lập:
+             * - nhận bằng 1 Xu Trung Thu;
+             * - WebBackgroundManager dùng cover để lấp đầy viewport, không kéo méo ảnh;
+             * - cấu hình fit/position nằm trên chính item nên không tác động nền khác;
+             * - card dùng skin Tiểu Chú Cuội và được khóa khỏi theme/giao diện khác.
+             */
+            backgroundFit: 'cover',
+            backgroundPosition: 'center center',
+            backgroundRepeat: 'no-repeat',
+            backgroundAttachment: 'fixed',
+
+            premiumSuite:
+                'midautumn-cuoi-osmanthus-night-background-v1',
+
+            premiumCard:
+                'midautumn-cuoi-chibi-banyan-v1'
+        },
+        {
+            id: 'frame_trung_thu_nguyet_que_hoa_hoan',
+
+            name: 'Nguyệt Quế · Hoa Đăng Chi Hoàn',
+
+            type: 'frame',
+
+            price: 1,
+            isNonCoin: true,
+
+            currency: 'mid_autumn_coin',
+            midAutumnCoinCost: 1,
+            disableTrial: true,
+
+            tag: 'Trung thu',
+            tags: ['Trung thu'],
+
+            value:
+                'assets/Premium/Trung thu/hang_khung1.png',
+
+            isIcon: false,
+
+            frameEffect:
+                'midautumn-osmanthus-moon-ring',
+
+            /*
+             * Khung Trung Thu:
+             * - dùng AvatarFrameManager chuẩn hiện có;
+             * - vị trí CSS tham chiếu khung Premium Mùa Xuân;
+             * - CSS riêng theo data-avatar-frame-id nên không ảnh hưởng khung khác;
+             * - cùng card/tag với bộ Tiểu Hằng Nga Trung Thu.
+             */
+            premiumCard:
+                'midautumn-chibi-lantern-v1'
+        },
+        {
+            id: 'background_trung_thu_nguyet_cung_hoa_dang_da',
+
+            name: 'Nguyệt Cung · Hoa Đăng Dạ',
+
+            type: 'background',
+
+            price: 1,
+            isNonCoin: true,
+
+            currency: 'mid_autumn_coin',
+            midAutumnCoinCost: 1,
+            disableTrial: true,
+
+            tag: 'Trung thu',
+            tags: ['Trung thu'],
+
+            value:
+                'assets/Premium/Trung thu/hang_nen1.png',
+
+            isIcon: false,
+
+            /*
+             * Nền Trung Thu độc lập:
+             * - dùng WebBackgroundManager chuẩn hiện có;
+             * - cover = lấp đầy toàn viewport, không kéo méo ảnh;
+             * - các thuộc tính fit nằm trên chính item này nên không đổi nền khác;
+             * - cùng card/tag Trung Thu và được theme-immune.
+             */
+            backgroundFit: 'cover',
+            backgroundPosition: 'center center',
+            backgroundRepeat: 'no-repeat',
+            backgroundAttachment: 'fixed',
+
+            premiumSuite:
+                'midautumn-moon-palace-background-v1',
+
+            premiumCard:
+                'midautumn-chibi-lantern-v1'
+        },
+
+        {
+            id: 'pet_linkclick_cheng_xiaoshi_chibi_1',
+
+            name: 'Cheng Xiaoshi · Tiểu Thời Ảnh',
+
+            type: 'pet',
+
+            price: 900,
+            isNonCoin: false,
+
+            tag: 'Link Click',
+            tags: [
+                'Link Click',
+                'Cheng Xiaoshi',
+                'Chibi'
+            ],
+
+            value:
+                'assets/Premium/Lock/Cheng Xiaoshi -chibi1.png',
+
+            asset:
+                'assets/Premium/Lock/Cheng Xiaoshi -chibi1.png',
+
+            isIcon: false,
+
+            /*
+             * Hiệu ứng RIÊNG hoàn toàn cho pet Chibi Link Click.
+             * Namespace: lcc1-* / linkclick-chibi-*.
+             * Không gọi lại / sửa / tái sử dụng effect Cheng Xiaoshi Premium cũ.
+             * Chỉ có realm quanh pet + hiệu ứng nhấn cục bộ.
+             */
+            petEffect:
+                'linkclick-chibi-memory-snap-magic',
+
+            disableClickEffect: true,
+
+            premiumCard:
+                'linkclick-chibi-memory-card-v1'
+        },
+
+        {
+            id: 'theme_linkclick_fragmented_memory',
+
+            name: 'Link Click · Ký Ức Phân Mảnh',
+
+            type: 'theme',
+
+            price: 800,
+            isNonCoin: false,
+
+            tag: 'Link Click',
+            tags: [
+                'Link Click',
+                'Ký ức',
+                'Giao diện'
+            ],
+
+            value:
+                'theme-linkclick-fragmented-memory',
+
+            customIcon:
+                '▦',
+
+            /*
+             * Cùng tag + cùng card với Cheng Xiaoshi · Tiểu Thời Ảnh.
+             * Theme runtime riêng: lct3-*.
+             * Không gọi/tái sử dụng lcx-* (Luxury) hoặc lcc2-* (pet 900 Coin).
+             */
+            premiumCard:
+                'linkclick-chibi-memory-card-v1'
+        },
+
+        {
+            id: 'effect_linkclick_echo_corridor',
+
+            name: 'Link Click · Hành Lang Dư Ảnh',
+
+            type: 'effect',
+
+            price: 850,
+            isNonCoin: false,
+
+            tag: 'Link Click',
+            tags: [
+                'Link Click',
+                'Dư ảnh',
+                'Hiệu ứng'
+            ],
+
+            value:
+                'effect_linkclick_echo_corridor',
+
+            customIcon:
+                '▥',
+
+            /*
+             * Hiệu ứng toàn web độc lập: namespace lce4-*.
+             * Không dùng lại lcx-* / lcc2-* / lct3-*.
+             * Root tự gắn ui-theme-immune + data-theme-immune.
+             */
+            premiumCard:
+                'linkclick-chibi-memory-card-v1'
+        },
+
+        {
+            id: 'frame_linkclick_cheng_xiaoshi_time_window',
+
+            name: 'Cheng Xiaoshi · Thời Ảnh Chi Hoàn',
+
+            type: 'frame',
+
+            price: 250,
+            isNonCoin: false,
+
+            tag: 'Link Click',
+            tags: [
+                'Link Click',
+                'Cheng Xiaoshi',
+                'Khung viền'
+            ],
+
+            value:
+                'assets/Premium/Lock/Cheng Xiaoshi-khung1.png',
+
+            isIcon: false,
+
+            frameEffect:
+                'linkclick-time-window-frame',
+
+            /*
+             * Dùng AvatarFrameManager chuẩn hiện có.
+             * Vị trí CSS tham chiếu khung Premium Mùa Xuân:
+             * - avatar góc phải: 60x60, center/center;
+             * - popup hồ sơ: 145x145, center/center.
+             * CSS chỉ scope theo data-avatar-frame-id của item này.
+             */
+            premiumCard:
+                'linkclick-chibi-memory-card-v1'
+        },
+
+        {
+            id: 'background_linkclick_cheng_xiaoshi_sunset_studio',
+
+            name: 'Cheng Xiaoshi · Hoàng Hôn Quang Ảnh',
+
+            type: 'background',
+
+            price: 150,
+            isNonCoin: false,
+
+            tag: 'Link Click',
+            tags: [
+                'Link Click',
+                'Cheng Xiaoshi',
+                'Nền'
+            ],
+
+            value:
+                'assets/Premium/Lock/Cheng Xiaoshi-nen1.png',
+
+            isIcon: false,
+
+            /*
+             * Nền Link Click độc lập:
+             * - cover: phủ kín viewport nhưng không kéo méo tỉ lệ ảnh;
+             * - center center: giữ vùng hoàng hôn/thành phố ở trọng tâm;
+             * - no-repeat + fixed: đúng kiểu nền PC toàn màn hình;
+             * - các thuộc tính nằm trên chính item nên không sửa nền khác.
+             */
+            backgroundFit:
+                'cover',
+
+            backgroundPosition:
+                'center center',
+
+            backgroundRepeat:
+                'no-repeat',
+
+            backgroundAttachment:
+                'fixed',
+
+            premiumCard:
+                'linkclick-chibi-memory-card-v1'
+        },
+        {"id": "pet_kim_lien_regular_3", "name": "Kim Liên · Tiểu Liên Đồng", "type": "pet", "price": 850, "isNonCoin": false, "tag": "Kim Liên", "tags": ["Kim Liên"], "runtimeCss": "css/premium-kim-lien.css?v=20261008.3", "value": "assets/Premium/Tu tiên/kim_lien_chipi3.png", "asset": "assets/Premium/Tu tiên/kim_lien_chipi3.png", "isIcon": false, "disableClickEffect": true, "petEffect": "kim-lien-regular-dewdrop"},
+        {"id": "theme_kim_lien_regular_3", "name": "Kim Liên · Ngọc Diệp Hiên", "type": "theme", "price": 800, "isNonCoin": false, "tag": "Kim Liên", "tags": ["Kim Liên"], "runtimeCss": "css/premium-kim-lien.css?v=20261008.3", "customIcon": "❖", "value": "theme_kim_lien_regular_3"},
+        {"id": "effect_kim_lien_regular_3", "name": "Kim Liên · Kim Vũ Phù Quang", "type": "effect", "price": 900, "isNonCoin": false, "tag": "Kim Liên", "tags": ["Kim Liên"], "runtimeCss": "css/premium-kim-lien.css?v=20261008.3", "customIcon": "✧", "value": "effect_kim_lien_regular_3"},
+        {"id": "frame_kim_lien_regular_3", "name": "Kim Liên · Liên Hoa Bảo Hoàn", "type": "frame", "price": 250, "isNonCoin": false, "tag": "Kim Liên", "tags": ["Kim Liên"], "runtimeCss": "css/premium-kim-lien.css?v=20261008.3", "value": "assets/Premium/Tu tiên/kim_lien_khung3.png", "asset": "assets/Premium/Tu tiên/kim_lien_khung3.png", "isIcon": false},
+        {"id": "background_kim_lien_regular_3", "name": "Kim Liên · Bích Đàm Kim Liên", "type": "background", "price": 150, "isNonCoin": false, "tag": "Kim Liên", "tags": ["Kim Liên"], "runtimeCss": "css/premium-kim-lien.css?v=20261008.3", "value": "assets/Premium/Tu tiên/kim_lien_nen3.png", "asset": "assets/Premium/Tu tiên/kim_lien_nen3.png", "isIcon": false, "backgroundFit": "cover", "backgroundPosition": "center center", "backgroundRepeat": "no-repeat", "backgroundAttachment": "fixed"},
+        {"id": "pet_hac_mong_regular_2", "name": "Hạc Mộng · Tiểu Vân Hạc", "type": "pet", "price": 850, "isNonCoin": false, "tag": "Hạc Mộng", "tags": ["Hạc Mộng"], "runtimeCss": "css/premium-hac-mong.css?v=20261008.regular1", "value": "assets/Premium/Tu tiên/hac_mong_chipi2.png", "asset": "assets/Premium/Tu tiên/hac_mong_chipi2.png", "isIcon": false, "disableClickEffect": true, "petEffect": "hac-mong-regular-cloud"},
+        {"id": "theme_hac_mong_regular_2", "name": "Hạc Mộng · Thanh Vân Các", "type": "theme", "price": 800, "isNonCoin": false, "tag": "Hạc Mộng", "tags": ["Hạc Mộng"], "runtimeCss": "css/premium-hac-mong.css?v=20261008.regular1", "customIcon": "☁", "value": "theme_hac_mong_regular_2"},
+        {"id": "effect_hac_mong_regular_2", "name": "Hạc Mộng · Vũ Thư Phiêu Vân", "type": "effect", "price": 900, "isNonCoin": false, "tag": "Hạc Mộng", "tags": ["Hạc Mộng"], "runtimeCss": "css/premium-hac-mong.css?v=20261008.regular1", "customIcon": "〰", "value": "effect_hac_mong_regular_2"},
+        {"id": "frame_hac_mong_regular_2", "name": "Hạc Mộng · Vân Vũ Ngọc Hoàn", "type": "frame", "price": 250, "isNonCoin": false, "tag": "Hạc Mộng", "tags": ["Hạc Mộng"], "runtimeCss": "css/premium-hac-mong.css?v=20261008.regular1", "value": "assets/Premium/Tu tiên/hac_mong_khung2.png", "asset": "assets/Premium/Tu tiên/hac_mong_khung2.png", "isIcon": false},
+        {"id": "background_hac_mong_regular_2", "name": "Hạc Mộng · Vân Hải Tĩnh Cảnh", "type": "background", "price": 150, "isNonCoin": false, "tag": "Hạc Mộng", "tags": ["Hạc Mộng"], "runtimeCss": "css/premium-hac-mong.css?v=20261008.regular1", "value": "assets/Premium/Tu tiên/hac_mong_nen2.png", "asset": "assets/Premium/Tu tiên/hac_mong_nen2.png", "isIcon": false, "backgroundFit": "cover", "backgroundPosition": "center center", "backgroundRepeat": "no-repeat", "backgroundAttachment": "fixed"},
+    ]
+};
+
+/*
+ * FRAME RUNTIME CSS METADATA v1
+ * ------------------------------------------------------------
+ * Mỗi khung tự khai báo stylesheet runtime của chính nó.
+ * StudentFeatureLoader đọc metadata này sau khi store-manager.js được nạp,
+ * vì vậy khung đang mặc không còn phụ thuộc vào việc mở tab Cửa hàng.
+ */
+const FRAME_RUNTIME_CSS_BY_ITEM_ID = Object.freeze({
+    frame_lotm_klein_gray_fog_ring_event: Object.freeze([
+        'css/lord-of-mysteries-klein.css?v=20260917.frame-runtime-barrier-v1'
+    ]),
+    frame_mua_ha_nhat_diep_chi_hoan: Object.freeze([
+        'css/premium-mua-xuan.css?v=20260917.frame-runtime-barrier-v1'
+    ]),
+    frame_premium_mua_xuan_hoa_mong: Object.freeze([
+        'css/premium-mua-xuan.css?v=20260917.frame-runtime-barrier-v1'
+    ]),
+    frame_quoc_khanh_viet_dieu_quoc_an: Object.freeze([
+        'css/quoc-khanh-pet.css?v=20261003.cleanup1'
+    ]),
+    frame_tamon_bside_signal_ring: Object.freeze([
+        'css/tamon-b-side.css?v=20260917.bmask-frame-selfcontained-v1'
+    ]),
+    frame_tamon_bside_black_cat_moon_ring: Object.freeze([
+        'css/tamon-b-side.css?v=20260920.tamon2-black-cat-frame-v1'
+    ]),
+    frame_truyenthuyet_nyx_hac_nguyet_chi_hoan: Object.freeze([
+        'css/nyx-than-thoai.css?v=20260917.frame-runtime-barrier-v1',
+        'css/legendery.css?v=20260917.frame-runtime-barrier-v1'
+    ]),
+    frame_truyenthuyet_aether_thien_quang_chi_hoan: Object.freeze([
+        'css/aether-than-thoai.css?v=20260917.aether-frame-v1'
+    ]),
+    frame_cam_mong_thanh_huyen_chi_hoan: Object.freeze([
+        'css/cam-co-cam-mong.css?v=20260917.frame-runtime-barrier-v1'
+    ]),
+    frame_trung_thu_chu_cuoi_que_anh_chi_hoan: Object.freeze([
+        'css/trung-thu-nguyet-cung.css?v=20261003.cleanup1'
+    ]),
+    frame_trung_thu_nguyet_que_hoa_hoan: Object.freeze([
+        'css/trung-thu-nguyet-cung.css?v=20261003.cleanup1'
+    ]),
+    frame_linkclick_cheng_xiaoshi_time_window: Object.freeze([
+        'css/link-click-cheng-xiaoshi.css?v=20260917.frame-runtime-barrier-v1'
+    ])
+});
+
+StoreConfig.items.forEach(item => {
+    const runtimeCss =
+        FRAME_RUNTIME_CSS_BY_ITEM_ID[
+            String(item?.id || '')
+        ];
+
+    if (runtimeCss) {
+        item.runtimeCss = runtimeCss;
+    }
+});
+
+
+// =========================================================
+// AETHER · TIỂU THIÊN QUANG — CSS RUNTIME GUARD
+// Dùng chung đúng file aether-than-thoai.css đã có; không sửa/ghi đè
+// các hiệu ứng Aether Luxury khác. Chỉ bảo đảm card cửa hàng thường
+// có skin riêng ngay cả khi tab Luxury chưa từng được mở.
+// =========================================================
+function ensureAetherLittleSpiritStylesheet() {
+    if (typeof document === 'undefined' || !document.head) return null;
+
+    const existing = Array.from(
+        document.querySelectorAll('link[rel="stylesheet"][href]')
+    ).find(link =>
+        /(?:^|\/)aether-than-thoai(?:\(\d+\))?\.css(?:[?#].*)?$/i
+            .test(link.href || '')
+    );
+
+    if (existing) return existing;
+
+    const byId = document.getElementById(
+        'aether-little-spirit-runtime-style'
+    );
+    if (byId) return byId;
+
+    const link = document.createElement('link');
+    link.id = 'aether-little-spirit-runtime-style';
+    link.rel = 'stylesheet';
+    link.href =
+        'css/aether-than-thoai.css?v=20260917.aether-little-spirit-theme-v2';
+    link.dataset.aetherLittleSpirit = 'true';
+
+    link.addEventListener('error', () => {
+        console.error(
+            '[AETHER CHIBI] Không tải được css/aether-than-thoai.css'
+        );
+    }, { once: true });
+
+    document.head.appendChild(link);
+    return link;
+}
+
+
+// =========================================================
+// ĐÊM ĐẦY SAO · CHIBI — CSS RUNTIME GUARD
+// Dùng một file CSS riêng cho card cửa hàng thường + hiệu ứng pet.
+// Không chạm vào stylesheet Đêm Đầy Sao Luxury đã có.
+// =========================================================
+function ensureStarryNightChibiStylesheet() {
+    if (typeof document === 'undefined' || !document.head) return null;
+
+    // CHUNG 1 CSS với Premium Đêm Đầy Sao.
+    const existing = Array.from(
+        document.querySelectorAll('link[rel="stylesheet"][href]')
+    ).find(link =>
+        /(?:^|\/)dem-day-sao(?:\(\d+\))?\.css(?:[?#].*)?$/i
+            .test(link.href || '')
+    );
+
+    if (existing) {
+        existing.id = existing.id || 'starry-night-premium-style';
+        const targetHref = 'css/dem-day-sao.css?v=20260921.starry-night-distinct-v2';
+        if (!String(existing.getAttribute('href') || '').includes('20260921.starry-night-distinct-v2')) {
+            existing.setAttribute('href', targetHref);
+        }
+        return existing;
+    }
+
+    const byId = document.getElementById('starry-night-premium-style');
+    if (byId) return byId;
+
+    const link = document.createElement('link');
+    link.id = 'starry-night-premium-style';
+    link.rel = 'stylesheet';
+    link.href = 'css/dem-day-sao.css?v=20260921.starry-night-distinct-v2';
+    link.dataset.starryNight = 'true';
+
+    link.addEventListener('error', () => {
+        console.error(
+            '[STARRY NIGHT] Không tải được css/dem-day-sao.css'
+        );
+    }, { once: true });
+
+    document.head.appendChild(link);
+    return link;
+}
+
+class StoreManager {
+    static getItemsByType(type) {
+        return StoreConfig.items.filter(item => type === 'all' || item.type === type)
+            .sort((a, b) => Number(a.id.endsWith('_kim_lien_regular_3')) - Number(b.id.endsWith('_kim_lien_regular_3')));
+    }
+
+    static getItemById(id) {
+        return window.CollectionRewards?.getItem(id) || StoreConfig.items.find(item => item.id === id);
+    }
+
+    static getAnnualSaleState(item, now = new Date()) {
+        const schedules =
+            Array.isArray(item?.annualSaleWindows) &&
+                item.annualSaleWindows.length
+                ? item.annualSaleWindows
+                : (
+                    item?.annualSale
+                        ? [item.annualSale]
+                        : []
+                );
+
+        // Không có lịch giới hạn = vật phẩm bán bình thường
+        if (!schedules.length) {
+            return {
+                hasAnnualSale: false,
+                isOpen: true,
+                start: null,
+                end: null,
+                nextStart: null,
+                nextOpenLabel: '',
+                windowLabel: ''
+            };
+        }
+
+        const nowTime = now.getTime();
+        const currentYear = now.getFullYear();
+
+        const padNumber = number =>
+            String(number).padStart(2, '0');
+
+        const formatFullDate = date => {
+            return [
+                padNumber(date.getDate()),
+                padNumber(date.getMonth() + 1),
+                date.getFullYear()
+            ].join('/');
+        };
+
+        /*
+         * Tạo các đợt mở bán của:
+         * - năm hiện tại
+         * - năm tiếp theo
+         *
+         * Nhờ vậy sau 05/05 có thể tự nhảy
+         * sang 01/03 năm sau.
+         */
+        const windows = [];
+
+        [
+            currentYear,
+            currentYear + 1
+        ].forEach(year => {
+
+            schedules.forEach(schedule => {
+                const start = new Date(
+                    year,
+                    schedule.startMonth - 1,
+                    schedule.startDay,
+                    0,
+                    0,
+                    0,
+                    0
+                );
+
+                const end = new Date(
+                    year,
+                    schedule.endMonth - 1,
+                    schedule.endDay,
+                    23,
+                    59,
+                    59,
+                    999
+                );
+
+                windows.push({
+                    schedule,
+                    start,
+                    end
+                });
+            });
+
+        });
+
+        windows.sort(
+            (a, b) =>
+                a.start.getTime() -
+                b.start.getTime()
+        );
+
+        // ==========================================
+        // KIỂM TRA CÓ ĐANG TRONG ĐỢT MỞ BÁN KHÔNG
+        // ==========================================
+
+        const activeWindow =
+            windows.find(window => {
+                return (
+                    nowTime >= window.start.getTime() &&
+                    nowTime <= window.end.getTime()
+                );
+            });
+
+        const isOpen = Boolean(activeWindow);
+
+        // ==========================================
+        // TÌM ĐỢT MỞ BÁN TIẾP THEO
+        // ==========================================
+
+        const nextWindow =
+            windows.find(window => {
+                return window.start.getTime() > nowTime;
+            }) || null;
+
+        /*
+         * Chuỗi hiển thị:
+         *
+         * 01–05/03 • 01–05/04 • 01–05/05
+         */
+        const windowLabel =
+            schedules
+                .map(schedule => {
+                    const sameMonth =
+                        schedule.startMonth ===
+                        schedule.endMonth;
+
+                    if (sameMonth) {
+                        return (
+                            `${padNumber(schedule.startDay)}` +
+                            `–${padNumber(schedule.endDay)}` +
+                            `/${padNumber(schedule.startMonth)}`
+                        );
+                    }
+
+                    return (
+                        `${padNumber(schedule.startDay)}` +
+                        `/${padNumber(schedule.startMonth)}` +
+                        `–` +
+                        `${padNumber(schedule.endDay)}` +
+                        `/${padNumber(schedule.endMonth)}`
+                    );
+                })
+                .join(' • ');
+
+        return {
+            hasAnnualSale: true,
+
+            isOpen,
+
+            start:
+                activeWindow?.start ||
+                nextWindow?.start ||
+                null,
+
+            end:
+                activeWindow?.end ||
+                nextWindow?.end ||
+                null,
+
+            nextStart:
+                nextWindow?.start ||
+                null,
+
+            nextOpenLabel:
+                nextWindow
+                    ? formatFullDate(
+                        nextWindow.start
+                    )
+                    : '',
+
+            windowLabel
+        };
+    }
+
+    /*
+     * Cổng mua vật phẩm.
+     * Ngăn giao diện giới hạn bị mua ngoài ngày mở bán.
+     */
+    static buyItemSafely(itemId, isUpgrade = false) {
+        const item = this.getItemById(itemId);
+
+        if (!item) {
+            console.error(
+                `[StoreManager] Không tìm thấy vật phẩm: ${itemId}`
+            );
+            return;
+        }
+
+        if (item.isLocked === true) {
+            AppDialog.notify(
+                `🔒 ${item.name} đang bị Giáo viên khóa.`
+            );
+            return;
+        }
+
+        /*
+         * Vật phẩm dùng Xu Trung Thu vẫn phải đi tiếp qua buyItem().
+         * window.buyItem sẽ chuyển đúng sang MidAutumnCoinManager.redeem().
+         * Không return ở đây, nếu không nút mua chỉ hiện cảnh báo rồi dừng.
+         */
+
+        const saleState =
+            this.getAnnualSaleState(item);
+
+        if (
+            saleState.hasAnnualSale &&
+            !saleState.isOpen
+        ) {
+            AppDialog.notify(
+                `${item.name} chỉ mở bán từ ` +
+                `${saleState.windowLabel} hằng năm.\n\n` +
+                `Đợt mở bán tiếp theo: ${saleState.nextOpenLabel}.`
+            );
+
+            return;
+        }
+
+        const purchaseHandler =
+            typeof window.buyItem === 'function'
+                ? window.buyItem
+                : (
+                    typeof buyItem === 'function'
+                        ? buyItem
+                        : null
+                );
+
+        if (!purchaseHandler) {
+            console.error(
+                '[StoreManager] Không tìm thấy hàm buyItem().'
+            );
+            return;
+        }
+
+        return purchaseHandler(itemId, isUpgrade);
+    }
+
+    /*
+     * Dùng thử cũng chỉ hoạt động trong thời gian mở bán.
+     */
+    static trialItemSafely(itemId) {
+        const item = this.getItemById(itemId);
+
+        if (!item) {
+            console.error(
+                `[StoreManager] Không tìm thấy vật phẩm: ${itemId}`
+            );
+            return;
+        }
+
+        if (item.isLocked === true) {
+            AppDialog.notify(
+                `🔒 ${item.name} đang bị Giáo viên khóa.`
+            );
+            return;
+        }
+
+        const saleState =
+            this.getAnnualSaleState(item);
+
+        if (
+            saleState.hasAnnualSale &&
+            !saleState.isOpen
+        ) {
+            AppDialog.notify(
+                `${item.name} hiện chưa mở bán.\n\n` +
+                `Thời gian: ${saleState.windowLabel} hằng năm.\n` +
+                `Mở lại: ${saleState.nextOpenLabel}.`
+            );
+
+            return;
+        }
+
+        const trialHandler =
+            typeof window.trialItem === 'function'
+                ? window.trialItem
+                : (
+                    typeof trialItem === 'function'
+                        ? trialItem
+                        : null
+                );
+
+        if (!trialHandler) {
+            console.error(
+                '[StoreManager] Không tìm thấy hàm trialItem().'
+            );
+            return;
+        }
+
+        return trialHandler(itemId);
+    }
+
+    static applyItem(itemId) {
+        if (window.isStudentStoreGameAccessEnabled?.() === false) return false;
+        const item = this.getItemById(itemId);
+        if (!item) return false;
+
+        // K2/K3: runtime cơ sở cũng tôn trọng quyền sở hữu do student.js cung cấp.
+        if (
+            typeof window.studentStoreCanUseItemSync === 'function' &&
+            window.studentStoreCanUseItemSync(itemId) !== true
+        ) {
+            AppDialog.notify('⛔ Bạn chưa sở hữu vật phẩm này.');
+            return false;
+        }
+
+        // Chặn trang bị từ mọi đường dẫn khi Giáo viên đã khóa vật phẩm.
+        // Không ảnh hưởng thao tác Gỡ vật phẩm đang mặc.
+        if (item.isLocked === true) {
+            AppDialog.notify(
+                `🔒 ${item.name} đang bị Giáo viên khóa, không thể sử dụng.`
+            );
+            return false;
+        }
+
+        switch (item.type) {
+            case 'theme':
+                // FIX KẸT GIAO DIỆN: Xóa toàn bộ class giao diện cũ trong StoreConfig khỏi thẻ <body> trước khi đổi
+                StoreConfig.items.forEach(i => {
+                    if (i.type === 'theme' && i.value) {
+                        document.body.classList.remove(i.value);
+                    }
+                });
+                ThemeManager.applyTheme(item.id);
+                break;
+            case 'effect':
+                EffectManager.applyEffect(item.id);
+                break;
+            case 'pet':
+                PetManager.spawnPet(item);
+                break;
+            case 'music': // BỔ SUNG DÒNG NÀY
+                MusicManager.applyMusic(item.id);
+                break;
+        }
+    }
+
+    static renderStoreItem(item, isOwned = false, isEquipped = false, isTrial = false, isUpcoming = false) {
+        const annualSaleState =
+            this.getAnnualSaleState(item);
+
+        /*
+         * Người đã sở hữu vẫn có thể mặc giao diện quanh năm.
+         * Chỉ khóa người chưa sở hữu.
+         */
+        const annualSaleLocked =
+            annualSaleState.hasAnnualSale &&
+            !annualSaleState.isOpen &&
+            !isOwned;
+        const annualSaleIcon =
+            item.annualSaleIcon || '📅';
+
+        const annualSaleTitle =
+            item.annualSaleTitle ||
+            'Vật phẩm giới hạn hằng năm';
+        const tagClassMap = {
+            'Lord of the Mysteries': 'tag-lotm',
+            'Truyền thuyết': 'tag-truyen-thuyet',
+            'Sao thủy': 'tag-sao-thuy',
+            'Cổ tích': 'tag-co-tich',
+            'Đời sống': 'tag-doi-song',
+            'Ban đêm': 'tag-ban-dem',
+            'Ban ngày': 'tag-ban-ngay',
+            'Doraemon': 'tag-doraemon',
+            'Hội họa': 'tag-hoi-hoa',
+            'Thất Đại Tội': 'tag-that-dai-toi',
+            'Hệ Mặt Trời': 'tag-he-mat-troi',
+            'Sinh nhật 2026': 'tag-sinh-nhat-2026',
+            'Cơn mưa': 'tag-con-mua',
+            'Mùa xuân': 'tag-mua-xuan',
+            'Mùa thu': 'tag-mua-thu-regular',
+            'Mùa Hạ': 'tag-mua-ha-limited',
+            '2/9': 'tag-quoc-khanh-2-9',
+            'Cầm Mộng': 'tag-cam-mong-chibi',
+            'Kim Liên': 'tag-kim-lien-regular',
+            'Hạc Mộng': 'tag-hac-mong-regular',
+            'Trung thu': 'tag-trung-thu-chibi',
+            'Link Click': 'tag-link-click-chibi',
+            'Đêm đầy sao': 'tag-starry-night-chibi',
+            'BL': 'tag-bl',
+        };
+
+        let tagClass = tagClassMap[item.tag] || 'tag-normal';
+        let actionButton = '';
+        let trialButton = '';
+
+        const isMidAutumnCoinItem =
+            String(item.currency || '') ===
+            'mid_autumn_coin';
+
+        const midAutumnCoinCost =
+            Math.max(
+                1,
+                Number(
+                    item.midAutumnCoinCost ||
+                    item.price ||
+                    1
+                )
+            );
+
+        const normalizedBirthdayTag =
+            String(item.tag || '')
+                .normalize('NFD')
+                .replace(
+                    /[\u0300-\u036f]/g,
+                    ''
+                )
+                .replace(/đ/g, 'd')
+                .replace(/Đ/g, 'D')
+                .trim()
+                .toLowerCase();
+
+        const specialBirthdayCoinEligible =
+            item
+                .specialBirthdayCoinEligible !==
+            false &&
+            (
+                normalizedBirthdayTag ===
+                'sinh nhat' ||
+                normalizedBirthdayTag
+                    .startsWith(
+                        'sinh nhat '
+                    )
+            );
+
+        const specialBirthdayCoinBalance =
+            Number(
+                window
+                    .studentSpecialBirthdayCoinCount
+            ) || 0;
+
+        // --- LOGIC 1: XỬ LÝ VẬT PHẨM BỊ GIÁO VIÊN KHÓA SỬ DỤNG VÀ MUA ---
+        if (item.isLocked === true) {
+            trialButton =
+                `<button class="btn-preview disabled" disabled>` +
+                `🔒 Đã bị khóa` +
+                `</button>`;
+
+            actionButton =
+                `<button class="btn-equip disabled" disabled ` +
+                `style="background: #e11d48; color: white; border: none; ` +
+                `cursor: not-allowed; box-shadow: none;">` +
+                `🔒 Giáo viên đã khóa` +
+                `</button>`;
+        }
+
+        /*
+         * Vật phẩm giới hạn Hệ Mặt Trời
+         */
+        else if (annualSaleLocked) {
+            trialButton = `
+        <button
+            class="btn-preview disabled"
+            disabled
+            title="Chỉ dùng thử trong thời gian mở bán"
+        >
+            🚫 Thử từ ${annualSaleState.windowLabel}
+        </button>
+    `;
+
+            actionButton = `
+        <button
+    class="btn-equip active annual-sale-locked"
+    disabled
+    title="${annualSaleTitle}"
+>
+    ${annualSaleIcon} Mở lại ${annualSaleState.nextOpenLabel}
+</button>
+    `;
+        }
+
+        else if (isUpcoming) {
+            trialButton = `<button class="btn-preview disabled" disabled>🔒 Chưa mở bán</button>`;
+            actionButton = `<button class="btn-equip active" disabled id="countdown-btn-${item.id}" style="background: #2c3e50; color: #f1c40f; cursor: not-allowed; font-family: 'Courier New', Courier, monospace; font-size: 1.05em; font-weight: bold; border: 1px solid #7f8c8d; box-shadow: inset 0 2px 4px rgba(0,0,0,0.3);">⏳ Đang tính toán...</button>`;
+        }
+        // --- LOGIC LUỒNG HOẠT ĐỘNG BÌNH THƯỜNG ---
+        else {
+            if (isEquipped) {
+                actionButton = `<button class="btn-equip active" onclick="StoreManager.unapplyItem('${item.id}')" style="background: rgba(225, 29, 72, 0.08); color: #e11d48; border: 1px dashed #e11d48; cursor: pointer; box-shadow: none;" title="Nhấn để tháo vật phẩm này">❌ Tháo trang bị</button>`;
+            } else if (isOwned) {
+                actionButton = `<button class="btn-equip" onclick="StoreManager.applyItem('${item.id}')">✨ Mặc ngay</button>`;
+            } else {
+                if (isMidAutumnCoinItem) {
+                    actionButton = `
+            <button
+                class="btn-buy midautumn-coin-buy"
+                onclick="StoreManager.buyItemSafely('${item.id}')"
+                title="Thanh toán bằng Xu Trung Thu"
+            >
+                🌕 Đổi ${midAutumnCoinCost} Xu Trung Thu
+            </button>
+        `;
+                } else if (
+                    item.rewardSource ===
+                    'birthday_coin' ||
+                    specialBirthdayCoinEligible
+                ) {
+                    const rewardButtons = [];
+
+                    // Xu Sinh Nhật đúng năm.
+                    if (
+                        item.rewardSource ===
+                        'birthday_coin'
+                    ) {
+                        const birthdayYear =
+                            Number(
+                                item.birthdayYear
+                            );
+
+                        const birthdayBalance =
+                            Number(
+                                window
+                                    .studentBirthdayCoins &&
+                                window
+                                    .studentBirthdayCoins[
+                                String(
+                                    birthdayYear
+                                )
+                                ]
+                            ) || 0;
+
+                        if (
+                            birthdayBalance > 0 &&
+                            typeof window
+                                .redeemBirthdayItem ===
+                            'function'
+                        ) {
+                            rewardButtons.push(`
+                <button
+                    class="
+                        btn-buy
+                        birthday-coin-reward
+                    "
+                    onclick="
+                        window.redeemBirthdayItem(
+                            '${item.id}',
+                            ${birthdayYear}
+                        )
+                    "
+                >
+                    🎂 Đổi Xu Sinh Nhật
+                    ${birthdayYear}
+                </button>
+            `);
+                        } else {
+                            rewardButtons.push(`
+                <button
+                    class="
+                        btn-buy
+                        birthday-coin-reward
+                    "
+                    disabled
+                >
+                    🎂 Cần Xu Sinh Nhật
+                    ${birthdayYear}
+                </button>
+            `);
+                        }
+                    }
+
+                    // Xu Đặc Biệt không phân biệt năm.
+                    if (
+                        specialBirthdayCoinEligible
+                    ) {
+                        if (
+                            specialBirthdayCoinBalance >
+                            0 &&
+                            typeof window
+                                .redeemSpecialBirthdayItem ===
+                            'function'
+                        ) {
+                            rewardButtons.push(`
+                <button
+                    class="btn-buy"
+                    onclick="
+                        window.redeemSpecialBirthdayItem(
+                            '${item.id}'
+                        )
+                    "
+                    style="
+                        background:
+                            linear-gradient(
+                                135deg,
+                                #8b5cf6,
+                                #ec4899
+                            );
+                    "
+                >
+                    ✨ Đổi 1 Xu Đặc Biệt
+                </button>
+            `);
+                        } else {
+                            rewardButtons.push(`
+                <button
+                    class="btn-buy"
+                    disabled
+                    style="
+                        background:#cbd5e1;
+                        color:#64748b;
+                    "
+                >
+                    ✨ Cần Xu Đặc Biệt
+                </button>
+            `);
+                        }
+                    }
+
+                    actionButton = `
+        <div style="
+            display:flex;
+            flex-direction:column;
+            gap:8px;
+        ">
+            ${rewardButtons.join('')}
+        </div>
+    `;
+                } else if (item.eventOnly === true) {
+                    actionButton = `
+            <button
+                class="btn-buy event-only"
+                disabled
+                title="Vật phẩm này chỉ được trao từ sự kiện"
+            >
+                🎁 Chỉ nhận từ sự kiện
+            </button>
+        `;
+                } else if (item.isNonCoin) {
+                    // Nếu giáo viên đặt giá lớn hơn 0 thì mở bán giới hạn
+                    if (item.price > 0) {
+                        actionButton = `
+                <button
+                    class="btn-buy"
+                    onclick="StoreManager.buyItemSafely('${item.id}')"
+                >
+                    🛒 Mua giới hạn: ${item.price} 🪙
+                </button>
+            `;
+                    } else {
+                        actionButton = `
+                <button
+                    class="btn-buy"
+                    onclick="StoreManager.buyItemSafely('${item.id}')"
+                >
+                    🎁 Nhận được từ sự kiện
+                </button>
+            `;
+                    }
+                } else {
+                    actionButton = `
+            <button
+                class="btn-buy"
+                onclick="StoreManager.buyItemSafely('${item.id}')"
+            >
+                🛒 Mua đứt: ${item.price} 🪙
+            </button>
+        `;
+                }
+            }
+
+            // Vật phẩm Xu Trung Thu không có cơ chế dùng thử bằng Coin.
+            if (isMidAutumnCoinItem) {
+                trialButton = `
+        <button
+            class="btn-preview disabled"
+            disabled
+            title="Vật phẩm này mua bằng Xu Trung Thu"
+        >
+            🌕 Thanh toán bằng Xu Trung Thu
+        </button>
+    `;
+            }
+
+            // Cấu hình hiển thị nút dùng thử đối với vật phẩm Sự kiện được mở bán bằng Coin
+            else if (item.isNonCoin && (!item.price || item.price <= 0)) {
+                trialButton = `<button class="btn-preview disabled" disabled title="Không khả dụng">🚫 Không hỗ trợ thử nghiệm</button>`;
+            } else if (isTrial) {
+                let trialPrice = item.price / 2;
+                let refund = trialPrice * 0.3;
+                let finalPrice = item.price - refund;
+
+                trialButton = `<button class="btn-preview active" disabled>⏳ Đang trong 24h dùng thử</button>`;
+                actionButton = `<button class="btn-buy upgrade" onclick="StoreManager.buyItemSafely('${item.id}', true)">💎 Nâng cấp vĩnh viễn: ${finalPrice} 🪙</button>`;
+            } else if (!isOwned) {
+                let trialPrice = item.price / 2;
+                trialButton = `<button class="btn-preview" onclick="StoreManager.trialItemSafely('${item.id}')">⏳ Dùng thử 1 ngày: ${trialPrice} 🪙</button>`;
+            }
+        }
+
+        const typeNameMap = {
+            theme: 'Giao diện',
+            effect: 'Hiệu ứng',
+            pet: 'Thú cưng ảo',
+            music: 'Nhạc nền',
+            frame: 'Khung viền',
+            background: 'Nền'
+        };
+
+        let typeName = typeNameMap[item.type] || 'Vật phẩm';
+
+        let iconHTML = '';
+        if (item.isIcon === false && item.value) {
+            // Đã xóa toàn bộ logic gán extraClass hiệu ứng
+            // Chỉ giữ lại class 'item-icon' mặc định để không bị hiện hiệu ứng trong Cửa hàng
+            iconHTML = `<img src="${item.value}" class="item-icon" style="width: 80px; height: 80px; object-fit: contain;">`;
+        } else {
+            let displayIcon = this.getIconForType(item.type);
+            if (item.customIcon) displayIcon = item.customIcon;
+            else if (item.type !== 'theme' && item.value) displayIcon = item.value;
+
+            iconHTML = `<div class="item-icon">${displayIcon}</div>`;
+        }
+
+        /* =========================================================
+   NHÓM CARD CỬA HÀNG ĐẶC BIỆT
+   ========================================================= */
+
+        const nyxTrinityIds = new Set([
+            'pet_truyenthuyet_nyx',
+            'effect_truyenthuyet_nyx_domain',
+            'theme_truyenthuyet_celestial'
+        ]);
+
+        /*
+ * NYX · TIỂU DẠ TINH LINH
+ * Card riêng hoàn toàn.
+ */
+        const nyxLittleSpiritIds = new Set([
+            'pet_truyenthuyet_nyx_chibi_1'
+        ]);
+
+        /*
+         * AETHER · TIỂU THIÊN QUANG
+         * Card mỹ thuật riêng nhưng GIỮ NGUYÊN DOM/bố cục store-item-card.
+         */
+        const aetherLittleSpiritIds = new Set([
+            'pet_truyenthuyet_aether_chibi_2',
+            'theme_truyenthuyet_aether_thien_quang_thanh_vuc',
+            'effect_truyenthuyet_aether_thien_quang_thien_mon',
+            'frame_truyenthuyet_aether_thien_quang_chi_hoan',
+            'background_truyenthuyet_aether_thien_khung_luu_quang'
+        ]);
+
+        /*
+ * BỘ NGUYỆT DẠ NYX
+ * Card giữ nguyên thiết kế riêng,
+ * không cho giao diện khác ghi đè.
+ */
+        const nyxMoonRelicIds = new Set([
+            'theme_truyenthuyet_thanh_dien_nguyet_da',
+            'effect_truyenthuyet_da_trieu_tinh_nguyet',
+            'frame_truyenthuyet_nyx_hac_nguyet_chi_hoan',
+            'background_truyenthuyet_nyx_vinh_da_thien_mac'
+        ]);
+
+        const tamonBsideChibiIds = new Set([
+            'pet_tamon_bside_chibi_1',
+            'theme_tamon_bside_backstage',
+            'effect_tamon_bside_spectrum_break',
+            'frame_tamon_bside_signal_ring',
+            'background_tamon_bside_stage_signal'
+        ]);
+
+        /*
+         * TAMON'S B-SIDE · CHIBI II
+         * Card Tamon 2 hoàn toàn riêng về mỹ thuật, nhưng DOM/bố cục vẫn là store-item-card chuẩn.
+         * Pet + theme + effect + frame + background Hắc Miêu dùng chung card Tamon 2.
+         * Chỉ dùng chung SKIN TAG Tamon's B-Side với Tamon 1; KHÔNG dùng chung card/style/effect.
+         */
+        const tamonBsideChibi2Ids = new Set([
+            'pet_tamon_bside_chibi_2',
+            'theme_tamon_bside_black_cat_nocturne',
+            'effect_tamon_bside_black_cat_eclipse',
+            'frame_tamon_bside_black_cat_moon_ring',
+            'background_tamon_bside_black_cat_nocturne'
+        ]);
+
+        /*
+         * THANH HUYỀN · CẦM MỘNG
+         * Pet + theme + effect + frame + background dùng CHUNG card Cầm Mộng
+         * nhưng GIỮ NGUYÊN DOM / bố cục chuẩn.
+         */
+        const camMongChibiIds = new Set([
+            'pet_cam_mong_chibi_1',
+            'theme_cam_mong_thanh_huyen_tien_cac',
+            'effect_cam_mong_van_cam_luu_quang',
+            'frame_cam_mong_thanh_huyen_chi_hoan',
+            'background_cam_mong_thanh_huyen_tien_canh'
+        ]);
+
+        const premiumSpringIds = new Set([
+            'pet_premium_mua_xuan',
+            'effect_premium_mua_xuan',
+            'theme_mua_xuan_thanh_minh',
+            'frame_premium_mua_xuan_hoa_mong',
+            'background_premium_mua_xuan_hoa_mong'
+        ]);
+
+        // MÙA THU · CỬA HÀNG THƯỜNG — card riêng, DOM/bố cục vẫn dùng store-item-card chuẩn.
+        // Namespace/card group này KHÔNG dùng chung với pet_luxury_mua_thu.
+        const premiumAutumnRegularIds = new Set([
+            'pet_premium_mua_thu_chibi_3',
+            'theme_mua_thu_phong_diep_kinh_suong',
+            'effect_mua_thu_phong_diep_quang_trieu',
+            'frame_mua_thu_phong_diep_chi_hoan',
+            'background_mua_thu_phong_lam_mong_canh'
+        ]);
+
+        const premiumSummerLimitedIds = new Set([
+            'pet_premium_mua_ha_chibi_2',
+            'theme_mua_ha_ha_quang_luu_ly',
+            'effect_mua_ha_phong_linh_ha_nhat',
+            'frame_mua_ha_nhat_diep_chi_hoan',
+            'background_mua_ha_luu_phong_mong_canh'
+        ]);
+
+        const amonTrinityIds = new Set([
+            'pet_lotm_amon',
+            'effect_lotm_amon',
+            'theme_lotm_mysteries'
+        ]);
+
+        /*
+         * LORD OF THE MYSTERIES · KLEIN CHIBI EVENT
+         * Klein Chibi + giao diện Hội Tarot dùng CHUNG skin/card Klein.
+         * Cả hai vẫn chỉ dùng chung TAG Lord of the Mysteries với Amon,
+         * tuyệt đối không nhập vào card Amon.
+         * Giữ NGUYÊN DOM / bố cục store-item-card.
+         */
+        const lotmKleinChibiEventIds = new Set([
+            'pet_lotm_klein_chibi_event_1',
+            'theme_lotm_tarot_council_event'
+        ]);
+
+        /*
+         * LORD OF THE MYSTERIES · EFFECT SỰ KIỆN TOÀN WEB
+         * Chỉ dùng chung TAG Lord of the Mysteries.
+         * Không dùng card Amon/Klein; có skin card riêng nhưng giữ DOM chuẩn.
+         */
+        const lotmEventEffectIds = new Set([
+            'effect_lotm_gray_fog_revelation_event'
+        ]);
+
+        /*
+         * LORD OF THE MYSTERIES · KHUNG VIỀN SỰ KIỆN
+         * Chỉ dùng chung TAG Lord of the Mysteries.
+         * Card riêng, giữ layout store-item-card chuẩn và miễn mọi theme.
+         */
+        const lotmEventFrameIds = new Set([
+            'frame_lotm_klein_gray_fog_ring_event'
+        ]);
+
+        /*
+         * LORD OF THE MYSTERIES · NỀN SỰ KIỆN
+         * Chỉ dùng chung TAG Lord of the Mysteries.
+         * Card riêng, layout store-item-card chuẩn, miễn mọi theme.
+         */
+        const lotmEventBackgroundIds = new Set([
+            'background_lotm_klein_gray_fog_world_event'
+        ]);
+
+        const shizukaTrinityIds = new Set([
+            'pet_doraemon_shizuka',
+            'theme_doraemon_childhood',
+            'effect_doraemon_school_memories'
+        ]);
+
+        const sevenSinsSlothIds = new Set([
+            'pet_thatdaitoi_luoibieng_1',
+            'theme_thatdaitoi_acedia_dream',
+            'effect_thatdaitoi_acedia_domain'
+        ]);
+
+        /*
+         * ACEDIA · CHIBI — pet 850 Coin ở CỬA HÀNG THƯỜNG.
+         * Card riêng hoàn toàn: không dùng skin/tag của bộ relic Acedia sự kiện.
+         */
+        const sevenSinsSlothChibiIds = new Set([
+            'pet_thatdaitoi_luoibieng_chibi_1',
+            'theme_thatdaitoi_mien_khe_tinh_gioi',
+            'frame_thatdaitoi_mien_khe_chi_hoan',
+            'background_thatdaitoi_mien_canh_tinh_da',
+            'effect_thatdaitoi_mien_vu_tinh_da'
+        ]);
+
+        const birthday2026Ids = new Set([
+            'pet_sinh_nhat_2026',
+            'theme_sinh_nhat_tiec_ngot_2026',
+            'effect_sinh_nhat_than_an_phuc_loc_2026'
+        ]);
+
+        const nationalDay29Ids = new Set([
+            'pet_quoc_khanh_chibi_1',
+            'effect_quoc_khanh_viet_dieu_non_song',
+            'theme_quoc_khanh_viet_dieu_hong_ky',
+            'frame_quoc_khanh_viet_dieu_quoc_an',
+            'background_quoc_khanh_son_ha_ruc_sang'
+        ]);
+
+        const midAutumnChibiPetIds = new Set([
+            'pet_trung_thu_hang_nga_chibi_1',
+            'theme_trung_thu_nguyet_hoi_hoa_dang',
+            'effect_trung_thu_nguyet_trieu_luu_quang',
+            'frame_trung_thu_nguyet_que_hoa_hoan',
+            'background_trung_thu_nguyet_cung_hoa_dang_da'
+        ]);
+
+        /*
+         * TRUNG THU · TIỂU CHÚ CUỘI
+         * Thẻ riêng về mỹ thuật nhưng vẫn dùng nguyên DOM/bố cục store-item-card.
+         * Không nhập vào nhóm Tiểu Hằng Nga để tag/card có thiết kế riêng.
+         */
+        const midAutumnCuoiChibiIds = new Set([
+            'pet_trung_thu_chu_cuoi_chibi_2',
+            'theme_trung_thu_quang_han_nguyet_que',
+            'effect_trung_thu_que_anh_phi_diep',
+            'frame_trung_thu_chu_cuoi_que_anh_chi_hoan',
+            'background_trung_thu_chu_cuoi_que_lam_nguyet_da'
+        ]);
+
+        /*
+         * LINK CLICK · CHENG XIAOSHI CHIBI
+         * Card riêng về mỹ thuật nhưng giữ NGUYÊN DOM / bố cục chuẩn.
+         */
+        const linkClickChibiIds = new Set([
+            'pet_linkclick_cheng_xiaoshi_chibi_1',
+            'theme_linkclick_fragmented_memory',
+            'effect_linkclick_echo_corridor',
+            'frame_linkclick_cheng_xiaoshi_time_window',
+            'background_linkclick_cheng_xiaoshi_sunset_studio'
+        ]);
+
+
+        /*
+         * ĐÊM ĐẦY SAO · CHIBI
+         * Thẻ riêng cho cửa hàng thường, giữ nguyên DOM/bố cục store-item-card.
+         * Miễn nhiễm giao diện khác và dùng CSS riêng, tách biệt Premium Luxury.
+         */
+        const starryNightChibiIds = new Set([
+            'pet_dem_day_sao_chibi_1',
+            'theme_dem_day_sao_hoa_gioi',
+            'effect_dem_day_sao_tinh_hoa_luu_van',
+            'frame_dem_day_sao_tinh_da_chi_hoan',
+            'background_dem_day_sao_mong_canh_1'
+        ]);
+
+        const acediaCardVariantMap = Object.freeze({
+            pet_thatdaitoi_luoibieng_1: 'familiar',
+            theme_thatdaitoi_acedia_dream: 'palace',
+            effect_thatdaitoi_acedia_domain: 'domain'
+        });
+
+        const acediaVariant =
+            acediaCardVariantMap[item.id] || '';
+
+        const acediaRelicHTML = acediaVariant
+            ? `
+                <div
+                    class="acedia-card-architecture"
+                    aria-hidden="true"
+                >
+                    <span
+                        class="acedia-card-pillar pillar-left"
+                    ></span>
+
+                    <span
+                        class="acedia-card-pillar pillar-right"
+                    ></span>
+
+                    <span class="acedia-card-arch"></span>
+                    <span class="acedia-card-hourglass"></span>
+
+                    <span
+                        class="acedia-card-chain chain-left"
+                    ></span>
+
+                    <span
+                        class="acedia-card-chain chain-right"
+                    ></span>
+                </div>
+
+                <div class="acedia-relic-header">
+                    <span class="acedia-relic-number">
+                        Ⅶ
+                    </span>
+
+                    <span class="acedia-relic-order">
+                        ORDO ACEDIAE
+                    </span>
+
+                    <span class="acedia-relic-index">
+                        ${item.acediaIndex || 'VII'}
+                    </span>
+                </div>
+
+                <div class="acedia-relic-lore">
+                    <span class="acedia-relic-glyph">
+                        ${item.acediaGlyph || '☾'}
+                    </span>
+
+                    <span class="acedia-relic-copy">
+                        <b>
+                            ${item.acediaRole ||
+            'Di vật Lười Biếng'}
+                        </b>
+
+                        <small>
+                            ${item.acediaLore ||
+            'Thời gian ngủ quên trong mộng điện.'}
+                        </small>
+                    </span>
+                </div>
+            `
+            : '';
+
+        const cardClasses = [
+            'store-item-card'
+        ];
+
+        if (item.isLocked === true) {
+            cardClasses.push('is-teacher-locked');
+        }
+
+        let specialCardGroup = '';
+        let isThemeImmune = false;
+        if (item.id.endsWith('_hac_mong_regular_2')) {
+            cardClasses.push('hmr-card', 'store-theme-locked', 'ui-theme-immune');
+            specialCardGroup = 'hac-mong-regular'; isThemeImmune = true;
+        }
+        if (item.id.endsWith('_kim_lien_regular_3')) {
+            cardClasses.push('klr-card', 'store-theme-locked', 'ui-theme-immune');
+            specialCardGroup = 'kim-lien-regular';
+            isThemeImmune = true;
+        }
+
+        /* TAMON'S B-SIDE · CHIBI — card riêng nhưng giữ nguyên bố cục chuẩn */
+        if (tamonBsideChibiIds.has(item.id)) {
+            cardClasses.push(
+                'store-card-tamon-bside-chibi',
+                'store-theme-locked',
+                'ui-theme-immune'
+            );
+
+            specialCardGroup = 'tamon-bside-chibi';
+            isThemeImmune = true;
+        }
+
+        /* TAMON'S B-SIDE · CHIBI II — card riêng, tuyệt đối không đổi layout */
+        if (tamonBsideChibi2Ids.has(item.id)) {
+            cardClasses.push(
+                'store-card-tamon-bside-chibi2',
+                'store-theme-locked',
+                'ui-theme-immune'
+            );
+
+            specialCardGroup = 'tamon-bside-chibi2';
+            isThemeImmune = true;
+        }
+
+        /*
+         * THANH HUYỀN · CẦM MỘNG
+         * Chỉ thêm class trang trí; cấu trúc card chuẩn phía dưới
+         * không đổi một thẻ HTML nào.
+         */
+        if (camMongChibiIds.has(item.id)) {
+            cardClasses.push(
+                'store-card-cam-mong-chibi',
+                'store-theme-locked',
+                'ui-theme-immune'
+            );
+
+            specialCardGroup = 'cam-mong-chibi';
+            isThemeImmune = true;
+        }
+
+        if (premiumSpringIds.has(item.id)) {
+            cardClasses.push(
+                'store-card-premium-spring',
+                'store-theme-locked',
+                'ui-theme-immune'
+            );
+
+            specialCardGroup = 'premium-spring';
+            isThemeImmune = true;
+        }
+
+        /* MÙA THU · CỬA HÀNG THƯỜNG — skin riêng, tuyệt đối không đổi DOM/bố cục card. */
+        if (premiumAutumnRegularIds.has(item.id)) {
+            cardClasses.push(
+                'store-card-autumn-regular',
+                'store-theme-locked',
+                'ui-theme-immune'
+            );
+
+            specialCardGroup = 'autumn-regular';
+            isThemeImmune = true;
+        }
+
+        /* PREMIUM MÙA HẠ · thẻ riêng nhưng giữ nguyên DOM/bố cục chuẩn */
+        if (premiumSummerLimitedIds.has(item.id)) {
+            cardClasses.push(
+                'store-card-premium-summer-limited',
+                'store-theme-locked',
+                'ui-theme-immune'
+            );
+
+            specialCardGroup = 'premium-summer-limited';
+            isThemeImmune = true;
+        }
+
+
+
+        /* Bộ ba Nyx */
+        if (nyxTrinityIds.has(item.id)) {
+            cardClasses.push(
+                'store-card-nyx-trinity',
+                'store-theme-locked',
+                'ui-theme-immune'
+            );
+
+            specialCardGroup = 'nyx-trinity';
+            isThemeImmune = true;
+        }
+
+        /* =============================================
+   NYX · TIỂU DẠ TINH LINH
+   Card riêng + miễn nhiễm giao diện
+   ============================================= */
+
+        if (nyxLittleSpiritIds.has(item.id)) {
+
+            cardClasses.push(
+                'store-card-nyx-little-spirit',
+                'store-theme-locked',
+                'ui-theme-immune'
+            );
+
+            specialCardGroup =
+                'nyx-little-spirit';
+
+            isThemeImmune = true;
+        }
+
+
+        /* =============================================
+           AETHER · TIỂU THIÊN QUANG
+           - Card riêng về mỹ thuật
+           - Không thay DOM/bố cục card chuẩn
+           - Miễn nhiễm theme/giao diện đang trang bị
+           ============================================= */
+        if (aetherLittleSpiritIds.has(item.id)) {
+            ensureAetherLittleSpiritStylesheet();
+
+            cardClasses.push(
+                'store-card-aether-little-spirit',
+                'store-theme-locked',
+                'ui-theme-immune'
+            );
+
+            specialCardGroup =
+                'aether-little-spirit';
+
+            isThemeImmune = true;
+        }
+
+        /* =============================================
+   THÁNH ĐIỆN NGUYỆT DẠ
+   + DẠ TRIỀU TINH NGUYỆT
+   Miễn nhiễm mọi giao diện bên ngoài
+   ============================================= */
+
+        if (nyxMoonRelicIds.has(item.id)) {
+
+            cardClasses.push(
+                'store-card-nyx-moon-relic',
+                'store-theme-locked',
+                'ui-theme-immune'
+            );
+
+            specialCardGroup =
+                'nyx-moon-relic';
+
+            isThemeImmune = true;
+        }
+
+
+        /* Bộ ba Amon */
+        if (amonTrinityIds.has(item.id)) {
+            cardClasses.push(
+                'store-card-amon-trinity',
+                'store-theme-locked',
+                'ui-theme-immune'
+            );
+
+            specialCardGroup = 'amon-trinity';
+            isThemeImmune = true;
+        }
+
+        /*
+         * Klein Moretti · Tiểu Kẻ Khờ — card cửa hàng THƯỜNG.
+         * Chỉ thêm skin + khóa ảnh hưởng theme; không thay cấu trúc card.
+         */
+        if (lotmKleinChibiEventIds.has(item.id)) {
+            cardClasses.push(
+                'store-card-lotm-klein-chibi-event',
+                'store-theme-locked',
+                'ui-theme-immune'
+            );
+
+            specialCardGroup = 'lotm-klein-chibi-event';
+            isThemeImmune = true;
+        }
+
+        /*
+         * Khải Huyền Sương Xám — thẻ riêng, vẫn dùng layout store-item-card chuẩn.
+         * Khóa tuyệt đối skin từ theme/giao diện đang trang bị.
+         */
+        if (lotmEventEffectIds.has(item.id)) {
+            cardClasses.push(
+                'store-card-lotm-event-effect',
+                'store-theme-locked',
+                'ui-theme-immune'
+            );
+
+            specialCardGroup = 'lotm-event-effect';
+            isThemeImmune = true;
+        }
+
+        /*
+         * Bí Vụ Chi Hoàn — card riêng, không nhập vào card Amon/Klein.
+         * Chỉ khác mỹ thuật; không thay DOM/bố cục card chuẩn.
+         */
+        if (lotmEventFrameIds.has(item.id)) {
+            cardClasses.push(
+                'store-card-lotm-frame-event',
+                'store-theme-locked',
+                'ui-theme-immune'
+            );
+
+            specialCardGroup = 'lotm-frame-event';
+            isThemeImmune = true;
+        }
+
+        /*
+         * Bí Cảnh Sương Xám — nền sự kiện riêng.
+         * Chỉ khóa skin card khỏi theme; không đổi DOM/bố cục card.
+         */
+        if (lotmEventBackgroundIds.has(item.id)) {
+            cardClasses.push(
+                'store-card-lotm-background-event',
+                'store-theme-locked',
+                'ui-theme-immune'
+            );
+
+            specialCardGroup = 'lotm-background-event';
+            isThemeImmune = true;
+        }
+
+        /* Bộ ba Shizuka */
+        if (shizukaTrinityIds.has(item.id)) {
+            cardClasses.push(
+                'store-card-shizuka-trinity',
+                'store-theme-locked',
+                'ui-theme-immune'
+            );
+
+            specialCardGroup = 'shizuka-trinity';
+            isThemeImmune = true;
+        }
+
+        /* Thẻ riêng Thất Đại Tội — Lười Biếng */
+        if (sevenSinsSlothIds.has(item.id)) {
+            cardClasses.push(
+                'store-card-seven-sins-sloth',
+                `store-card-acedia-${acediaVariant}`,
+                'store-theme-locked',
+                'ui-theme-immune'
+            );
+
+            specialCardGroup = 'seven-sins-sloth';
+            isThemeImmune = true;
+        }
+
+        /* Hai vật phẩm Acedia thường dùng chung thẻ Chibi và tag Thất Đại Tội. */
+        if (sevenSinsSlothChibiIds.has(item.id)) {
+            cardClasses.push(
+                'store-card-acedia-chibi-reverie',
+                'store-theme-locked',
+                'ui-theme-immune'
+            );
+
+            tagClass = 'tag-that-dai-toi';
+            specialCardGroup = 'seven-sins-acedia-chibi';
+            isThemeImmune = true;
+        }
+
+        /* Thẻ riêng Sinh Nhật 2026 */
+        if (birthday2026Ids.has(item.id)) {
+            cardClasses.push(
+                'store-card-birthday-2026',
+                'store-theme-locked',
+                'ui-theme-immune'
+            );
+
+            specialCardGroup = 'birthday-2026';
+            isThemeImmune = true;
+        }
+
+        /* =========================================================
+   QUỐC KHÁNH 2/9
+   Card riêng, không bị theme/giao diện khác ghi đè
+   ========================================================= */
+        if (nationalDay29Ids.has(item.id)) {
+            cardClasses.push(
+                'store-card-national-day-2-9',
+                'store-theme-locked',
+                'ui-theme-immune'
+            );
+
+            specialCardGroup = 'national-day-2-9';
+            isThemeImmune = true;
+        }
+
+        /* =========================================================
+           TRUNG THU · TIỂU HẰNG NGA
+           Card có mỹ thuật riêng nhưng dùng NGUYÊN bố cục card chuẩn.
+           ui-theme-immune giúp theme/giao diện đang mặc không nhuộm card.
+           ========================================================= */
+        if (midAutumnChibiPetIds.has(item.id)) {
+            cardClasses.push(
+                'store-card-midautumn-chibi',
+                'store-theme-locked',
+                'ui-theme-immune'
+            );
+
+            specialCardGroup = 'midautumn-chibi';
+            isThemeImmune = true;
+        }
+
+        /*
+         * TRUNG THU · TIỂU CHÚ CUỘI
+         * Giữ nguyên layout card chuẩn; chỉ thêm skin/tag riêng và theme immunity.
+         */
+        if (midAutumnCuoiChibiIds.has(item.id)) {
+            cardClasses.push(
+                'store-card-midautumn-cuoi-chibi',
+                'store-theme-locked',
+                'ui-theme-immune'
+            );
+
+            /*
+             * Tag riêng cho Tiểu Chú Cuội. Không dùng tag-trung-thu-chibi
+             * của Tiểu Hằng Nga để tránh kế thừa transform/ribbon chéo.
+             */
+            tagClass = 'tag-trung-thu-cuoi-chibi';
+
+            specialCardGroup = 'midautumn-cuoi-chibi';
+            isThemeImmune = true;
+        }
+
+        /*
+         * LINK CLICK · CHENG XIAOSHI CHIBI
+         * Thẻ vẫn dùng cấu trúc store-item-card chuẩn phía dưới.
+         * Chỉ thêm skin riêng + theme immune.
+         */
+        if (linkClickChibiIds.has(item.id)) {
+            cardClasses.push(
+                'store-card-linkclick-chibi',
+                'store-theme-locked',
+                'ui-theme-immune'
+            );
+
+            specialCardGroup = 'linkclick-chibi';
+            isThemeImmune = true;
+        }
+
+        /*
+         * ĐÊM ĐẦY SAO · CHIBI
+         * Tag/card riêng nhưng vẫn dùng nguyên bố cục thẻ chuẩn.
+         */
+        if (starryNightChibiIds.has(item.id)) {
+            ensureStarryNightChibiStylesheet();
+
+            cardClasses.push(
+                'store-card-starry-night-chibi',
+                'store-theme-locked',
+                'ui-theme-immune'
+            );
+
+            tagClass = 'tag-starry-night-chibi';
+            specialCardGroup = 'starry-night-chibi';
+            isThemeImmune = true;
+        }
+
+        /*
+         * HOTFIX v4.0.1:
+         * Vật phẩm bị khóa không render icon / tên / tag / nút ở dưới lớp che.
+         * Điều này tránh lộ nội dung mờ, tránh CSS của card đặc biệt xuyên qua
+         * overlay và giúp thẻ khóa chỉ có đúng một lớp placeholder.
+         */
+        if (item.isLocked === true) {
+            return `
+                <div
+                    class="${cardClasses.join(' ')}"
+                    data-type="${item.type}"
+                    data-locked-by-teacher="true"
+                    data-theme-immune="true"
+                    aria-label="Vật phẩm đang cập nhật, sẽ xuất hiện trong tương lai"
+                >
+                    <div
+                        class="store-teacher-lock-overlay"
+                        role="status"
+                        title="Vật phẩm đang cập nhật, sẽ xuất hiện trong tương lai"
+                    >
+                        <div class="store-teacher-lock-content">
+                            <span
+                                class="store-teacher-lock-question"
+                                aria-hidden="true"
+                            >?</span>
+
+                            <strong>
+                                Vật phẩm đang cập nhật
+                            </strong>
+
+                            <small>
+                                Sẽ xuất hiện trong tương lai.
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        const annualSaleBadge =
+            annualSaleState.hasAnnualSale
+                ? `
+            <div class="
+                annual-sale-chip
+                ${annualSaleState.isOpen
+                    ? 'is-open'
+                    : 'is-closed'
+                }
+            ">
+                <strong>
+                    ${annualSaleState.isOpen
+                    ? '● ĐANG MỞ BÁN'
+                    : '◌ GIỚI HẠN HẰNG NĂM'
+                }
+                </strong>
+
+                <small>
+                    ${annualSaleState.windowLabel}
+                </small>
+            </div>
+        `
+                : '';
+
+        return `
+    <div
+        class="${cardClasses.join(' ')}"
+
+        data-item-id="${item.id}"
+        data-type="${item.type}"
+
+        data-special-card="${specialCardGroup}"
+        data-acedia-variant="${acediaVariant}"
+
+        data-theme-immune="${isThemeImmune
+                ? 'true'
+                : 'false'
+            }"
+
+        style=""
+    >
+        ${item.isLocked === true
+                ? `
+        <div
+            class="store-teacher-lock-overlay"
+            role="status"
+            aria-label="Vật phẩm đang cập nhật, sẽ xuất hiện trong tương lai"
+            title="Vật phẩm đang cập nhật, sẽ xuất hiện trong tương lai"
+        >
+            <span class="store-teacher-lock-question">?</span>
+        </div>
+        `
+                : ''
+            }
+
+        <div class="card-glow"></div>
+
+        ${acediaRelicHTML}
+        ${annualSaleBadge}
+
+        <div class="item-tag ${tagClass}">
+            <span>${item.tag}</span>
+        </div>
+
+        <div class="item-icon-wrapper">
+            ${iconHTML}
+        </div>
+
+        <div class="item-info">
+            <h4 class="item-name">
+                ${item.name}
+            </h4>
+
+            <span class="item-type-label">
+                ${typeName}
+            </span>
+        </div>
+
+        <div class="item-actions">
+            ${trialButton}
+            ${actionButton}
+        </div>
+    </div>
+`;
+    }
+
+    static getIconForType(type) {
+        switch (type) {
+            case 'theme': return '🎨';
+            case 'effect': return '✨';
+            case 'pet': return '🐾';
+            case 'music': return '🎵';
+            case 'frame': return '🖼️';
+            case 'background': return '🌄';
+            default: return '📦';
+        }
+    }
+}
+
+
+/* =========================================================
+   HIỂN THỊ VẬT PHẨM BỊ GIÁO VIÊN KHÓA · HOTFIX v4.0.1
+   - Một lớp che duy nhất.
+   - Không render nội dung nhận diện của card bị khóa.
+   - Không để theme/premium CSS xuyên qua lớp che.
+   - Dấu ? luôn là hình tròn, không bị kéo thành hình bầu dục.
+   ========================================================= */
+(function installTeacherLockedStoreCardStyle() {
+    const oldStyle =
+        document.getElementById(
+            'teacherLockedStoreCardStyle'
+        );
+
+    if (oldStyle) {
+        oldStyle.remove();
+    }
+
+    const style =
+        document.createElement('style');
+
+    style.id =
+        'teacherLockedStoreCardStyle';
+
+    style.textContent = `
+        .is-teacher-locked {
+            position: relative !important;
+            min-height: 340px !important;
+            height: auto !important;
+            max-height: none !important;
+            align-self: stretch !important;
+            box-sizing: border-box !important;
+            overflow: hidden !important;
+            isolation: isolate !important;
+            background: #050607 !important;
+            background-image: none !important;
+            border: 1px solid rgba(255, 255, 255, .10) !important;
+            box-shadow: 0 16px 38px rgba(0, 0, 0, .38) !important;
+            cursor: not-allowed !important;
+        }
+
+        /* Cửa hàng Sang trọng: thẻ khóa phải giãn theo đúng chiều cao của hàng grid.
+           Không cố định 340px để tránh thấp hơn các card Premium/Luxury bên cạnh. */
+        #luxuryStoreGrid > .luxury-product-card.is-teacher-locked,
+        #luxuryStoreGrid > .luxury-product-card.luxury-teacher-locked-card {
+            height: auto !important;
+            max-height: none !important;
+            align-self: stretch !important;
+            box-sizing: border-box !important;
+        }
+
+        .is-teacher-locked::before,
+        .is-teacher-locked::after {
+            content: none !important;
+            display: none !important;
+            background: none !important;
+            background-image: none !important;
+            opacity: 0 !important;
+        }
+
+        .store-teacher-lock-overlay {
+            position: absolute !important;
+            inset: 0 !important;
+            z-index: 2147483000 !important;
+            display: grid !important;
+            place-items: center !important;
+            padding: 24px !important;
+            border-radius: inherit !important;
+            background:
+                radial-gradient(
+                    circle at 50% 36%,
+                    rgba(255, 255, 255, .07),
+                    transparent 30%
+                ),
+                linear-gradient(
+                    180deg,
+                    #080a0c 0%,
+                    #020304 100%
+                ) !important;
+            box-shadow:
+                inset 0 0 0 1px rgba(255, 255, 255, .06) !important;
+            cursor: not-allowed !important;
+            pointer-events: auto !important;
+            user-select: none !important;
+        }
+
+        .store-teacher-lock-content {
+            width: min(100%, 240px);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            text-align: center;
+            color: #fff;
+        }
+
+        .store-teacher-lock-question {
+            display: grid !important;
+            place-items: center !important;
+            flex: 0 0 auto !important;
+            width: 92px !important;
+            height: 92px !important;
+            min-width: 92px !important;
+            min-height: 92px !important;
+            max-width: 92px !important;
+            max-height: 92px !important;
+            overflow: hidden !important;
+            border-radius: 999px !important;
+            color: #fff !important;
+            font-size: 64px !important;
+            font-weight: 1000 !important;
+            line-height: 1 !important;
+            letter-spacing: 0 !important;
+            text-indent: 0 !important;
+            border: 3px solid rgba(255, 255, 255, .88) !important;
+            background: rgba(255, 255, 255, .04) !important;
+            text-shadow: 0 0 18px rgba(255, 255, 255, .28) !important;
+            box-shadow:
+                0 0 30px rgba(255, 255, 255, .08) !important;
+            box-sizing: border-box !important;
+        }
+
+        .store-teacher-lock-content strong {
+            font-size: 1rem !important;
+            font-weight: 900 !important;
+            letter-spacing: .01em !important;
+            color: #f8fafc !important;
+        }
+
+        .store-teacher-lock-content small {
+            max-width: 210px;
+            color: #94a3b8 !important;
+            font-size: .82rem !important;
+            line-height: 1.45 !important;
+        }
+    `;
+
+    document.head.appendChild(style);
+})();
+
+
+/* =========================================================
+   BẢO VỆ HÌNH ẢNH TOÀN WEBSITE
+   - Mở rộng cơ chế cũ của Cửa hàng thường + Cửa hàng Sang trọng.
+   - Chặn menu chuột phải / nhấn 2 ngón touchpad trên toàn trang.
+   - Chặn kéo ảnh, copy vùng có ảnh và Ctrl/Cmd+S.
+   - Ảnh được render động sau này cũng tự động được bảo vệ.
+   - Vẫn cho phép Ctrl/Cmd+C đối với văn bản thuần túy.
+   ========================================================= */
+(function installSiteImageProtection() {
+    if (window.SiteImageProtection) {
+        // Giữ tương thích với các đoạn code cũ đang gọi tên StoreImageProtection.
+        window.StoreImageProtection = window.SiteImageProtection;
+        return;
+    }
+
+    const STYLE_ID = 'site-image-protection-style';
+    let lastNoticeAt = 0;
+
+    function getElement(target) {
+        if (!target) return null;
+
+        return target.nodeType === 1
+            ? target
+            : target.parentElement || null;
+    }
+
+    function getImageElement(target) {
+        const element = getElement(target);
+        if (!element) return null;
+
+        if (element.matches?.('img')) {
+            return element;
+        }
+
+        return element.closest?.('img') || null;
+    }
+
+    function isProtectedImage(target) {
+        return Boolean(getImageElement(target));
+    }
+
+    function selectionContainsProtectedImage() {
+        const selection = window.getSelection?.();
+        if (!selection || selection.rangeCount === 0) {
+            return false;
+        }
+
+        for (let index = 0; index < selection.rangeCount; index++) {
+            const range = selection.getRangeAt(index);
+            const node = range.commonAncestorContainer;
+            const element = getElement(node);
+
+            if (!element) continue;
+
+            // Trình duyệt chọn trực tiếp chính thẻ ảnh.
+            if (element.matches?.('img')) {
+                return true;
+            }
+
+            const scope = element.nodeType === 1
+                ? element
+                : document.body;
+
+            if (!scope?.querySelectorAll) continue;
+
+            const images = scope.querySelectorAll('img');
+
+            for (const img of images) {
+                try {
+                    if (range.intersectsNode(img)) {
+                        return true;
+                    }
+                } catch (error) {
+                    // Một số node đặc biệt có thể không hỗ trợ intersectsNode.
+                }
+            }
+        }
+
+        return false;
+    }
+
+    function showProtectionNotice() {
+        const now = Date.now();
+
+        // Tránh spam thông báo khi người dùng giữ phím / chuột.
+        if (now - lastNoticeAt < 900) return;
+        lastNoticeAt = now;
+
+        const message =
+            'Hình ảnh trên website được bảo vệ và không hỗ trợ sao chép/lưu trực tiếp.';
+
+        if (typeof window.showToast === 'function') {
+            window.showToast(message, 'warning');
+            return;
+        }
+
+        console.info('[SiteImageProtection]', message);
+    }
+
+    function blockEvent(event, shouldNotify = true) {
+        event.preventDefault();
+        event.stopPropagation();
+
+        if (typeof event.stopImmediatePropagation === 'function') {
+            event.stopImmediatePropagation();
+        }
+
+        if (shouldNotify) {
+            showProtectionNotice();
+        }
+
+        return false;
+    }
+
+    function protectSubtree(root = document.body || document.documentElement) {
+        if (!root) return;
+
+        const images = [];
+
+        if (root.matches?.('img')) {
+            images.push(root);
+        }
+
+        root.querySelectorAll?.('img').forEach(img => {
+            images.push(img);
+        });
+
+        images.forEach(img => {
+            img.setAttribute('draggable', 'false');
+            img.setAttribute('data-site-image-protected', 'true');
+            img.style.webkitUserDrag = 'none';
+            img.style.userSelect = 'none';
+            img.style.webkitUserSelect = 'none';
+            img.style.webkitTouchCallout = 'none';
+        });
+    }
+
+    // Tên hàm cũ vẫn được giữ để student.js / luxury-store.js không cần sửa.
+    function protectFloatingStoreItemImages() {
+        document
+            .querySelectorAll('#virtual-pet-container img, #virtual-pet-img')
+            .forEach(img => protectSubtree(img));
+    }
+
+    function isStoreOpen() {
+        const root = document.querySelector('#tab-store');
+        if (!root) return false;
+
+        if (root.classList.contains('active')) {
+            return true;
+        }
+
+        const style = window.getComputedStyle(root);
+        return (
+            style.display !== 'none' &&
+            style.visibility !== 'hidden' &&
+            !root.hidden
+        );
+    }
+
+    function installStyle() {
+        if (document.getElementById(STYLE_ID)) return;
+
+        const style = document.createElement('style');
+        style.id = STYLE_ID;
+        style.textContent = `
+            html img,
+            body img,
+            img[data-site-image-protected="true"] {
+                -webkit-user-drag: none !important;
+                -webkit-user-select: none !important;
+                user-select: none !important;
+                -webkit-touch-callout: none !important;
+            }
+        `;
+
+        (document.head || document.documentElement)
+            .appendChild(style);
+    }
+
+    /*
+     * Chặn menu chuột phải trên TOÀN WEBSITE.
+     * Bao gồm chuột phải truyền thống và thao tác 2 ngón trên touchpad.
+     * Đây là phần mở rộng trực tiếp từ cơ chế cũ của Cửa hàng.
+     */
+    document.addEventListener('contextmenu', event => {
+        blockEvent(event);
+    }, true);
+
+    // Không cho kéo bất kỳ ảnh nào ra Desktop / tab mới.
+    document.addEventListener('dragstart', event => {
+        if (isProtectedImage(event.target)) {
+            blockEvent(event);
+        }
+    }, true);
+
+    // Chặn copy nếu thao tác copy trực tiếp ảnh hoặc vùng chọn có chứa ảnh.
+    // Văn bản thuần túy vẫn có thể copy bằng Ctrl/Cmd+C.
+    document.addEventListener('copy', event => {
+        const activeElement = document.activeElement;
+
+        if (
+            isProtectedImage(event.target) ||
+            isProtectedImage(activeElement) ||
+            selectionContainsProtectedImage()
+        ) {
+            blockEvent(event);
+        }
+    }, true);
+
+    // Ctrl/Cmd+S bị khóa toàn trang để tránh Save Page / Save As.
+    // Ctrl/Cmd+C chỉ bị khóa khi vùng chọn có ảnh.
+    document.addEventListener('keydown', event => {
+        const modifier = event.ctrlKey || event.metaKey;
+        if (!modifier) return;
+
+        const key = String(event.key || '').toLowerCase();
+
+        if (key === 's') {
+            blockEvent(event);
+            return;
+        }
+
+        if (
+            key === 'c' &&
+            selectionContainsProtectedImage()
+        ) {
+            blockEvent(event);
+        }
+    }, true);
+
+    installStyle();
+
+    const startProtection = () => {
+        protectSubtree(document.body || document.documentElement);
+        protectFloatingStoreItemImages();
+    };
+
+    if (document.readyState === 'loading') {
+        document.addEventListener(
+            'DOMContentLoaded',
+            startProtection,
+            { once: true }
+        );
+    } else {
+        startProtection();
+    }
+
+    // Mọi ảnh được thêm sau khi trang đã tải (modal, bài tập, avatar,
+    // cửa hàng, pet, thông báo, v.v.) đều tự động bị khóa.
+    const observer = new MutationObserver(mutations => {
+        mutations.forEach(mutation => {
+            mutation.addedNodes.forEach(node => {
+                if (node.nodeType !== 1) return;
+                protectSubtree(node);
+            });
+        });
+    });
+
+    const observeWholePage = () => {
+        if (!document.body) return false;
+
+        observer.observe(document.body, {
+            childList: true,
+            subtree: true
+        });
+
+        startProtection();
+        return true;
+    };
+
+    if (!observeWholePage()) {
+        document.addEventListener(
+            'DOMContentLoaded',
+            observeWholePage,
+            { once: true }
+        );
+    }
+
+    const protectionAPI = Object.freeze({
+        protectSubtree,
+        protectFloatingStoreItemImages,
+        isStoreOpen,
+        isProtectedStoreImage: isProtectedImage,
+        isProtectedImage,
+        selectionContainsProtectedImage
+    });
+
+    // Tên mới phản ánh đúng phạm vi toàn website.
+    window.SiteImageProtection = protectionAPI;
+
+    // Alias cũ để không làm hỏng student.js / luxury-store.js hiện tại.
+    window.StoreImageProtection = protectionAPI;
+})();
+
+/* =========================================================
+   THÊM TAB KHUNG VIỀN + NỀN VÀO CỬA HÀNG
+   ========================================================= */
+(function installExtraStoreCategoryButtons() {
+
+    const EXTRA_FILTERS = [
+        {
+            type: 'frame',
+            label: '🖼️ Khung viền'
+        },
+        {
+            type: 'background',
+            label: '🌄 Nền'
+        }
+    ];
+
+    function install() {
+        const storeTab =
+            document.getElementById('tab-store');
+
+        if (!storeTab) return false;
+
+        // Tìm nút Nhạc nền hiện tại
+        const musicButton =
+            storeTab.querySelector(
+                'button[onclick*="filterStore(\'music\')"]'
+            );
+
+        if (
+            !musicButton ||
+            !musicButton.parentElement
+        ) {
+            return false;
+        }
+
+        const filterBar =
+            musicButton.parentElement;
+
+        // Có thêm 2 nút nên cho phép xuống dòng
+        // khi màn hình không đủ rộng.
+        filterBar.style.flexWrap = 'wrap';
+
+        EXTRA_FILTERS.forEach(config => {
+
+            // Không tạo trùng nút
+            const exists =
+                filterBar.querySelector(
+                    `button[data-store-extra-filter="${config.type}"]`
+                );
+
+            if (exists) return;
+
+            const button =
+                document.createElement('button');
+
+            button.type = 'button';
+
+            // Giữ đúng style/class của các nút hiện có
+            button.className = 'btn-approve';
+
+            button.dataset.storeExtraFilter =
+                config.type;
+
+            button.setAttribute(
+                'onclick',
+                `filterStore('${config.type}')`
+            );
+
+            button.style.background =
+                'rgba(255,255,255,0.5)';
+
+            button.style.color =
+                '#667eea';
+
+            button.textContent =
+                config.label;
+
+            // Thêm ngay sau các nút hiện tại
+            filterBar.appendChild(button);
+        });
+
+        return true;
+    }
+
+    function boot() {
+
+        // Nếu HTML cửa hàng đã có rồi
+        if (install()) return;
+
+        // Nếu JS chạy trước khi DOM cửa hàng xuất hiện
+        const observer =
+            new MutationObserver(() => {
+
+                if (install()) {
+                    observer.disconnect();
+                }
+
+            });
+
+        observer.observe(
+            document.documentElement,
+            {
+                childList: true,
+                subtree: true
+            }
+        );
+
+        // Không theo dõi vô hạn
+        setTimeout(
+            () => observer.disconnect(),
+            15000
+        );
+    }
+
+    if (
+        document.readyState === 'loading'
+    ) {
+        document.addEventListener(
+            'DOMContentLoaded',
+            boot,
+            { once: true }
+        );
+    } else {
+        boot();
+    }
+
+})();
+
+/* ============================================================================
+   FIX · CẦM MỘNG FRAME EQUIP BRIDGE
+   ITEM: frame_cam_mong_thanh_huyen_chi_hoan
+   Mục tiêu:
+   - Khi Firebase đã đánh dấu "đang trang bị", khung phải thực sự render.
+   - Tương thích cả AvatarFrameManager cũ (chưa gắn data-*) và bản mới.
+   - Không sửa logic / DOM / hiệu ứng của frame khác.
+   ============================================================================ */
+(function installCamMongFrameEquipBridge() {
+    'use strict';
+
+    const ITEM_ID =
+        'frame_cam_mong_thanh_huyen_chi_hoan';
+
+    const FRAME_EFFECT =
+        'cam-mong-thanh-huyen-frame';
+
+    const FRAME_ASSET =
+        'assets/Premium/Tu tiên/cam_co_khung1.png';
+
+    let installed = false;
+
+    function getItem(itemOrId) {
+        if (
+            itemOrId &&
+            typeof itemOrId === 'object'
+        ) {
+            return itemOrId;
+        }
+
+        if (
+            typeof StoreManager === 'undefined' ||
+            typeof StoreManager.getItemById !== 'function'
+        ) {
+            return null;
+        }
+
+        return StoreManager.getItemById(
+            String(itemOrId || '')
+        );
+    }
+
+    function isTarget(itemOrId) {
+        const item = getItem(itemOrId);
+
+        return !!(
+            item &&
+            item.id === ITEM_ID &&
+            item.type === 'frame'
+        );
+    }
+
+    function removeWrongTargetLayer(host) {
+        if (!host) return;
+
+        host
+            .querySelectorAll(
+                ':scope > .avatar-frame-decoration'
+            )
+            .forEach(node => {
+                const src =
+                    node.getAttribute('src') || '';
+
+                if (
+                    src &&
+                    !src.includes('cam_co_khung1.png')
+                ) {
+                    return;
+                }
+
+                /*
+                 * Nếu là layer Cầm Mộng cũ/lỗi thì thay mới.
+                 * Không xóa layer của frame khác.
+                 */
+                if (
+                    src.includes('cam_co_khung1.png')
+                ) {
+                    node.remove();
+                }
+            });
+    }
+
+    function ensureLayer(host, item, variant) {
+        if (!host || !item) return;
+
+        /*
+         * Không sửa style.position/top/right/left/bottom của host.
+         * CSS frame chỉ trang trí bên trong nút; layout nút Hồ sơ
+         * phải do student.css / theme hiện tại giữ nguyên.
+         */
+        host.classList.add(
+            'avatar-frame-equipped',
+            variant === 'profile'
+                ? 'avatar-frame-profile-host'
+                : 'avatar-frame-modal-host'
+        );
+
+        host.setAttribute(
+            'data-avatar-frame-effect',
+            FRAME_EFFECT
+        );
+
+        host.setAttribute(
+            'data-avatar-frame-id',
+            ITEM_ID
+        );
+
+        let aura =
+            host.querySelector(
+                ':scope > .avatar-frame-aura'
+            );
+
+        if (!aura) {
+            aura =
+                document.createElement('span');
+
+            aura.className =
+                'avatar-frame-aura';
+
+            aura.setAttribute(
+                'aria-hidden',
+                'true'
+            );
+
+            host.appendChild(aura);
+        }
+
+        let frame =
+            host.querySelector(
+                ':scope > .avatar-frame-decoration'
+            );
+
+        const currentSrc =
+            frame?.getAttribute('src') || '';
+
+        if (
+            !frame ||
+            !currentSrc.includes(
+                'cam_co_khung1.png'
+            )
+        ) {
+            /*
+             * Nếu manager không tạo layer hoặc đang giữ layer khác
+             * nhưng item hiện tại là Cầm Mộng, tạo đúng ảnh khung.
+             */
+            if (
+                frame &&
+                host.getAttribute(
+                    'data-avatar-frame-id'
+                ) === ITEM_ID
+            ) {
+                frame.remove();
+            }
+
+            frame =
+                document.createElement('img');
+
+            frame.className =
+                'avatar-frame-decoration';
+
+            frame.src =
+                item.value || FRAME_ASSET;
+
+            frame.alt = '';
+            frame.draggable = false;
+
+            frame.setAttribute(
+                'aria-hidden',
+                'true'
+            );
+
+            host.appendChild(frame);
+        }
+
+        /*
+         * Khắc phục trường hợp frame.onerror của manager cũ
+         * từng set display:none rồi item được render lại.
+         */
+        frame.style.removeProperty(
+            'display'
+        );
+
+        frame.style.removeProperty(
+            'visibility'
+        );
+
+        frame.style.removeProperty(
+            'opacity'
+        );
+
+        frame.dataset.camMongFrame =
+            '1';
+
+        const existingSparks =
+            host.querySelectorAll(
+                ':scope > .avatar-frame-spark'
+            );
+
+        if (!existingSparks.length) {
+            [
+                'spark-1',
+                'spark-2',
+                'spark-3',
+                'spark-4'
+            ].forEach(className => {
+                const spark =
+                    document.createElement(
+                        'span'
+                    );
+
+                spark.className =
+                    `avatar-frame-spark ${className}`;
+
+                spark.textContent = '✦';
+
+                spark.setAttribute(
+                    'aria-hidden',
+                    'true'
+                );
+
+                host.appendChild(spark);
+            });
+        }
+    }
+
+    function repairFrame(itemOrId) {
+        if (window.isStudentStoreGameAccessEnabled?.() === false) return false;
+        const item = getItem(itemOrId);
+        if (item && typeof myInventory !== 'undefined' && Array.isArray(myInventory) &&
+            !myInventory.some(entry => String(entry?.id) === String(item.id) && entry.isEquipped === true &&
+                !(entry.isTrial === true && Number(entry.trialExpiry || 0) <= Date.now()))) return false;
+
+        if (!isTarget(item)) {
+            return false;
+        }
+
+        const profileButton =
+            document.querySelector(
+                '.profile-trigger-btn'
+            );
+
+        const modalAvatarHost =
+            document.querySelector(
+                '#studentInfoModal ' +
+                '.avatar-upload-container'
+            );
+
+        ensureLayer(
+            profileButton,
+            item,
+            'profile'
+        );
+
+        ensureLayer(
+            modalAvatarHost,
+            item,
+            'modal'
+        );
+
+        return true;
+    }
+
+    function clearOnlyTargetFrame() {
+        document
+            .querySelectorAll(
+                '[data-avatar-frame-id="' +
+                ITEM_ID +
+                '"], ' +
+                '[data-avatar-frame-effect="' +
+                FRAME_EFFECT +
+                '"]'
+            )
+            .forEach(host => {
+                host
+                    .querySelectorAll(
+                        ':scope > ' +
+                        '.avatar-frame-decoration,' +
+                        ':scope > ' +
+                        '.avatar-frame-aura,' +
+                        ':scope > ' +
+                        '.avatar-frame-spark'
+                    )
+                    .forEach(node => {
+                        node.remove();
+                    });
+
+                host.classList.remove(
+                    'avatar-frame-equipped',
+                    'avatar-frame-profile-host',
+                    'avatar-frame-modal-host'
+                );
+
+                host.removeAttribute(
+                    'data-avatar-frame-id'
+                );
+
+                host.removeAttribute(
+                    'data-avatar-frame-effect'
+                );
+            });
+
+        document
+            .querySelectorAll(
+                'img.avatar-frame-decoration' +
+                '[src*="cam_co_khung1.png"]'
+            )
+            .forEach(node => node.remove());
+    }
+
+    function wrapAvatarFrameManager() {
+        const manager =
+            window.AvatarFrameManager;
+
+        if (
+            !manager ||
+            manager.__camMongFrameBridge
+        ) {
+            return !!manager;
+        }
+
+        const originalApply =
+            typeof manager.applyFrame ===
+                'function'
+                ? manager.applyFrame.bind(manager)
+                : null;
+
+        if (originalApply) {
+            manager.applyFrame =
+                function (itemOrId) {
+                    const result =
+                        originalApply(itemOrId);
+
+                    if (isTarget(itemOrId)) {
+                        repairFrame(itemOrId);
+
+                        requestAnimationFrame(
+                            () =>
+                                repairFrame(
+                                    itemOrId
+                                )
+                        );
+                    }
+
+                    return result;
+                };
+        }
+
+        manager.__camMongFrameBridge =
+            true;
+
+        return true;
+    }
+
+    function wrapStoreManager() {
+        if (
+            typeof StoreManager ===
+                'undefined' ||
+            StoreManager
+                .__camMongFrameStoreBridge
+        ) {
+            return (
+                typeof StoreManager !==
+                'undefined'
+            );
+        }
+
+        const originalApply =
+            typeof StoreManager.applyItem ===
+                'function'
+                ? StoreManager.applyItem
+                    .bind(StoreManager)
+                : null;
+
+        const originalUnapply =
+            typeof StoreManager.unapplyItem ===
+                'function'
+                ? StoreManager.unapplyItem
+                    .bind(StoreManager)
+                : null;
+
+        if (originalApply) {
+            StoreManager.applyItem =
+                async function (itemId) {
+                    const result =
+                        await originalApply(
+                            itemId
+                        );
+                    if (result === false || window.isStudentStoreGameAccessEnabled?.() === false) return false;
+
+                    if (isTarget(itemId)) {
+                        const item =
+                            getItem(itemId);
+
+                        /*
+                         * Render ngay, không chờ vòng Firebase kế tiếp.
+                         * Firebase vẫn là nguồn trạng thái chính vì
+                         * originalApply vẫn chạy nguyên vẹn.
+                         */
+                        if (
+                            window
+                                .AvatarFrameManager &&
+                            typeof window
+                                .AvatarFrameManager
+                                .applyFrame ===
+                                'function'
+                        ) {
+                            window
+                                .AvatarFrameManager
+                                .applyFrame(item);
+                        } else {
+                            repairFrame(item);
+                        }
+
+                        setTimeout(
+                            () =>
+                                repairFrame(
+                                    item
+                                ),
+                            80
+                        );
+
+                        setTimeout(
+                            () =>
+                                repairFrame(
+                                    item
+                                ),
+                            350
+                        );
+                    }
+
+                    return result;
+                };
+        }
+
+        if (originalUnapply) {
+            StoreManager.unapplyItem =
+                async function (itemId) {
+                    const result =
+                        await originalUnapply(
+                            itemId
+                        );
+
+                    if (isTarget(itemId)) {
+                        clearOnlyTargetFrame();
+                    }
+
+                    return result;
+                };
+        }
+
+        StoreManager
+            .__camMongFrameStoreBridge =
+            true;
+
+        return true;
+    }
+
+    function install() {
+        if (installed) return;
+
+        const hasManager =
+            wrapAvatarFrameManager();
+
+        const hasStore =
+            wrapStoreManager();
+
+        if (
+            hasManager &&
+            hasStore
+        ) {
+            installed = true;
+        }
+    }
+
+    /*
+     * store-manager.js chạy trước student.js trong student.html.
+     * setTimeout đưa việc patch sang cuối task, khi student.js
+     * đã override StoreManager.applyItem / unapplyItem xong.
+     */
+    setTimeout(install, 0);
+
+    let tries = 0;
+
+    const retryTimer =
+        setInterval(() => {
+            tries += 1;
+
+            install();
+
+            if (
+                installed ||
+                tries >= 80
+            ) {
+                clearInterval(
+                    retryTimer
+                );
+            }
+        }, 100);
+
+    /*
+     * Nếu profile/modal bị render lại, khôi phục layer Cầm Mộng
+     * chỉ khi DOM đang mang định danh đúng item này.
+     */
+    const observer =
+        new MutationObserver(
+            mutations => {
+                const targetHost =
+                    document.querySelector(
+                        '[data-avatar-frame-id="' +
+                        ITEM_ID +
+                        '"]'
+                    );
+
+                if (!targetHost) {
+                    return;
+                }
+
+                const item =
+                    getItem(ITEM_ID);
+
+                if (!item) return;
+
+                repairFrame(item);
+            }
+        );
+
+    const startObserver = () => {
+        if (!document.body) return;
+
+        observer.observe(
+            document.body,
+            {
+                childList: true,
+                subtree: true
+            }
+        );
+    };
+
+    if (
+        document.readyState ===
+        'loading'
+    ) {
+        document.addEventListener(
+            'DOMContentLoaded',
+            startObserver,
+            { once: true }
+        );
+    } else {
+        startObserver();
+    }
+})();
+
+/* === PREMIUM MÙA HẠ · KHUNG NHẬT DIỆP · namespace ha2f-* · FIX R2 === */
+(function installSummerHa2FrameBridge() {
+    'use strict';
+
+    const ITEM_ID = 'frame_mua_ha_nhat_diep_chi_hoan';
+    const FRAME_EFFECT = 'ha2f-summer-sunleaf-frame';
+    const FRAME_ASSET = 'assets/Premium/Bốn mùa/ha_khung2.png';
+    let installed = false;
+
+    function getItem(itemOrId) {
+        if (itemOrId && typeof itemOrId === 'object') return itemOrId;
+        if (
+            typeof StoreManager === 'undefined' ||
+            typeof StoreManager.getItemById !== 'function'
+        ) return null;
+        return StoreManager.getItemById(String(itemOrId || ''));
+    }
+
+    function isTarget(itemOrId) {
+        const item = getItem(itemOrId);
+        return !!(item && item.id === ITEM_ID && item.type === 'frame');
+    }
+
+    function hasOwnHa2fLayer(host) {
+        if (!host || host.nodeType !== 1) return false;
+        return !!host.querySelector(
+            ':scope > .avatar-frame-decoration[data-ha2f-frame="1"],' +
+            ':scope > .ha2f-frame-decoration,' +
+            ':scope > .ha2f-frame-aura,' +
+            ':scope > .ha2f-frame-glint,' +
+            ':scope > img.avatar-frame-decoration[src*="ha_khung2.png"]'
+        );
+    }
+
+    function isHa2fHost(host) {
+        if (!host || host.nodeType !== 1) return false;
+        return (
+            host.classList.contains('ha2f-frame-host') ||
+            host.getAttribute('data-avatar-frame-id') === ITEM_ID ||
+            host.getAttribute('data-avatar-frame-effect') === FRAME_EFFECT ||
+            hasOwnHa2fLayer(host)
+        );
+    }
+
+    function removeOwnLayers(host) {
+        if (!host) return;
+        host.querySelectorAll(
+            ':scope > .avatar-frame-decoration[data-ha2f-frame="1"],' +
+            ':scope > .ha2f-frame-decoration,' +
+            ':scope > .ha2f-frame-aura,' +
+            ':scope > .ha2f-frame-glint,' +
+            ':scope > img.avatar-frame-decoration[src*="ha_khung2.png"]'
+        ).forEach(node => node.remove());
+    }
+
+    function clearTargetHost(host) {
+        if (!isHa2fHost(host)) return;
+
+        const currentId = host.getAttribute('data-avatar-frame-id') || '';
+        const currentEffect = host.getAttribute('data-avatar-frame-effect') || '';
+        const anotherFrameIsActive =
+            (currentId && currentId !== ITEM_ID) ||
+            (currentEffect && currentEffect !== FRAME_EFFECT);
+
+        removeOwnLayers(host);
+        host.classList.remove('ha2f-frame-host');
+
+        /*
+         * Nếu một frame khác đã được manager áp vào host, tuyệt đối không
+         * xóa class/data của frame đó. Chỉ dọn namespace ha2f của khung Mùa Hạ.
+         */
+        if (!anotherFrameIsActive) {
+            host.classList.remove(
+                'avatar-frame-equipped',
+                'avatar-frame-profile-host',
+                'avatar-frame-modal-host'
+            );
+
+            if (currentId === ITEM_ID || !currentId) {
+                host.removeAttribute('data-avatar-frame-id');
+            }
+            if (currentEffect === FRAME_EFFECT || !currentEffect) {
+                host.removeAttribute('data-avatar-frame-effect');
+            }
+        }
+
+        if (host.dataset.ha2fThemeImmune === '1') {
+            /* Chỉ gỡ data-theme-immune nếu chính bridge này đã thêm. */
+            host.removeAttribute('data-theme-immune');
+            delete host.dataset.ha2fThemeImmune;
+        }
+    }
+
+    function clearOnlyTargetFrame() {
+        const hosts = new Set();
+
+        document.querySelectorAll(
+            '.ha2f-frame-host,' +
+            '[data-avatar-frame-id="' + ITEM_ID + '"],' +
+            '[data-avatar-frame-effect="' + FRAME_EFFECT + '"]'
+        ).forEach(host => hosts.add(host));
+
+        /*
+         * Quan trọng: manager chuẩn có thể xóa data-avatar-frame-* trước,
+         * nên phải truy ngược từ các node ha2f còn sót để tìm host.
+         */
+        document.querySelectorAll(
+            '.ha2f-frame-aura,' +
+            '.ha2f-frame-glint,' +
+            '.ha2f-frame-decoration,' +
+            '.avatar-frame-decoration[data-ha2f-frame="1"],' +
+            'img.avatar-frame-decoration[src*="ha_khung2.png"]'
+        ).forEach(node => {
+            if (node.parentElement) hosts.add(node.parentElement);
+        });
+
+        hosts.forEach(clearTargetHost);
+
+        /* Lưới an toàn cuối: không để ký hiệu ✦ ha2f thành phần tử mồ côi. */
+        document.querySelectorAll(
+            '.ha2f-frame-aura,' +
+            '.ha2f-frame-glint,' +
+            '.ha2f-frame-decoration,' +
+            '.avatar-frame-decoration[data-ha2f-frame="1"],' +
+            'img.avatar-frame-decoration[src*="ha_khung2.png"]'
+        ).forEach(node => node.remove());
+    }
+
+    function ensureLayer(host, item, variant) {
+        if (!host || !item) return;
+
+        host.classList.add(
+            'avatar-frame-equipped',
+            'ha2f-frame-host',
+            variant === 'profile'
+                ? 'avatar-frame-profile-host'
+                : 'avatar-frame-modal-host'
+        );
+        host.setAttribute('data-avatar-frame-id', ITEM_ID);
+        host.setAttribute('data-avatar-frame-effect', FRAME_EFFECT);
+
+        if (!host.hasAttribute('data-theme-immune')) {
+            host.setAttribute('data-theme-immune', 'true');
+            host.dataset.ha2fThemeImmune = '1';
+        }
+
+        /*
+         * Idempotent: observer có thể gọi repair nhiều lần. Không tháo/dựng lại
+         * layer đúng để tránh vòng lặp MutationObserver và nhấp nháy avatar.
+         */
+        let frame = host.querySelector(':scope > .avatar-frame-decoration');
+        const frameSrc = frame?.getAttribute('src') || '';
+
+        if (!frame || !frameSrc.includes('ha_khung2.png')) {
+            if (frame) frame.remove();
+            frame = document.createElement('img');
+            frame.className = 'avatar-frame-decoration ha2f-frame-decoration';
+            frame.src = item.value || FRAME_ASSET;
+            frame.alt = '';
+            frame.draggable = false;
+            frame.setAttribute('aria-hidden', 'true');
+            host.appendChild(frame);
+        } else {
+            frame.classList.add('ha2f-frame-decoration');
+        }
+
+        frame.dataset.ha2fFrame = '1';
+        frame.style.removeProperty('display');
+        frame.style.removeProperty('visibility');
+        frame.style.removeProperty('opacity');
+
+        let aura = host.querySelector(':scope > .ha2f-frame-aura');
+        if (!aura) {
+            aura = document.createElement('span');
+            aura.className = 'ha2f-frame-aura';
+            aura.setAttribute('aria-hidden', 'true');
+            host.appendChild(aura);
+        }
+
+        /* Chỉ nút hồ sơ cần các điểm sáng; popup giữ sạch để không che bút chì. */
+        if (variant === 'profile') {
+            for (let i = 1; i <= 4; i++) {
+                const className = 'glint-' + i;
+                if (host.querySelector(':scope > .ha2f-frame-glint.' + className)) {
+                    continue;
+                }
+                const glint = document.createElement('span');
+                glint.className = 'ha2f-frame-glint ' + className;
+                glint.textContent = '✦';
+                glint.setAttribute('aria-hidden', 'true');
+                host.appendChild(glint);
+            }
+        } else {
+            host.querySelectorAll(':scope > .ha2f-frame-glint')
+                .forEach(node => node.remove());
+        }
+    }
+
+    function repairFrame(itemOrId) {
+        if (window.isStudentStoreGameAccessEnabled?.() === false) return false;
+        const item = getItem(itemOrId);
+        if (item && typeof myInventory !== 'undefined' && Array.isArray(myInventory) &&
+            !myInventory.some(entry => String(entry?.id) === String(item.id) && entry.isEquipped === true &&
+                !(entry.isTrial === true && Number(entry.trialExpiry || 0) <= Date.now()))) return false;
+        if (!isTarget(item)) return false;
+
+        ensureLayer(
+            document.querySelector('.profile-trigger-btn'),
+            item,
+            'profile'
+        );
+        ensureLayer(
+            document.querySelector(
+                '#studentInfoModal .avatar-upload-container'
+            ),
+            item,
+            'modal'
+        );
+        return true;
+    }
+
+    function wrapAvatarFrameManager() {
+        const manager = window.AvatarFrameManager;
+        if (!manager || manager.__ha2fSummerFrameBridgeR2) return !!manager;
+
+        const originalApply =
+            typeof manager.applyFrame === 'function'
+                ? manager.applyFrame.bind(manager)
+                : null;
+        const originalClear =
+            typeof manager.clearFrame === 'function'
+                ? manager.clearFrame.bind(manager)
+                : null;
+
+        if (originalApply) {
+            manager.applyFrame = function (itemOrId) {
+                /* Khi đổi sang frame khác, dọn sạch ha2f trước khi manager dựng frame mới. */
+                if (!isTarget(itemOrId)) clearOnlyTargetFrame();
+
+                const result = originalApply(itemOrId);
+
+                if (isTarget(itemOrId)) {
+                    repairFrame(itemOrId);
+                    requestAnimationFrame(() => repairFrame(itemOrId));
+                }
+                return result;
+            };
+        }
+
+        if (originalClear) {
+            manager.clearFrame = function (...args) {
+                /*
+                 * Dọn CẢ TRƯỚC VÀ SAU originalClear. Đây là fix chính cho lỗi
+                 * data-* bị xóa trước khiến span ha2f còn sót cạnh nút hồ sơ.
+                 */
+                clearOnlyTargetFrame();
+                const result = originalClear(...args);
+                clearOnlyTargetFrame();
+                return result;
+            };
+        }
+
+        manager.__ha2fSummerFrameBridge = true;
+        manager.__ha2fSummerFrameBridgeR2 = true;
+        return true;
+    }
+
+    function wrapStoreManager() {
+        if (
+            typeof StoreManager === 'undefined' ||
+            StoreManager.__ha2fSummerFrameStoreBridgeR2
+        ) return typeof StoreManager !== 'undefined';
+
+        const originalApply =
+            typeof StoreManager.applyItem === 'function'
+                ? StoreManager.applyItem.bind(StoreManager)
+                : null;
+        const originalUnapply =
+            typeof StoreManager.unapplyItem === 'function'
+                ? StoreManager.unapplyItem.bind(StoreManager)
+                : null;
+
+        if (originalApply) {
+            StoreManager.applyItem = async function (itemId) {
+                const result = await originalApply(itemId);
+                if (result === false || window.isStudentStoreGameAccessEnabled?.() === false) return false;
+                if (isTarget(itemId)) {
+                    const item = getItem(itemId);
+                    if (
+                        window.AvatarFrameManager &&
+                        typeof window.AvatarFrameManager.applyFrame === 'function'
+                    ) {
+                        window.AvatarFrameManager.applyFrame(item);
+                    } else {
+                        repairFrame(item);
+                    }
+                    setTimeout(() => repairFrame(item), 80);
+                    setTimeout(() => repairFrame(item), 350);
+                }
+                return result;
+            };
+        }
+
+        if (originalUnapply) {
+            StoreManager.unapplyItem = async function (itemId) {
+                if (isTarget(itemId)) clearOnlyTargetFrame();
+                const result = await originalUnapply(itemId);
+                if (isTarget(itemId)) {
+                    clearOnlyTargetFrame();
+                    requestAnimationFrame(clearOnlyTargetFrame);
+                    setTimeout(clearOnlyTargetFrame, 80);
+                }
+                return result;
+            };
+        }
+
+        StoreManager.__ha2fSummerFrameStoreBridge = true;
+        StoreManager.__ha2fSummerFrameStoreBridgeR2 = true;
+        return true;
+    }
+
+    function install() {
+        if (installed) return;
+        installed = wrapAvatarFrameManager() && wrapStoreManager();
+    }
+
+    setTimeout(install, 0);
+
+    let tries = 0;
+    const retryTimer = setInterval(() => {
+        tries += 1;
+        install();
+        if (installed || tries >= 80) clearInterval(retryTimer);
+    }, 100);
+
+    const observer = new MutationObserver(() => {
+        const activeHost = document.querySelector(
+            '[data-avatar-frame-id="' + ITEM_ID + '"]'
+        );
+        if (!activeHost) return;
+        const item = getItem(ITEM_ID);
+        if (item) repairFrame(item);
+    });
+
+    const startObserver = () => {
+        if (!document.body) return;
+        observer.observe(document.body, {
+            childList: true,
+            subtree: true
+        });
+    };
+
+    if (document.readyState === 'loading') {
+        document.addEventListener(
+            'DOMContentLoaded',
+            startObserver,
+            { once: true }
+        );
+    } else {
+        startObserver();
+    }
+})();
+
+/* ============================================================================
+   LORD OF THE MYSTERIES · KLEIN MORETTI · BÍ VỤ CHI HOÀN
+   EVENT FRAME BRIDGE V1
+   Item: frame_lotm_klein_gray_fog_ring_event
+   Asset: assets/Premium/quỷ bí/klain_khung1.png
+   Namespace: lotmf1-*
+   ============================================================================ */
+(function installLotmKleinEventFrameBridge() {
+    'use strict';
+
+    const ITEM_ID = 'frame_lotm_klein_gray_fog_ring_event';
+    const FRAME_EFFECT = 'lotmf1-klein-gray-fog-frame';
+    const FRAME_ASSET = 'assets/Premium/quỷ bí/klain_khung1.png';
+
+    let installed = false;
+
+    function getItem(itemOrId) {
+        if (itemOrId && typeof itemOrId === 'object') {
+            return itemOrId;
+        }
+
+        if (
+            typeof StoreManager === 'undefined' ||
+            typeof StoreManager.getItemById !== 'function'
+        ) {
+            return null;
+        }
+
+        return StoreManager.getItemById(String(itemOrId || ''));
+    }
+
+    function isTarget(itemOrId) {
+        const item = getItem(itemOrId);
+
+        return !!(
+            item &&
+            item.id === ITEM_ID &&
+            item.type === 'frame'
+        );
+    }
+
+    function hasOwnLayer(host) {
+        if (!host || host.nodeType !== 1) {
+            return false;
+        }
+
+        return !!host.querySelector(
+            ':scope > .lotmf1-frame-decoration,' +
+            ':scope > .lotmf1-frame-aura,' +
+            ':scope > .lotmf1-frame-rune,' +
+            ':scope > .avatar-frame-decoration[data-lotmf1-frame="1"],' +
+            ':scope > img.avatar-frame-decoration[src*="klain_khung1.png"]'
+        );
+    }
+
+    function isOwnHost(host) {
+        if (!host || host.nodeType !== 1) {
+            return false;
+        }
+
+        return (
+            host.classList.contains('lotmf1-frame-host') ||
+            host.getAttribute('data-avatar-frame-id') === ITEM_ID ||
+            host.getAttribute('data-avatar-frame-effect') === FRAME_EFFECT ||
+            hasOwnLayer(host)
+        );
+    }
+
+    function removeOwnLayers(host) {
+        if (!host) return;
+
+        host.querySelectorAll(
+            ':scope > .lotmf1-frame-decoration,' +
+            ':scope > .lotmf1-frame-aura,' +
+            ':scope > .lotmf1-frame-rune,' +
+            ':scope > .avatar-frame-decoration[data-lotmf1-frame="1"],' +
+            ':scope > img.avatar-frame-decoration[src*="klain_khung1.png"]'
+        ).forEach(node => node.remove());
+    }
+
+    function clearTargetHost(host) {
+        if (!isOwnHost(host)) {
+            return;
+        }
+
+        const currentId =
+            host.getAttribute('data-avatar-frame-id') || '';
+
+        const currentEffect =
+            host.getAttribute('data-avatar-frame-effect') || '';
+
+        const anotherFrameIsActive =
+            (currentId && currentId !== ITEM_ID) ||
+            (currentEffect && currentEffect !== FRAME_EFFECT);
+
+        removeOwnLayers(host);
+        host.classList.remove('lotmf1-frame-host');
+
+        /*
+         * Nếu frame khác đang hoạt động, không được xóa class/data của nó.
+         */
+        if (!anotherFrameIsActive) {
+            host.classList.remove(
+                'avatar-frame-equipped',
+                'avatar-frame-profile-host',
+                'avatar-frame-modal-host'
+            );
+
+            if (currentId === ITEM_ID || !currentId) {
+                host.removeAttribute('data-avatar-frame-id');
+            }
+
+            if (currentEffect === FRAME_EFFECT || !currentEffect) {
+                host.removeAttribute('data-avatar-frame-effect');
+            }
+
+            if (host.dataset.lotmf1ThemeImmune === '1') {
+                host.removeAttribute('data-theme-immune');
+                delete host.dataset.lotmf1ThemeImmune;
+            }
+        }
+    }
+
+    function clearOnlyTargetFrame() {
+        const hosts = new Set();
+
+        document.querySelectorAll(
+            '.lotmf1-frame-host,' +
+            '[data-avatar-frame-id="' + ITEM_ID + '"],' +
+            '[data-avatar-frame-effect="' + FRAME_EFFECT + '"]'
+        ).forEach(host => hosts.add(host));
+
+        /*
+         * Manager cũ có thể xóa data-* trước. Truy ngược từ node riêng
+         * để vẫn dọn đúng frame này và không dọn frame khác.
+         */
+        document.querySelectorAll(
+            '.lotmf1-frame-decoration,' +
+            '.lotmf1-frame-aura,' +
+            '.lotmf1-frame-rune,' +
+            '.avatar-frame-decoration[data-lotmf1-frame="1"],' +
+            'img.avatar-frame-decoration[src*="klain_khung1.png"]'
+        ).forEach(node => {
+            if (node.parentElement) {
+                hosts.add(node.parentElement);
+            }
+        });
+
+        hosts.forEach(clearTargetHost);
+
+        document.querySelectorAll(
+            '.lotmf1-frame-decoration,' +
+            '.lotmf1-frame-aura,' +
+            '.lotmf1-frame-rune,' +
+            '.avatar-frame-decoration[data-lotmf1-frame="1"]'
+        ).forEach(node => node.remove());
+    }
+
+    function ensureLayer(host, item, variant) {
+        if (!host || !item) {
+            return;
+        }
+
+        host.classList.add(
+            'avatar-frame-equipped',
+            'lotmf1-frame-host',
+            variant === 'profile'
+                ? 'avatar-frame-profile-host'
+                : 'avatar-frame-modal-host'
+        );
+
+        host.setAttribute('data-avatar-frame-id', ITEM_ID);
+        host.setAttribute('data-avatar-frame-effect', FRAME_EFFECT);
+
+        /*
+         * Khóa theme chỉ khi frame này đang chiếm host.
+         */
+        if (!host.hasAttribute('data-theme-immune')) {
+            host.setAttribute('data-theme-immune', 'true');
+            host.dataset.lotmf1ThemeImmune = '1';
+        }
+
+        let frame =
+            host.querySelector(':scope > .lotmf1-frame-decoration') ||
+            host.querySelector(
+                ':scope > .avatar-frame-decoration[data-lotmf1-frame="1"]'
+            );
+
+        if (!frame) {
+            const generic =
+                host.querySelector(':scope > .avatar-frame-decoration');
+
+            const genericSrc =
+                generic?.getAttribute('src') || '';
+
+            if (
+                generic &&
+                genericSrc.includes('klain_khung1.png')
+            ) {
+                frame = generic;
+            } else if (
+                generic &&
+                host.getAttribute('data-avatar-frame-id') === ITEM_ID
+            ) {
+                generic.remove();
+            }
+        }
+
+        if (!frame) {
+            frame = document.createElement('img');
+            frame.className =
+                'avatar-frame-decoration lotmf1-frame-decoration';
+            frame.src = item.value || FRAME_ASSET;
+            frame.alt = '';
+            frame.draggable = false;
+            frame.setAttribute('aria-hidden', 'true');
+            host.appendChild(frame);
+        } else {
+            frame.classList.add(
+                'avatar-frame-decoration',
+                'lotmf1-frame-decoration'
+            );
+
+            if (
+                !String(frame.getAttribute('src') || '')
+                    .includes('klain_khung1.png')
+            ) {
+                frame.src = item.value || FRAME_ASSET;
+            }
+        }
+
+        frame.dataset.lotmf1Frame = '1';
+
+        frame.style.removeProperty('display');
+        frame.style.removeProperty('visibility');
+        frame.style.removeProperty('opacity');
+        frame.style.removeProperty('filter');
+        frame.style.removeProperty('transform');
+
+        let aura =
+            host.querySelector(':scope > .lotmf1-frame-aura');
+
+        if (!aura) {
+            aura = document.createElement('span');
+            aura.className = 'lotmf1-frame-aura';
+            aura.setAttribute('aria-hidden', 'true');
+            host.appendChild(aura);
+        }
+
+        /*
+         * Chỉ profile có ký hiệu nhỏ. Popup không thêm để tránh đè bút chì.
+         */
+        if (variant === 'profile') {
+            for (let index = 1; index <= 4; index++) {
+                const className = 'rune-' + index;
+
+                if (
+                    host.querySelector(
+                        ':scope > .lotmf1-frame-rune.' + className
+                    )
+                ) {
+                    continue;
+                }
+
+                const rune = document.createElement('span');
+
+                rune.className =
+                    'lotmf1-frame-rune ' + className;
+
+                rune.textContent =
+                    index % 2 === 0 ? '◈' : '✦';
+
+                rune.setAttribute('aria-hidden', 'true');
+                host.appendChild(rune);
+            }
+        } else {
+            host.querySelectorAll(
+                ':scope > .lotmf1-frame-rune'
+            ).forEach(node => node.remove());
+        }
+    }
+
+    function repairFrame(itemOrId) {
+        if (window.isStudentStoreGameAccessEnabled?.() === false) return false;
+        const item = getItem(itemOrId);
+        if (item && typeof myInventory !== 'undefined' && Array.isArray(myInventory) &&
+            !myInventory.some(entry => String(entry?.id) === String(item.id) && entry.isEquipped === true &&
+                !(entry.isTrial === true && Number(entry.trialExpiry || 0) <= Date.now()))) return false;
+
+        if (!isTarget(item)) {
+            return false;
+        }
+
+        ensureLayer(
+            document.querySelector('.profile-trigger-btn'),
+            item,
+            'profile'
+        );
+
+        ensureLayer(
+            document.querySelector(
+                '#studentInfoModal .avatar-upload-container'
+            ),
+            item,
+            'modal'
+        );
+
+        return true;
+    }
+
+    function repairExistingTarget() {
+        const targetHost =
+            document.querySelector(
+                '[data-avatar-frame-id="' + ITEM_ID + '"],' +
+                '[data-avatar-frame-effect="' + FRAME_EFFECT + '"]'
+            );
+
+        const sourceNode =
+            document.querySelector(
+                'img.avatar-frame-decoration[src*="klain_khung1.png"]'
+            );
+
+        if (!targetHost && !sourceNode) {
+            return false;
+        }
+
+        const item = getItem(ITEM_ID);
+
+        return item ? repairFrame(item) : false;
+    }
+
+    function wrapAvatarFrameManager() {
+        const manager = window.AvatarFrameManager;
+
+        if (
+            !manager ||
+            manager.__lotmf1KleinFrameBridge
+        ) {
+            return !!manager;
+        }
+
+        const originalApply =
+            typeof manager.applyFrame === 'function'
+                ? manager.applyFrame.bind(manager)
+                : null;
+
+        const originalClear =
+            typeof manager.clearFrame === 'function'
+                ? manager.clearFrame.bind(manager)
+                : null;
+
+        if (originalApply) {
+            manager.applyFrame =
+                function (itemOrId) {
+                    if (!isTarget(itemOrId)) {
+                        clearOnlyTargetFrame();
+                    }
+
+                    const result =
+                        originalApply(itemOrId);
+
+                    if (isTarget(itemOrId)) {
+                        repairFrame(itemOrId);
+
+                        requestAnimationFrame(
+                            () => repairFrame(itemOrId)
+                        );
+                    }
+
+                    return result;
+                };
+        }
+
+        if (originalClear) {
+            manager.clearFrame =
+                function (...args) {
+                    clearOnlyTargetFrame();
+
+                    const result =
+                        originalClear(...args);
+
+                    clearOnlyTargetFrame();
+
+                    return result;
+                };
+        }
+
+        manager.__lotmf1KleinFrameBridge = true;
+        return true;
+    }
+
+    function wrapStoreManager() {
+        if (
+            typeof StoreManager === 'undefined' ||
+            StoreManager.__lotmf1KleinFrameStoreBridge
+        ) {
+            return typeof StoreManager !== 'undefined';
+        }
+
+        const originalApply =
+            typeof StoreManager.applyItem === 'function'
+                ? StoreManager.applyItem.bind(StoreManager)
+                : null;
+
+        const originalUnapply =
+            typeof StoreManager.unapplyItem === 'function'
+                ? StoreManager.unapplyItem.bind(StoreManager)
+                : null;
+
+        if (originalApply) {
+            StoreManager.applyItem =
+                async function (itemId) {
+                    const result =
+                        await originalApply(itemId);
+                    if (result === false || window.isStudentStoreGameAccessEnabled?.() === false) return false;
+
+                    if (isTarget(itemId)) {
+                        const item = getItem(itemId);
+
+                        if (
+                            window.AvatarFrameManager &&
+                            typeof window.AvatarFrameManager.applyFrame ===
+                                'function'
+                        ) {
+                            window.AvatarFrameManager.applyFrame(item);
+                        } else {
+                            repairFrame(item);
+                        }
+
+                        setTimeout(
+                            () => repairFrame(item),
+                            80
+                        );
+
+                        setTimeout(
+                            () => repairFrame(item),
+                            350
+                        );
+                    }
+
+                    return result;
+                };
+        }
+
+        if (originalUnapply) {
+            StoreManager.unapplyItem =
+                async function (itemId) {
+                    if (isTarget(itemId)) {
+                        clearOnlyTargetFrame();
+                    }
+
+                    const result =
+                        await originalUnapply(itemId);
+
+                    if (isTarget(itemId)) {
+                        clearOnlyTargetFrame();
+                        requestAnimationFrame(clearOnlyTargetFrame);
+                        setTimeout(clearOnlyTargetFrame, 80);
+                    }
+
+                    return result;
+                };
+        }
+
+        StoreManager.__lotmf1KleinFrameStoreBridge = true;
+        return true;
+    }
+
+    function install() {
+        if (installed) {
+            return;
+        }
+
+        const managerReady =
+            wrapAvatarFrameManager();
+
+        const storeReady =
+            wrapStoreManager();
+
+        if (managerReady && storeReady) {
+            installed = true;
+            repairExistingTarget();
+        }
+    }
+
+    /*
+     * store-manager.js chạy trước student.js; chờ AvatarFrameManager sẵn sàng.
+     */
+    setTimeout(install, 0);
+
+    let tries = 0;
+
+    const retryTimer =
+        setInterval(() => {
+            tries += 1;
+            install();
+
+            if (installed || tries >= 100) {
+                clearInterval(retryTimer);
+            }
+        }, 100);
+
+    const observer =
+        new MutationObserver(() => {
+            const targetHost =
+                document.querySelector(
+                    '[data-avatar-frame-id="' + ITEM_ID + '"],' +
+                    '[data-avatar-frame-effect="' + FRAME_EFFECT + '"]'
+                );
+
+            const sourceNode =
+                document.querySelector(
+                    'img.avatar-frame-decoration[src*="klain_khung1.png"]'
+                );
+
+            if (!targetHost && !sourceNode) {
+                return;
+            }
+
+            const item = getItem(ITEM_ID);
+
+            if (item) {
+                repairFrame(item);
+            }
+        });
+
+    const startObserver = () => {
+        if (!document.body) {
+            return;
+        }
+
+        observer.observe(
+            document.body,
+            {
+                childList: true,
+                subtree: true
+            }
+        );
+    };
+
+    if (document.readyState === 'loading') {
+        document.addEventListener(
+            'DOMContentLoaded',
+            startObserver,
+            { once: true }
+        );
+    } else {
+        startObserver();
+    }
+})();
+
+/* ============================================================================
+   ĐÊM ĐẦY SAO · TINH HỌA CHI HOÀN — SNDF1 FRAME BRIDGE
+   - Chỉ dành cho frame_dem_day_sao_tinh_da_chi_hoan.
+   - Dùng vị trí profile/popup chuẩn đã kiểm chứng ở Premium Mùa Xuân.
+   - Namespace độc lập sndf1-*; không sửa runtime/DOM của frame khác.
+   ============================================================================ */
+(function installStarryNightPaintedFrameBridge() {
+    'use strict';
+
+    const ITEM_ID = 'frame_dem_day_sao_tinh_da_chi_hoan';
+    const FRAME_EFFECT = 'sndf1-starry-night-painted-frame';
+    const FRAME_ASSET = 'assets/Premium/đêm đầy sao/nam_khung1.png';
+    let installed = false;
+
+    function getItem(itemOrId) {
+        if (itemOrId && typeof itemOrId === 'object') return itemOrId;
+        if (
+            typeof StoreManager === 'undefined' ||
+            typeof StoreManager.getItemById !== 'function'
+        ) return null;
+        return StoreManager.getItemById(String(itemOrId || ''));
+    }
+
+    function isTarget(itemOrId) {
+        const item = getItem(itemOrId);
+        return !!(
+            item &&
+            item.id === ITEM_ID &&
+            item.type === 'frame'
+        );
+    }
+
+    function isOwnHost(host) {
+        if (!host || host.nodeType !== 1) return false;
+        return (
+            host.classList.contains('sndf1-frame-host') ||
+            host.getAttribute('data-avatar-frame-id') === ITEM_ID ||
+            host.getAttribute('data-avatar-frame-effect') === FRAME_EFFECT ||
+            !!host.querySelector(
+                ':scope > .sndf1-frame-decoration,' +
+                ':scope > .sndf1-frame-aura,' +
+                ':scope > .sndf1-frame-glint,' +
+                ':scope > img.avatar-frame-decoration[src*="nam_khung1.png"]'
+            )
+        );
+    }
+
+    function removeOwnLayers(host) {
+        if (!host) return;
+        host.querySelectorAll(
+            ':scope > .sndf1-frame-decoration,' +
+            ':scope > .sndf1-frame-aura,' +
+            ':scope > .sndf1-frame-glint,' +
+            ':scope > img.avatar-frame-decoration[data-sndf1-frame="1"],' +
+            ':scope > img.avatar-frame-decoration[src*="nam_khung1.png"]'
+        ).forEach(node => node.remove());
+    }
+
+    function clearTargetHost(host) {
+        if (!isOwnHost(host)) return;
+
+        const currentId = host.getAttribute('data-avatar-frame-id') || '';
+        const currentEffect = host.getAttribute('data-avatar-frame-effect') || '';
+        const anotherFrameIsActive =
+            (currentId && currentId !== ITEM_ID) ||
+            (currentEffect && currentEffect !== FRAME_EFFECT);
+
+        removeOwnLayers(host);
+        host.classList.remove('sndf1-frame-host');
+
+        if (!anotherFrameIsActive) {
+            host.classList.remove(
+                'avatar-frame-equipped',
+                'avatar-frame-profile-host',
+                'avatar-frame-modal-host'
+            );
+
+            if (currentId === ITEM_ID || !currentId) {
+                host.removeAttribute('data-avatar-frame-id');
+            }
+            if (currentEffect === FRAME_EFFECT || !currentEffect) {
+                host.removeAttribute('data-avatar-frame-effect');
+            }
+        }
+
+        if (host.dataset.sndf1ThemeImmune === '1') {
+            host.removeAttribute('data-theme-immune');
+            delete host.dataset.sndf1ThemeImmune;
+        }
+    }
+
+    function clearOnlyTargetFrame() {
+        const hosts = new Set();
+
+        document.querySelectorAll(
+            '.sndf1-frame-host,' +
+            '[data-avatar-frame-id="' + ITEM_ID + '"],' +
+            '[data-avatar-frame-effect="' + FRAME_EFFECT + '"]'
+        ).forEach(host => hosts.add(host));
+
+        document.querySelectorAll(
+            '.sndf1-frame-decoration,' +
+            '.sndf1-frame-aura,' +
+            '.sndf1-frame-glint,' +
+            'img.avatar-frame-decoration[data-sndf1-frame="1"],' +
+            'img.avatar-frame-decoration[src*="nam_khung1.png"]'
+        ).forEach(node => {
+            if (node.parentElement) hosts.add(node.parentElement);
+        });
+
+        hosts.forEach(clearTargetHost);
+
+        document.querySelectorAll(
+            '.sndf1-frame-decoration,' +
+            '.sndf1-frame-aura,' +
+            '.sndf1-frame-glint,' +
+            'img.avatar-frame-decoration[data-sndf1-frame="1"]'
+        ).forEach(node => node.remove());
+    }
+
+    function ensureLayer(host, item, variant) {
+        if (!host || !item) return;
+
+        host.classList.add(
+            'avatar-frame-equipped',
+            'sndf1-frame-host',
+            variant === 'profile'
+                ? 'avatar-frame-profile-host'
+                : 'avatar-frame-modal-host'
+        );
+
+        host.setAttribute('data-avatar-frame-id', ITEM_ID);
+        host.setAttribute('data-avatar-frame-effect', FRAME_EFFECT);
+
+        if (!host.hasAttribute('data-theme-immune')) {
+            host.setAttribute('data-theme-immune', 'true');
+            host.dataset.sndf1ThemeImmune = '1';
+        }
+
+        let frame = host.querySelector(':scope > .avatar-frame-decoration');
+        const currentSrc = frame?.getAttribute('src') || '';
+
+        if (!frame || !currentSrc.includes('nam_khung1.png')) {
+            if (frame) frame.remove();
+            frame = document.createElement('img');
+            frame.className = 'avatar-frame-decoration sndf1-frame-decoration';
+            frame.src = item.value || FRAME_ASSET;
+            frame.alt = '';
+            frame.draggable = false;
+            frame.setAttribute('aria-hidden', 'true');
+            host.appendChild(frame);
+        } else {
+            frame.classList.add('sndf1-frame-decoration');
+        }
+
+        frame.dataset.sndf1Frame = '1';
+        frame.style.removeProperty('display');
+        frame.style.removeProperty('visibility');
+        frame.style.removeProperty('opacity');
+
+        let aura = host.querySelector(':scope > .sndf1-frame-aura');
+        if (!aura) {
+            aura = document.createElement('span');
+            aura.className = 'sndf1-frame-aura';
+            aura.setAttribute('aria-hidden', 'true');
+            host.appendChild(aura);
+        }
+
+        if (variant === 'profile') {
+            for (let index = 1; index <= 4; index++) {
+                const className = 'glint-' + index;
+                if (host.querySelector(':scope > .sndf1-frame-glint.' + className)) {
+                    continue;
+                }
+                const glint = document.createElement('span');
+                glint.className = 'sndf1-frame-glint ' + className;
+                glint.textContent = '✦';
+                glint.setAttribute('aria-hidden', 'true');
+                host.appendChild(glint);
+            }
+        } else {
+            host.querySelectorAll(':scope > .sndf1-frame-glint')
+                .forEach(node => node.remove());
+        }
+    }
+
+    function repairFrame(itemOrId) {
+        if (window.isStudentStoreGameAccessEnabled?.() === false) return false;
+        const item = getItem(itemOrId);
+        if (item && typeof myInventory !== 'undefined' && Array.isArray(myInventory) &&
+            !myInventory.some(entry => String(entry?.id) === String(item.id) && entry.isEquipped === true &&
+                !(entry.isTrial === true && Number(entry.trialExpiry || 0) <= Date.now()))) return false;
+        if (!isTarget(item)) return false;
+
+        ensureLayer(
+            document.querySelector('.profile-trigger-btn'),
+            item,
+            'profile'
+        );
+
+        ensureLayer(
+            document.querySelector(
+                '#studentInfoModal .avatar-upload-container'
+            ),
+            item,
+            'modal'
+        );
+
+        return true;
+    }
+
+    function wrapAvatarFrameManager() {
+        const manager = window.AvatarFrameManager;
+        if (!manager || manager.__sndf1StarryFrameBridge) return !!manager;
+
+        const originalApply =
+            typeof manager.applyFrame === 'function'
+                ? manager.applyFrame.bind(manager)
+                : null;
+        const originalClear =
+            typeof manager.clearFrame === 'function'
+                ? manager.clearFrame.bind(manager)
+                : null;
+
+        if (originalApply) {
+            manager.applyFrame = function (itemOrId) {
+                if (!isTarget(itemOrId)) clearOnlyTargetFrame();
+                const result = originalApply(itemOrId);
+                if (isTarget(itemOrId)) {
+                    repairFrame(itemOrId);
+                    requestAnimationFrame(() => repairFrame(itemOrId));
+                }
+                return result;
+            };
+        }
+
+        if (originalClear) {
+            manager.clearFrame = function (...args) {
+                clearOnlyTargetFrame();
+                const result = originalClear(...args);
+                clearOnlyTargetFrame();
+                return result;
+            };
+        }
+
+        manager.__sndf1StarryFrameBridge = true;
+        return true;
+    }
+
+    function wrapStoreManager() {
+        if (
+            typeof StoreManager === 'undefined' ||
+            StoreManager.__sndf1StarryFrameStoreBridge
+        ) return typeof StoreManager !== 'undefined';
+
+        const originalApply =
+            typeof StoreManager.applyItem === 'function'
+                ? StoreManager.applyItem.bind(StoreManager)
+                : null;
+        const originalUnapply =
+            typeof StoreManager.unapplyItem === 'function'
+                ? StoreManager.unapplyItem.bind(StoreManager)
+                : null;
+
+        if (originalApply) {
+            StoreManager.applyItem = async function (itemId) {
+                const result = await originalApply(itemId);
+                if (
+                    result === false ||
+                    window.isStudentStoreGameAccessEnabled?.() === false
+                ) return false;
+
+                if (isTarget(itemId)) {
+                    const item = getItem(itemId);
+                    if (
+                        window.AvatarFrameManager &&
+                        typeof window.AvatarFrameManager.applyFrame === 'function'
+                    ) {
+                        window.AvatarFrameManager.applyFrame(item);
+                    } else {
+                        repairFrame(item);
+                    }
+                    setTimeout(() => repairFrame(item), 80);
+                    setTimeout(() => repairFrame(item), 350);
+                }
+
+                return result;
+            };
+        }
+
+        if (originalUnapply) {
+            StoreManager.unapplyItem = async function (itemId) {
+                if (isTarget(itemId)) clearOnlyTargetFrame();
+                const result = await originalUnapply(itemId);
+                if (isTarget(itemId)) {
+                    clearOnlyTargetFrame();
+                    requestAnimationFrame(clearOnlyTargetFrame);
+                    setTimeout(clearOnlyTargetFrame, 80);
+                }
+                return result;
+            };
+        }
+
+        StoreManager.__sndf1StarryFrameStoreBridge = true;
+        return true;
+    }
+
+    function install() {
+        if (installed) return;
+        installed = wrapAvatarFrameManager() && wrapStoreManager();
+    }
+
+    setTimeout(install, 0);
+
+    let tries = 0;
+    const retryTimer = setInterval(() => {
+        tries += 1;
+        install();
+        if (installed || tries >= 80) clearInterval(retryTimer);
+    }, 100);
+
+    const observer = new MutationObserver(() => {
+        const activeHost = document.querySelector(
+            '[data-avatar-frame-id="' + ITEM_ID + '"]'
+        );
+        if (!activeHost) return;
+        const item = getItem(ITEM_ID);
+        if (item) repairFrame(item);
+    });
+
+    const startObserver = () => {
+        if (!document.body) return;
+        observer.observe(document.body, { childList: true, subtree: true });
+    };
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', startObserver, { once: true });
+    } else {
+        startObserver();
+    }
+})();
+
+
+
+// STORE_CONCURRENCY_V2: shared by student.js and teacher.js.
+// The matching database.rules.json is required; denied writes fail closed.
+window.StoreConcurrency = (() => {
+    const validKey = value => typeof value === 'string' && value.length > 0 &&
+        !/[.#$\[\]\/]/.test(value);
+    function online() {
+        if (window.isOffline || navigator.onLine === false) throw new Error('STORE_OFFLINE');
+    }
+    async function charge(username, itemId, operation, kind, amount, patch, coupon = null) {
+        online();
+        if (!validKey(username) || !validKey(String(itemId)) || !validKey(operation.operationId) ||
+            !Number.isFinite(amount) || amount < 0 || amount > 999999) throw new Error('INVALID_AMOUNT');
+        const table = kind === 'trial' ? 'store_trial_claims' : 'store_purchase_ops';
+        const updates = {};
+        for (const [key, value] of Object.entries(patch)) updates[`${table}/${username}/${itemId}/${key}`] = value;
+        updates[`store_charge_receipts/${username}/${operation.operationId}`] = {
+            version: 1, itemId: String(itemId), kind, amount, createdAt: Date.now(),
+            ...(coupon ? { discountKey: coupon.key, percent: coupon.percent } : {})
+        };
+        if (amount > 0) updates[`student_coins/${username}`] = firebase.database.ServerValue.increment(-amount);
+        if (coupon) {
+            const prefix = `student_discounts/${username}/${coupon.key}`;
+            updates[`${prefix}/isUsed`] = true;
+            updates[`${prefix}/usedAt`] = Date.now();
+            updates[`${prefix}/usedForItem`] = String(itemId);
+            updates[`${prefix}/usedTransactionId`] = operation.operationId;
+        }
+        // Never retry this increment. On reconnect, recover the saved item grant instead.
+        await db.ref().update(updates);
+    }
+    async function equipment(username, itemId, equip, lookup, canContinue = () => true) {
+        online();
+        if (!validKey(username) || !validKey(String(itemId))) throw new Error('INVALID_ITEM');
+        const revisionRef = db.ref(`store_equipment_revisions/${username}`);
+        const inventoryRef = db.ref(`student_inventory/${username}`);
+        const exempt = item => ['frame', 'music'].includes(String(item?.type || ''));
+        for (let attempt = 0; attempt < 6; attempt++) {
+            // Read revision FIRST: any later concurrent equipment commit invalidates this snapshot.
+            const revision = Number((await revisionRef.once('value')).val() || 0);
+            if (!Number.isSafeInteger(revision) || revision < 0) throw new Error('INVALID_EQUIPMENT_REVISION');
+            const inventory = (await inventoryRef.once('value')).val() || {};
+            if (!canContinue()) return false;
+            const target = lookup(itemId);
+            if (!target || (equip && target.isLocked === true)) return false;
+            const specialBackground = entry => entry?.source === 'collection_reward' &&
+                String(entry.id || '').startsWith('reward_bg_') && entry.isTrial !== true;
+            const targetSpecial = Object.values(inventory).some(entry => String(entry?.id) === String(itemId) && specialBackground(entry));
+            const activeSpecial = Object.values(inventory).find(entry => specialBackground(entry) && entry.isEquipped === true);
+            // Never silently remove an active special background when equipping a shop item.
+            // Re-evaluate after every revision conflict, including changes from other tabs.
+            if (equip && activeSpecial && String(activeSpecial.id) !== String(itemId) &&
+                (target.type === 'background' || target.luxuryOnly === true)) {
+                const message = 'Hãy vào Phần thưởng và bấm Tháo nền đặc biệt trước khi mặc nền khác hoặc vật phẩm cửa hàng sang trọng.';
+                if (typeof window.showToast === 'function') window.showToast(message, 'error'); else (await AppDialog.alert(message));
+                return false;
+            }
+            const matches = Object.entries(inventory).filter(([, entry]) => String(entry?.id) === String(itemId));
+            const usable = matches.filter(([, entry]) => entry.isTrial !== true ||
+                (Number.isFinite(Number(entry.trialExpiry)) && Number(entry.trialExpiry) > Date.now()));
+            if (!matches.length || (equip && !usable.length)) return false;
+            const chosenKey = (usable.find(([key]) => key === String(itemId)) || usable[0])?.[0];
+            const updates = { [`store_equipment_revisions/${username}`]: revision + 1 };
+            for (const [key, entry] of Object.entries(inventory)) {
+                if (!entry) continue;
+                const definition = lookup(entry.id);
+                const sameId = String(entry.id) === String(itemId);
+                const conflict = equip && ((targetSpecial && (definition?.luxuryOnly === true || definition?.type === 'background' || entry.type === 'background')) || (definition && (definition.type === target.type ||
+                    (!exempt(definition) && !exempt(target) &&
+                        Boolean(definition.luxuryOnly) !== Boolean(target.luxuryOnly)))));
+                if (!sameId && !conflict) continue;
+                const next = sameId && equip && key === chosenKey;
+                if (entry.isEquipped !== next) updates[`student_inventory/${username}/${key}/isEquipped`] = next;
+            }
+            if (!canContinue()) return false;
+            try {
+                await db.ref().update(updates);
+                return true;
+            } catch (error) {
+                if (!/permission.denied/i.test(String(error.code || error.message))) throw error;
+                const latestRevision = Number((await revisionRef.once('value')).val() || 0);
+                if (latestRevision === revision) throw error; // Rules/auth error, not a race.
+            }
+        }
+        throw new Error('EQUIPMENT_BUSY');
+    }
+    return { charge, equipment };
+})();
