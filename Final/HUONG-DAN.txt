@@ -1,0 +1,35 @@
+FILE DÙNG ĐỂ NHẬP WEB
+
+HSK-1-6.xlsx: nên dùng để THÊM từ vào web.
+Chọn Tiếng Trung → Cài đặt → Dữ liệu → Nhập Excel. Chỉ nhập một lần để tránh thêm trùng.
+Sheet TuVung có tên cột khớp trình nhập của web. Các cột từ stt trở đi phục vụ đối chiếu, web bỏ qua khi nhập Excel.
+
+HSK-1-6.json: JSON tương thích web, THAY THẾ kho từ vựng hiện có. Xuất bản sao lưu trước khi nhập. Không nhập cả Excel và JSON liên tiếp.
+
+NGUỒN VÀ CHẤT LƯỢNG
+Nguồn: D:/tiếng trung/tài liệu ôn tiếng trung/5000 từ vựng HSK-6.pdf (156 trang, PDF ảnh).
+Tài liệu thực tế có 5.078 dòng, từ HSK 1 đến HSK 6; giữ nguyên thứ tự và mục trùng của nguồn.
+Đây là bản chuyển đổi OCR có hiệu chỉnh, chưa được soát thủ công toàn bộ. 478 dòng được đánh dấu tại cột reviewNote; các dòng không đánh dấu cũng không có nghĩa đã được xác minh tuyệt đối.
+Đã đối chiếu thủ công chữ Hán và phiên âm của 145 dòng. Nghĩa từ tiếng Việt nhận dạng từ PDF, không dịch lại bằng AI. Không tự thêm từ loại.
+Đã bổ sung ví dụ Trung–pinyin–Việt cho 5.078 dòng vào cột example. Đây là nội dung bổ sung, không nằm trong PDF gốc. Câu cơ bản được rút gọn/biên soạn thêm; phần lớn bản dịch câu tiếng Việt được dịch tự động trên máy và chưa được soát thủ công toàn bộ. Cấp HSK là cấp của mục từ, không bảo đảm toàn bộ từ trong câu đều dưới cấp đó.
+Nguồn ví dụ tham chiếu: Chinese-English HSK Dictionary, © 2026 Tim Pearce, https://github.com/TeaPearce/chinese-english-dictionary, dựa trên CC-CEDICT. Phần ví dụ phái sinh áp dụng CC BY-SA 4.0: https://creativecommons.org/licenses/by-sa/4.0/. Đã ghép theo mục từ, bổ sung câu và dịch sang tiếng Việt. Giấy phép và bản ghi nguồn nằm trong Vi-du-HSK/.
+Phiên âm được đối chiếu/chuẩn hóa bằng từ điển tham chiếu; có thể khác cách viết liền hoặc tách âm trong PDF. Một số cách đọc của nguồn được giữ lại và cần người học rà soát.
+Nguồn đối chiếu: https://github.com/drkameleon/complete-hsk-vocabulary (MIT; giấy phép trong Chuyen-doi-PDF/reference-LICENSE.txt).
+Cột sourcePage là số trang để tìm lại trong PDF. Lọc reviewNote khác rỗng để xem các dòng cần kiểm tra.
+
+SẮP XẾP THƯ MỤC
+Hai tệp HSK ở ngay trong Final là kết quả cần dùng.
+Chuyen-doi-PDF/: công cụ chuyển đổi, OCR thô, ảnh đối chiếu, thống kê, tài liệu tham chiếu.
+tests/: mã kiểm thử và kết quả kiểm thử web.
+tmp/: các file nháp trước đó.
+backup-ai-20261004-112545/ và index.before-firebase.html: bản sao lưu cũ.
+Các file đang chạy web được giữ ở thư mục dự án. Lệnh npm test đã cập nhật đường dẫn mới.
+
+FILE MỚI: Tu-vung-Xiao-Cidian-cho-web.json
+846 mục từ file tu_vung_xiao_cidian(1).json đã chuyển đúng cấu trúc meta.language + textData.vocab.
+Giữ nguyên từ vựng, nghĩa, từ loại và số trang. 525 mục HSK null hiện ở nhóm Chưa phân cấp sau khi cập nhật web. File nguồn không có pinyin/ví dụ nên để trống các trường này.
+Nhập JSON này thay thế kho từ hiện tại; hãy xuất bản sao lưu trước. Không nhập chỉ để bổ sung vài mục nếu muốn giữ toàn bộ kho cũ.
+
+FIREBASE
+Nút Lưu lên Mây / Tải về Máy trong Cài đặt đã chuyển sang Firebase. Trước đây các nút này gọi Supabase nên báo chưa cấu hình máy chủ dù đã cấu hình Firebase.
+Nhấn Ctrl+F5 rồi thử lại. Chưa cấu hình/đăng nhập sẽ mở phần Firebase để thực hiện. Đã kiểm thử bằng SDK mô phỏng; chưa đăng nhập dự án Firebase thật của bạn.
