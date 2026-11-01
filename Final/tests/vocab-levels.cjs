@@ -1,0 +1,12 @@
+const assert=require('node:assert/strict'),vm=require('node:vm'),fs=require('node:fs'),path=require('node:path');
+const source=fs.readFileSync(path.join(__dirname,'../../script.js'),'utf8');
+const helper=source.slice(source.indexOf('function vocabLevelGroup('),source.indexOf('function cardHTML('));
+const render=source.slice(source.indexOf('function filteredVocabulary()'),source.indexOf('// --- 3. CẬP NHẬT TÌM KIẾM NGỮ PHÁP ---'));
+const nodes={'#vocabGrid':{innerHTML:''},'#filterHSK':{value:'all'},'#searchV':{value:''}};
+const context={Vocabulary:require('../../vocabulary-core.js'),NEW:{vocab:[{hanzi:'适',pinyin:'',vietnamese:'dễ chịu',hskLevel:null},{hanzi:'嗓子',pinyin:'',vietnamese:'cổ họng',hskLevel:5}],srs:{}},$:s=>nodes[s],$$:()=>[],renderVocabStats(){},removeTones:s=>String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,''),cardHTML:v=>'<article>'+v.hanzi+'</article>',lucide:{createIcons(){}},document:{getElementById:()=>null},handleLearnNew(){},handleCram(){}};
+vm.createContext(context);vm.runInContext(helper+render,context);
+context.renderVocab();assert.match(nodes['#vocabGrid'].innerHTML,/Chưa phân cấp/);
+nodes['#filterHSK'].value='unknown';context.renderVocab();assert.match(nodes['#vocabGrid'].innerHTML,/适/);assert.doesNotMatch(nodes['#vocabGrid'].innerHTML,/嗓子/);
+nodes['#filterHSK'].value='all';nodes['#searchV'].value='de chiu';context.renderVocab();assert.match(nodes['#vocabGrid'].innerHTML,/适/);
+nodes['#filterHSK'].value='5';nodes['#searchV'].value='';context.renderVocab();assert.match(nodes['#vocabGrid'].innerHTML,/嗓子/);assert.doesNotMatch(nodes['#vocabGrid'].innerHTML,/适/);
+console.log('PASS null HSK remains visible, filterable and searchable without being assigned a false HSK level.');
